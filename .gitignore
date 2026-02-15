@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+*.env
+
+# VS Code
+.vscode/
+.history/
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Project specific
+Dual_Runner.zip
+*.log
