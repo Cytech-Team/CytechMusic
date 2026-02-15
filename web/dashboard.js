@@ -7,7 +7,8 @@
 // ==========================================
 // --- ZERO-DELAY INTERNAL RUNNER ---
 // ยิงเข้าหาตัวเอง (Pages Function) เพื่อประหยัดเวลาและไม่มี Delay
-const BOT_API = "/api/proxy";
+const IS_LOCAL_DASH = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const BOT_API = IS_LOCAL_DASH ? "http://localhost:8000/api/proxy" : "/api/proxy";
 
 async function smartFetch(endpoint, options = {}) {
     // ยิงเข้าหา Internal Proxy (/api/proxy) เสมอเพื่อแก้ปัญหา CORS และ HTTPS
@@ -31,7 +32,11 @@ async function smartFetch(endpoint, options = {}) {
 let selectedGuildId = null;
 let currentUserId = null;
 let statusInterval = null;
-let currentLang = 'EN'; // Track current language
+let currentLang = 'EN';
+// REALTIME STATE
+let wsConnection = null;
+let isRealtime = false;
+
 let playerState = {
     position: 0,
     duration: 1,
@@ -43,30 +48,47 @@ let playerState = {
 // 1. CORE WRAPPERS (Matching HTML onclicks)
 // ==========================================
 
+
+// ==========================================
+// 1. CORE WRAPPERS (Instant Polish)
+// ==========================================
+
 function control(action, value = null) {
-    console.log(`[Dashboard] Action: ${action}`, value);
-
-    if (action === 'stop') {
-        // OPTIMIZATION: Immediate UI Reset for Stop button
-        updatePlayerUI({ is_playing: false });
-        sendControl('stop');
-        return;
-    }
-
-    // Map actions to BOT API expected terms
+    // OPTIMISTIC UPDATE: Update UI immediately explicitly
     if (action === 'playpause') {
-        sendControl('pause');
-    } else if (action === 'prev' || action === 'next') {
-        sendControl('skip');
-    } else if (action === 'volume') {
-        handleVolume(value);
-    } else {
-        sendControl(action, value);
+        const playIcon = document.getElementById('play-icon');
+        const isPaused = playerState.paused;
+        // Toggle state locally first
+        playerState.paused = !isPaused;
+        if (playIcon) playIcon.className = playerState.paused ? 'fas fa-play' : 'fas fa-pause';
+
+        // Resume/Pause timer logic
+        if (!playerState.paused) {
+            playerState.lastUpdate = performance.now();
+        }
     }
+    else if (action === 'stop') {
+        updatePlayerUI({ is_playing: false });
+    }
+
+    // Map actions
+    let apiAction = action;
+    if (action === 'playpause') apiAction = 'pause'; // API calls it 'pause' (toggle)
+    else if (action === 'prev' || action === 'next') {
+        apiAction = 'skip';
+        // Optimistic: Reset progress to 0 on skip
+        updateProgressUI(0, playerState.duration);
+    }
+    else if (action === 'volume') {
+        handleVolume(value);
+        return; // handleVolume calls sendControl
+    }
+
+    sendControl(apiAction, value);
 }
 
 /**
- * Seek track by clicking progress bar
+ * Seek track by clicking progress bar (Instant Feedback)
  */
 function seekTrack(event) {
     if (!playerState.duration || playerState.duration <= 0) return;
@@ -80,17 +102,19 @@ function seekTrack(event) {
     const percent = Math.max(0, Math.min(x / width, 1));
     const seekPos = Math.floor(percent * playerState.duration);
 
-    console.log(`[Dashboard] Seeking to: ${seekPos}ms (${Math.round(percent * 100)}%)`);
+    // OPTIMISTIC: Update State & UI Immediately
+    playerState.position = seekPos;
+    playerState.lastUpdate = performance.now(); // Reset sync timer
 
-    // Update local UI immediately for responsiveness
-    updateProgressUI(seekPos, playerState.duration);
+    updateProgressUI(seekPos, playerState.duration); // Force draw
 
     // Send to bot
+    console.log(`[Dashboard] Seeking to: ${seekPos}ms`);
     sendControl('seek', seekPos);
 }
 
 // ==========================================
-// 2. INTERNAL LOGIC
+// 2. INTERNAL LOGIC (High Precision)
 // ==========================================
 
 // Start local timer for smooth updates
@@ -102,11 +126,19 @@ requestAnimationFrame(startLocalTimer);
 
 function updateLocalTimer() {
     if (!playerState.paused && playerState.duration > 0) {
-        const now = Date.now();
+        const now = performance.now(); // Use High Res Time
+        // Fallback Initialize
+        if (!playerState.lastUpdate) playerState.lastUpdate = now;
+
         const elapsed = now - playerState.lastUpdate;
+
+        // Predict current position
         let estimatedPos = playerState.position + elapsed;
 
+        // Cap at duration
         if (estimatedPos > playerState.duration) estimatedPos = playerState.duration;
+
+        // Update UI only (Don't update state.position permanent to avoid drift accumulation)
         updateProgressUI(estimatedPos, playerState.duration);
     }
 }
@@ -127,13 +159,13 @@ function updateProgressUI(currentMs, totalMs) {
 }
 
 function formatTime(ms) {
-    if (ms === Infinity || ms >= 36000000) return "LIVE"; // Handle streams/infinite tracks
+    if (ms === Infinity || ms >= 36000000) return "LIVE";
     if (!ms || isNaN(ms) || ms < 0) return "0:00";
 
-    const seconds = Math.floor(ms / 1000);
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
+    const totalSeconds = Math.floor(ms / 1000);
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
 
     if (h > 0) {
         return `${h}:${m < 10 ? '0' + m : m}:${s < 10 ? '0' + s : s}`;
@@ -162,7 +194,77 @@ function onUserLoggedIn(user) {
         }
         currentUserId = user.id;
         startAutoConnect(user.id);
+
+        // Init Favorites
+        setTimeout(renderFavorites, 500); // Small delay to ensure data populated
     }
+}
+
+// ... (Existing functions) ...
+
+// ==========================================
+// 7. FAVORITES / COLLECTION
+// ==========================================
+
+function renderFavorites() {
+    const list = document.getElementById('favorites-list');
+    if (!list) return;
+
+    let favs = [];
+    // Data populated by script.js into window.userPremium from /api/user_info
+    if (window.userPremium && window.userPremium.favorites) {
+        favs = window.userPremium.favorites;
+    }
+
+    if (!favs || favs.length === 0) {
+        list.innerHTML = `
+            <div class="queue-empty" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                <i class="fas fa-heart" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.3; color: #ff5555;"></i>
+                <p>No favorites found.</p>
+                <p style="font-size: 0.9em; opacity: 0.7;">Click the [❤️] button on the player to save songs!</p>
+            </div>`;
+        return;
+    }
+
+    list.innerHTML = favs.map((track) => {
+        const safeTitle = (track.title || "Unknown").replace(/'/g, "\\'");
+        const safeUri = (track.uri || "").replace(/'/g, "\\'");
+        // Encoded might be missing in older saves, nice to have but uri is backup
+        const encoded = track.encoded || "";
+
+        return `
+        <div class="queue-item" onclick="playFavorite('${encoded}', '${safeUri}')" style="cursor: pointer;">
+            <div class="result-icon" style="color:#ff5555; width:30px;"><i class="fas fa-heart"></i></div>
+            <div class="queue-details">
+                <span class="queue-title">${track.title}</span>
+                <span class="queue-artist">${track.author || '-'}</span>
+            </div>
+            <div class="queue-action">
+                <i class="fas fa-play-circle" style="color: var(--gold-primary); font-size: 1.2rem;"></i>
+            </div>
+        </div>
+        `;
+    }).join('');
+}
+
+async function playFavorite(encoded, uri) {
+    if (!selectedGuildId) {
+        alert("Please join a voice channel first / กรุณาเข้าห้องเสียงก่อน");
+        return;
+    }
+
+    // Construct Payload for Play
+    // Note: If encoded is empty string, backend logic should fallback to URI
+    const payload = JSON.stringify({
+        encoded: encoded,
+        uri: uri,
+        source: 'favorite'
+    });
+
+    // Optimistic UI Feedback
+    showNotification("Adding to Queue", "กำลังเพิ่มลงคิว", "Song added from collection.", "เพิ่มเพลงจากคอลเลกชันแล้ว", "success");
+
+    await sendControl('play', payload);
 }
 
 function showDashboard() {
@@ -196,8 +298,92 @@ async function autoConnectVoice(userId) {
 function selectServer(guildId) {
     selectedGuildId = guildId;
     fetchStatus();
+
+    // Start Realtime Engine
+    initRealtime(guildId);
+}
+
+// =========================================
+// REALTIME ENGINE (ZERO DELAY)
+// =========================================
+function initRealtime(guildId) {
+    if (wsConnection) {
+        try { wsConnection.close(); } catch (e) { }
+    }
+
+    // Determine WS URL (Smart Direct Logic)
+    let wsUrl = '';
+
+    // 1. LOCAL ENVIRONMENT OPTIMIZATION (Zero Proxy Latency)
+    // If web is running locally, connect DIRECTLY to bot on localhost:8000
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+        // Default aiohttp port is often 8000 or 8080. Using 8000 as standard.
+        // If bot uses different port, user can update here easily.
+        wsUrl = `ws://${location.hostname}:8000/api/gateway`;
+        console.log("[Realtime] Local Environment -> Direct Connect:", wsUrl);
+    }
+    // 2. REMOTE / PRODUCTION
+    else if (BOT_API.startsWith('http')) {
+        wsUrl = BOT_API.replace('http', 'ws');
+        // Handle standard proxy path replacement
+        if (wsUrl.endsWith('proxy')) wsUrl = wsUrl.replace('proxy', 'gateway');
+        else if (!wsUrl.includes('gateway')) wsUrl += '/gateway'; // Guess endpoint
+    }
+    // 3. RELATIVE / REVERSE PROXY
+    else {
+        const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        wsUrl = `${proto}//${location.host}/api/gateway`;
+    }
+
+    // console.log("[Realtime] Connecting:", wsUrl);
+
+    try {
+        wsConnection = new WebSocket(wsUrl);
+
+        wsConnection.onopen = () => {
+            console.log("[Realtime] Connected!");
+            isRealtime = true;
+            if (statusInterval) clearInterval(statusInterval);
+
+            wsConnection.send(JSON.stringify({
+                op: 'connect',
+                guild_id: guildId
+            }));
+        };
+
+        wsConnection.onmessage = (e) => {
+            try {
+                const msg = JSON.parse(e.data);
+                if (msg.op === 'state') {
+                    const d = msg.data;
+                    updatePlayerUI({
+                        is_playing: d.playing,
+                        paused: d.paused,
+                        position: d.pos,
+                        duration: d.len,
+                        title: d.title || 'Nothing Playing',
+                        author: d.author || '-',
+                        thumbnail: d.thumb,
+                        volume: d.vol || 100,
+                        queue: [] // WS doesn't send full queue yet
+                    });
+                }
+            } catch (x) { }
+        };
+
+        wsConnection.onclose = () => {
+            isRealtime = false;
+            startFallbackPolling();
+        };
+
+    } catch (e) {
+        startFallbackPolling();
+    }
+}
+
+function startFallbackPolling() {
     if (statusInterval) clearInterval(statusInterval);
-    statusInterval = setInterval(fetchStatus, 5000); // Optimized: 5s interval to save Worker requests
+    statusInterval = setInterval(fetchStatus, 3000);
 }
 
 async function fetchStatus() {
@@ -222,6 +408,20 @@ let isRequesting = false; // Guard for overlapping requests
 
 async function sendControl(action, value = null) {
     if (!selectedGuildId || isRequesting) return;
+
+    // REALTIME SOCKET SEND (Fastest)
+    if (isRealtime && wsConnection && wsConnection.readyState === WebSocket.OPEN) {
+        wsConnection.send(JSON.stringify({
+            op: 'control',
+            guild_id: selectedGuildId,
+            action: action,
+            value: value
+        }));
+        // Optimistic UI handled by wrapper
+        return;
+    }
+
+    if (isRealtime) return; // If realtime connected but busy, wait.
 
     // Allow volume to bypass or handle separately? 
     // Let's keep it simple: everything gets a small cooldown.
@@ -478,6 +678,27 @@ async function playTrack(encoded, uri) {
     await sendControl('play', payload);
 }
 
+
+// ==========================================
+// 6. INITIALIZATION & EVENTS
+// ==========================================
+
+function attachSeekListener() {
+    const bar = document.getElementById('progress-bar');
+    if (bar && !bar.hasAttribute('data-listening')) {
+        bar.addEventListener('click', seekTrack);
+        bar.setAttribute('data-listening', 'true');
+        // console.log("[Dashboard] Seek listener attached.");
+    }
+}
+
+// Ensure listener is attached after UI updates
+const originalUpdatePlayerUI = updatePlayerUI;
+updatePlayerUI = function (data) {
+    originalUpdatePlayerUI(data);
+    attachSeekListener();
+};
+
 function renderQueue(queue) {
     const list = document.getElementById('queue-list');
     if (!list) return;
@@ -488,18 +709,43 @@ function renderQueue(queue) {
     }
 
     list.innerHTML = queue.map((track, index) => `
-        <div class="queue-item" onclick="sendControl('skipto', ${index})" title="Play Now / เล่นทันที">
+        <div class="queue-item" id="q-item-${index}" onclick="handleQueueAction('skipto', ${index})" title="Play Now / เล่นทันที">
             <div class="result-icon" style="width:30px; height:30px; font-size:0.8rem; margin-right:10px;">${index + 1}</div>
             <div class="queue-details">
                 <span class="queue-title">
                     ${track.title || 'Unknown'} 
-                    <span style="font-size:0.7em; opacity:0.6; margin-left:6px;"><i class="fas fa-forward"></i> Play Now</span>
+                    <span class="play-now-badge" style="font-size:0.7em; opacity:0; margin-left:6px; transition:opacity 0.2s;"><i class="fas fa-forward"></i> Play Now</span>
                 </span>
                 <span class="queue-artist">${track.author || '-'}</span>
             </div>
-            <div class="queue-action" onclick="event.stopPropagation(); sendControl('remove', ${index});" title="Remove / ลบเพลง" style="cursor:pointer; padding:8px; color:#ff4d4d;">
+            <div class="queue-action" onclick="event.stopPropagation(); handleQueueAction('remove', ${index});" title="Remove / ลบเพลง" style="cursor:pointer; padding:8px; color:#ff4d4d;">
                 <i class="fas fa-trash"></i>
             </div>
         </div>
     `).join('');
 }
+
+function handleQueueAction(action, index) {
+    const item = document.getElementById(`q-item-${index}`);
+    if (item) {
+        item.style.opacity = '0.5';
+        item.style.pointerEvents = 'none';
+        if (action === 'remove') item.style.transform = 'scale(0.95)';
+    }
+
+    // Call API with slight delay to show visual feedback
+    requestAnimationFrame(() => sendControl(action, index));
+}
+
+// CSS Injection for hover effect
+const style = document.createElement('style');
+style.innerHTML = `
+.queue-item:hover .play-now-badge { opacity: 0.6 !important; }
+.queue-item:active { transform: scale(0.98); }
+`;
+document.head.appendChild(style);
+
+// ==========================================
+// END OF FILE
+// ==========================================
+

@@ -124,7 +124,7 @@ class Cyori(commands.Bot):
         
         embed = discord.Embed(title="🎵 Music Player Error", color=discord.Color.orange())
         embed.add_field(name="Track", value=f"[{track.title}]({track.uri})", inline=False)
-        embed.add_field(name="Guild", value=f"{player.guild.name} ({player.guild.id})", inline=True)
+        embed.add_field(name="Guild", value=f"{player.guild.name} ({player.guild.idhttps://github.com/ChocoMeow/Vocard})", inline=True)
         embed.description = f"```py\n{exception}\n```"
         embed.timestamp = discord.utils.utcnow()
 
@@ -152,7 +152,7 @@ class Cyori(commands.Bot):
         self.web_app = web.Application()
 
         # Final wall for Slash Commands
-        @self.tree.interaction_check
+        # Final wall for Slash Commands
         async def global_interaction_check(interaction: discord.Interaction):
             # Whitelist commands that CAN be used in DM
             dm_whitelist = ["help", "ping", "stats", "botinfo", "premium check", "redeem"]
@@ -165,6 +165,8 @@ class Cyori(commands.Bot):
             if await self.check_deprecation(interaction):
                 return False # Stop command execution
             return True
+
+        self.tree.interaction_check = global_interaction_check
 
         # Global check for Prefix Commands
         @self.check

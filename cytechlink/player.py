@@ -299,6 +299,15 @@ class MusicControls(discord.ui.View):
     
     async def check_vote(self, user_id: int) -> bool:
         try:
+            # 1. Premium Check (Priority)
+            is_premium = False
+            if hasattr(self.player.bot, "is_premium"):
+                is_premium = await self.player.bot.is_premium(user_id)
+            
+            if is_premium:
+                return True
+
+            # 2. Vote Check
             has_voted = await self.player.bot.check_vote(user_id, self.player.guild.id)
             return has_voted
         except Exception as e:
@@ -517,10 +526,14 @@ class MusicControls(discord.ui.View):
 
     @discord.ui.button(emoji="<:playlist:1416274601851359395>", label="Autoplay", custom_id='autoplay_button', style=discord.ButtonStyle.gray)
     async def autoplay_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-        has_voted = await self.check_vote(interaction.user.id)
-        if has_voted:
-            if not await self.player.is_privileged(interaction.user, strict=True):
-                return await interaction.followup.send(self.player.bot.i18n.get("dj_required", await self.player.bot.get_lang(interaction.guild.id)), ephemeral=True)
+        # 1. Check Privilege (Strict: DJ/Admin Only because it changes playback flow)
+        if not await self.player.is_privileged(interaction.user, strict=True):
+            return await interaction.followup.send(self.player.bot.i18n.get("dj_required", await self.player.bot.get_lang(interaction.guild.id)), ephemeral=True)
+
+        # 2. Check Requirement (Vote or Premium)
+        can_use = await self.check_vote(interaction.user.id)
+        
+        if can_use:
             data = await collection_myasync.find_one({}) or {"guilds": {}}          
             guild_id = str(interaction.guild.id)
             guild_data: dict = data["guilds"].get(guild_id, {})
@@ -540,14 +553,19 @@ class MusicControls(discord.ui.View):
         else:
             view = discord.ui.View()
             view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="Vote", url="https://top.gg/bot/1469606905948405833"))
-            await interaction.followup.send(embed=discord.Embed(title='Vote Required', description='You must vote to use this feature.', color=0xFFD700), view=view, ephemeral=True)
+            view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="Premium", url="https://discord.gg/cytech"))
+            await interaction.followup.send(embed=discord.Embed(title='Premium / Vote Required', description='You must vote on Top.gg OR be a Premium user to use Autoplay.', color=0xFFD700), view=view, ephemeral=True)
 
     @discord.ui.button(label="⌛ 24/7", custom_id='playforever_button', style=discord.ButtonStyle.gray)
     async def playforever_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-        has_voted = await self.check_vote(interaction.user.id)
-        if has_voted:
-            if not await self.player.is_privileged(interaction.user, strict=True):
-                return await interaction.followup.send(self.player.bot.i18n.get("dj_required", await self.player.bot.get_lang(interaction.guild.id)), ephemeral=True)
+        # 1. Check Privilege
+        if not await self.player.is_privileged(interaction.user, strict=True):
+             return await interaction.followup.send(self.player.bot.i18n.get("dj_required", await self.player.bot.get_lang(interaction.guild.id)), ephemeral=True)
+
+        # 2. Check Requirement (Vote or Premium)
+        can_use = await self.check_vote(interaction.user.id)
+        
+        if can_use:
             data = await collection_myasync.find_one({}) or {"guilds": {}}          
             guild_id = str(interaction.guild.id)
             guild_data: dict = data["guilds"].get(guild_id, {})
@@ -564,8 +582,46 @@ class MusicControls(discord.ui.View):
         else:
             view = discord.ui.View()
             view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="Vote", url="https://top.gg/bot/1469606905948405833"))
-            await interaction.followup.send(embed=discord.Embed(title='Vote Required', description='You must vote to use this feature.', color=0xFFD700), view=view, ephemeral=True)
+            view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="Premium", url="https://discord.gg/cytech"))
+            await interaction.followup.send(embed=discord.Embed(title='Premium / Vote Required', description='You must vote on Top.gg OR be a Premium user to use 24/7 Mode.', color=0xFFD700), view=view, ephemeral=True)
         
+    @discord.ui.button(emoji="❤️", label="Save", custom_id='fav_button', style=discord.ButtonStyle.secondary, row=1)
+    async def fav_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not self.player.current:
+            return await interaction.response.send_message("❌ Nothing is playing.", ephemeral=True)
+            
+        track = self.player.current
+        # Compact Track Data
+        song_data = {
+            "title": track.title,
+            "uri": track.uri,
+            "author": track.author,
+            "identifier": track.identifier,
+            "thumbnail": track.thumbnail,
+            "length": track.length,
+            "added_at": int(time.time())
+        }
+        
+        user_id = str(interaction.user.id)
+        
+        # MongoDB: Add to favorites collection (or user profile)
+        # Using addToSet to prevent duplicates based on exact object match
+        # Ideally check URI uniqueness, but object match is OK for now.
+        try:
+            # We use 'users' collection structure implicitly via user_id key in main DB
+            await collection_myasync.update_one(
+                {"user_id": user_id},
+                {"$addToSet": {"favorites": song_data}},
+                upsert=True
+            )
+            
+            lang = await self.player.bot.get_lang(interaction.guild.id)
+            # Todo: Add i18n for helpers
+            await interaction.response.send_message(f"❤️ **Saved to Collection:**\n[{track.title}]({track.uri})", ephemeral=True)
+        except Exception as e:
+            print(f"Fav Error: {e}")
+            await interaction.response.send_message("❌ Failed to save track.", ephemeral=True)
+
 async def connect_channel(ctx: Union[commands.Context, Interaction], channel: VoiceChannel = None):
     try:
         channel = channel or ctx.author.voice.channel if isinstance(ctx, commands.Context) else ctx.user.voice.channel

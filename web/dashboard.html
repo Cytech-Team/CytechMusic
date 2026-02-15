@@ -116,6 +116,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="#" class="sidebar-btn" onclick="switchTab('favorites', this)">
+                            <i class="fas fa-heart"></i> <span class="lang-text" data-en="Collection"
+                                data-th="คอลเลกชัน">Collection</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="settings.html" class="sidebar-btn">
                             <i class="fas fa-cog"></i> <span class="lang-text" data-en="Settings"
                                 data-th="ตั้งค่า">Settings</span>
@@ -233,6 +239,24 @@
                     </div>
                 </div>
 
+                <!-- TAB: FAVORITES -->
+                <div id="tab-favorites" class="dash-tab-content" style="display: none;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 class="lang-text" data-en="My Collection" data-th="คอลเลกชันของฉัน">My Collection</h3>
+                        <button class="btn-glass" onclick="renderFavorites()"
+                            style="font-size: 0.9rem; padding: 5px 15px;">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    <div id="favorites-list" class="queue-list" style="max-height: 500px; overflow-y: auto;">
+                        <div class="queue-empty" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                            <i class="fas fa-heart" style="font-size: 3rem; margin-bottom: 10px; opacity: 0.3;"></i>
+                            <p>No favorites saved yet.</p>
+                        </div>
+                    </div>
+                </div>
+
             </section>
         </div>
     </main>
@@ -310,16 +334,19 @@
     <!-- NOTIFICATION MODAL -->
     <div id="notification-modal" class="modal" style="display: none;">
         <div class="modal-content glass-effect" style="max-width: 450px;">
-            <div class="modal-header" style="background: rgba(255, 68, 68, 0.1); border-bottom-color: rgba(255, 68, 68, 0.2);">
+            <div class="modal-header"
+                style="background: rgba(255, 68, 68, 0.1); border-bottom-color: rgba(255, 68, 68, 0.2);">
                 <h3 id="notify-title" style="color: #FF4444;">Alert</h3>
-                <button class="close-btn" onclick="document.getElementById('notification-modal').style.display='none'">&times;</button>
+                <button class="close-btn"
+                    onclick="document.getElementById('notification-modal').style.display='none'">&times;</button>
             </div>
             <div class="modal-body" style="text-align: center; padding: 30px 20px;">
                 <div id="notify-icon" style="font-size: 3rem; color: #FF4444; margin-bottom: 20px;">
                     <i class="fas fa-exclamation-circle"></i>
                 </div>
                 <p id="notify-message" style="font-size: 1.1rem; line-height: 1.6; color: var(--text-main);"></p>
-                <button class="btn btn-primary" style="margin-top: 25px; width: 100%;" onclick="document.getElementById('notification-modal').style.display='none'">
+                <button class="btn btn-primary" style="margin-top: 25px; width: 100%;"
+                    onclick="document.getElementById('notification-modal').style.display='none'">
                     OK / ตกลง
                 </button>
             </div>

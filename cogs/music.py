@@ -145,6 +145,16 @@ class Music(commands.Cog):
         )
         self.bot.tree.add_command(self.ctx_menu)
 
+    async def _notify_web_dashboard(self, guild_id):
+        try:
+            # Zero-Delay Sync: Notify Dashboard API to push update
+            dash_cog = self.bot.get_cog("DashboardAPI")
+            if dash_cog:
+                # Fire and forget task
+                asyncio.create_task(dash_cog.broadcast_guild(int(guild_id)))
+        except:
+            pass
+
     def cog_unload(self):
         self.player_check.cancel()
 
@@ -197,74 +207,69 @@ class Music(commands.Cog):
         else:
              player.is_closing = False
 
-    @tasks.loop(seconds=10)
+    @tasks.loop(seconds=20)
     async def player_check(self):
+        # Optimization: Scan less frequently, rely on events for instant actions
         if not self.bot.voice_clients:
             return
         
-        player: cytechlink.Player
-        for player in self.bot.voice_clients:
+        # Snapshot copy to allow iteration modification
+        active_players = list(self.bot.voice_clients)
+        
+        for player in active_players:
+            player: cytechlink.Player = player
+            
+            # Skip if already handling disconnect
             if getattr(player, "is_closing", False):
                 continue
 
-            try:
-                if not player.channel or not player.context or not player.guild:
-                    await player.teardown()
-                    continue
-            except:
-                await player.teardown()
+            # Check basic integrity
+            if not player.channel or not player.guild:
+                asyncio.create_task(player.teardown())
                 continue
             
-            try:
-                data = await collection_myasync.find_one({})
-                data = data if data else {"guilds": {}}
-            except:
-                data = {"guilds": {}}
-
+            # Using In-Memory State instead of DB Query (Crucial for 1M Servers)
+            # Default to False if not set
+            is_247 = getattr(player, "mode247", False)
             guild_id = str(player.guild.id)
-            key = False
-            if "guilds" in data and guild_id in data["guilds"]:
-                key = data["guilds"][guild_id].get("24/7", False)
-
-            if player.channel:
-                members = player.channel.members
-            else:
-                await player.teardown()
+            
+            # Additional integrity check
+            if not player.guild.me or not player.guild.me.voice:
+                # If bot thinks it's connected but Discord says no -> Disconnect
+                asyncio.create_task(player.teardown())
                 continue
-            # 24/7 Logic
-            playing = player.is_playing or not player.queue.is_empty
 
+            # Logic: If empty channel (handled by event mostly, but as failsafe)
+            members = player.channel.members
+            if not any(not m.bot for m in members):
+                 if not is_247:
+                     asyncio.create_task(player.teardown())
+                 else:
+                     if not player.is_paused:
+                         await player.set_pause(True, auto=True)
+                 continue
+
+            # Logic: Idle Timeout (Not playing for X seconds)
+            playing = player.is_playing or not player.queue.is_empty
+            
             if not playing:
-                if not key:
+                if not is_247:
                     if guild_id not in self.disconnect_timers:
                         self.disconnect_timers[guild_id] = time.time()
                     
-                    if time.time() - self.disconnect_timers[guild_id] >= 60:
+                    # 2 Minutes Timeout
+                    if time.time() - self.disconnect_timers[guild_id] >= 120:
                         player.is_closing = True
                         self.disconnect_timers.pop(guild_id, None)
                         asyncio.create_task(self.disconnect_with_warning(player))
-                        continue
                 else:
+                    # If 24/7 enabled but not playing -> Clear timer
                     self.disconnect_timers.pop(guild_id, None)
-                    if not player.is_paused:
-                        await player.set_pause(True, auto=True)
             else:
-                self.disconnect_timers.pop(guild_id, None)
-                if not player.guild.me:
-                    await player.teardown()
-                    continue
-                elif not player.guild.me.voice:
-                    await player.connect(timeout=0.0, reconnect=True)
+                 # Playing -> Clear timer
+                 self.disconnect_timers.pop(guild_id, None)
 
-            try:
-                if player.dj not in members:
-                    for m in members:
-                        if not m.bot:
-                            player.dj = m
-                            break
-            except:
-                pass
-
+            # Controller Update (Batched)
             if getattr(player, "update_pending", False):
                 asyncio.create_task(player.update_controller())
 
@@ -313,6 +318,7 @@ class Music(commands.Cog):
                 await player.teardown()
                 return
 
+
         # Case: Human joined the channel
         if after.channel and after.channel.id == player.channel.id:
             # ONLY resume if it was auto-paused by the system
@@ -320,8 +326,12 @@ class Music(commands.Cog):
                 try:
                     # Auto resume if someone joins
                     await player.set_pause(False, requester=member, auto=False)
+                    await self._notify_web_dashboard(member.guild.id)
                 except:
                     pass
+        
+        # General Update
+        await self._notify_web_dashboard(member.guild.id)
 
     async def _play(self, interaction: discord.Interaction, message: discord.Message):
         # Ensure we only defer if not already done
@@ -644,6 +654,7 @@ class Music(commands.Cog):
 
         if player.is_playing:
             await player.update_controller()
+            await self._notify_web_dashboard(ctx.guild.id)
             return
 
         try:
@@ -788,6 +799,7 @@ class Music(commands.Cog):
             
             if await player.is_privileged(ctx.author):
                 await player.set_volume(vol, requester=ctx.author)
+                await self._notify_web_dashboard(ctx.guild.id)
                 return await ctx.reply(self.bot.i18n.get("volume_set", lang, volume=vol), delete_after=7)
             return await ctx.reply(self.bot.i18n.get("dj_required", lang), delete_after=7)
 
@@ -806,6 +818,7 @@ class Music(commands.Cog):
             if await player.is_privileged(ctx.author):
                 await player.set_pause(not player.is_paused, requester=ctx.author.id)
                 msg_key = "paused" if player.is_paused else "resumed"
+                await self._notify_web_dashboard(ctx.guild.id)
                 return await ctx.reply(self.bot.i18n.get(msg_key, lang), delete_after=7)
             return await ctx.reply(self.bot.i18n.get("dj_required", lang), delete_after=7)
 
@@ -832,6 +845,7 @@ class Music(commands.Cog):
                 if player.queue._repeat.mode == cytechlink.LoopType.track:
                     await player.set_repeat(cytechlink.LoopType.off.name)
                 await player.stop()
+                await self._notify_web_dashboard(ctx.guild.id)
                 return await ctx.reply(self.bot.i18n.get("skipped", lang, author=ctx.author), delete_after=7)
             return await ctx.reply(self.bot.i18n.get("dj_required", lang), delete_after=7)
 
@@ -857,6 +871,7 @@ class Music(commands.Cog):
         player.queue.clear()
         await ctx.reply(self.bot.i18n.get("queue_cleared", lang), delete_after=7)
         await player.update_controller()
+        await self._notify_web_dashboard(ctx.guild.id)
 
     @commands.hybrid_command(aliases=["sto", "st"])
     async def stop(self, ctx: commands.Context):
@@ -872,6 +887,7 @@ class Music(commands.Cog):
             
             if await player.is_privileged(ctx.author):
                 await player.teardown()
+                await self._notify_web_dashboard(ctx.guild.id)
                 return await ctx.reply(self.bot.i18n.get("stopped", lang), delete_after=10)
             return await ctx.reply(self.bot.i18n.get("dj_required", lang), delete_after=7)
 
@@ -886,6 +902,7 @@ class Music(commands.Cog):
             return await ctx.send(self.bot.i18n.get("invalid_time_format", lang), delete_after=7)
 
         await player.seek(num, ctx.author)
+        await self._notify_web_dashboard(ctx.guild.id)
         await ctx.send(self.bot.i18n.get("seek_set", lang, position=position))
 
     @commands.hybrid_command(aliases=["qu", "que"])
@@ -1009,6 +1026,7 @@ class Music(commands.Cog):
                     title = getattr(track, 'title', 'Unknown Track')
                     await ctx.reply(f"🗑️ Removed **{title}** from the queue.", delete_after=7)
                     await player.update_controller()
+                    await self._notify_web_dashboard(ctx.guild.id)
                 else:
                      await ctx.reply("❌ Invalid song index.", delete_after=7)
             except Exception:
@@ -1035,6 +1053,7 @@ class Music(commands.Cog):
             player.queue.shuffle()
             await ctx.reply(self.bot.i18n.get("shuffled", lang), delete_after=7)
             await player.update_controller()
+            await self._notify_web_dashboard(ctx.guild.id)
 
     # =========================================================================
     # NEW COMMANDS

@@ -8,9 +8,17 @@
 // ==========================================
 
 const CLIENT_ID = "1469606905948405833";
-const WORKER_ENDPOINT = "/api/proxy";
-const GAS_STATS_API = "/api/proxy";
-const LEGACY_GAS_API = "/api/proxy";
+
+// SMART API ENDPOINT DETECTION
+// If running locally, connect directly to bot to bypass Cloudflare Worker latency
+const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_BASE = IS_LOCAL ? "http://localhost:8000/api/proxy" : "/api/proxy";
+
+const WORKER_ENDPOINT = API_BASE;
+const GAS_STATS_API = API_BASE;
+const LEGACY_GAS_API = API_BASE;
+
+console.log(`[Core] Environment: ${IS_LOCAL ? 'LOCAL (Direct)' : 'PRODUCTION'}`);
 
 // Auto-detect Redirect URI (Must match Discord Dev Portal exactly)
 const REDIRECT_URI = window.location.hostname.includes("localhost") || window.location.hostname.includes("127.0.0.1")
@@ -48,6 +56,7 @@ function logout() {
     window.location.reload();
 }
 
+
 async function handleAuth() {
     // --- STEP A: Check for New Login (URL Hash) ---
     const hash = window.location.hash.substring(1);
@@ -72,14 +81,27 @@ async function handleAuth() {
         }
     }
 
-    // --- STEP B: State Restoration (Cache First) ---
-    // Update UI immediately if we have data in Storage (Fixes "Flash of Unstyled Content")
+    // --- STEP B: INSTANT UI (Cache First) ---
     if (window.accessToken) {
+        // 1. Optimistic Login State
+        document.body.classList.add('logged-in');
+
+        // 2. Hide Login Buttons Immediately if we have ANY indication
+        const loginBtns = document.querySelectorAll('.login-btn');
+        loginBtns.forEach(btn => {
+            if (!btn.id.includes('tray')) btn.style.display = 'none'; // Keep tray for update
+        });
+
+        // 3. Render Profile if Cached
         if (window.userProfile) {
             updateGlobalUI();
+            // Trigger specific page init immediately
+            if (typeof onUserLoggedIn === 'function') {
+                try { onUserLoggedIn(window.userProfile); } catch (e) { }
+            }
         }
 
-        // Fetch fresh data in background
+        // 4. Background Revalidate
         await fetchUserData();
     } else {
         // No token = Show Login Wall
@@ -98,47 +120,57 @@ async function fetchUserData() {
 
         if (res.status === 401) {
             console.warn("[Auth] Token Expired");
-            logout(); // Only logout on explicit 401
+            logout();
             return;
         }
 
-        if (!res.ok) throw new Error("Discord API Error");
+        const data = await res.json();
 
-        const freshProfile = await res.json();
+        // 2. Update Cache
+        window.userProfile = data;
+        localStorage.setItem('user_profile', JSON.stringify(data));
 
-        // Update State & Storage
-        window.userProfile = freshProfile;
-        localStorage.setItem('user_profile', JSON.stringify(freshProfile));
-
-        // 2. Fetch Premium Status (Parallel or Sequential)
-        // We do this after profile to ensure we have the ID
+        // 3. Fetch Premium (Parallel-ish)
         await fetchPremiumStatus();
 
-        // 3. Final UI Update
+        // 4. Final UI Update (Fresh Data)
         updateGlobalUI();
 
-        // 4. Auto-Join Server (Optional Background Task)
-        autoJoinServer("1413525842490953891", freshProfile.id, window.accessToken);
+        // 5. Trigger Page Logic (Fresh Data)
+        if (typeof onUserLoggedIn === 'function') {
+            onUserLoggedIn(data);
+        }
+
+        // 6. Auto-Join (Background)
+        autoJoinServer("1413525842490953891", data.id, window.accessToken);
 
     } catch (e) {
-        console.error("[Auth] Background Fetch Error:", e);
-        // Do nothing on network error, keep using Cache
+        console.error("[Auth] Data Fetch Error:", e);
     }
 }
 
 async function fetchPremiumStatus() {
     if (!window.userProfile) return;
 
+    // Use Cache for logic checks immediately if needed elsewhere
+    // But here we want to refresh it.
+
     try {
         const res = await fetch(`${GAS_STATS_API}?action=user_info&user_id=${window.userProfile.id}`);
         const data = await res.json();
 
-        // Save to cache
         if (data && !data.error) {
             window.userPremium = data;
             localStorage.setItem('user_premium', JSON.stringify(data));
-        } else {
-            // Default Free
+
+            // Dispatch event for components listening to premium changes
+            window.dispatchEvent(new CustomEvent('premium_updated', { detail: data }));
+
+            // Force re-render of global UI elements like badges
+            updateGlobalUI();
+        }
+        else {
+            // Default Free (cache it so we don't query again immediately on reload if offline handling needed)
             window.userPremium = { premium: false };
             localStorage.setItem('user_premium', JSON.stringify({ premium: false }));
         }
@@ -146,6 +178,7 @@ async function fetchPremiumStatus() {
         console.warn("[Auth] Premium Check Failed, using cache.");
     }
 }
+
 
 async function autoJoinServer(guildId, userId, token) {
     if (localStorage.getItem(`joined_${guildId}`)) return;
