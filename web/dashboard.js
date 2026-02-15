@@ -488,11 +488,17 @@ function renderQueue(queue) {
     }
 
     list.innerHTML = queue.map((track, index) => `
-        <div class="queue-item">
+        <div class="queue-item" onclick="sendControl('skipto', ${index})" title="Play Now / เล่นทันที">
             <div class="result-icon" style="width:30px; height:30px; font-size:0.8rem; margin-right:10px;">${index + 1}</div>
             <div class="queue-details">
-                <span class="queue-title">${track.title || 'Unknown'}</span>
+                <span class="queue-title">
+                    ${track.title || 'Unknown'} 
+                    <span style="font-size:0.7em; opacity:0.6; margin-left:6px;"><i class="fas fa-forward"></i> Play Now</span>
+                </span>
                 <span class="queue-artist">${track.author || '-'}</span>
+            </div>
+            <div class="queue-action" onclick="event.stopPropagation(); sendControl('remove', ${index});" title="Remove / ลบเพลง" style="cursor:pointer; padding:8px; color:#ff4d4d;">
+                <i class="fas fa-trash"></i>
             </div>
         </div>
     `).join('');

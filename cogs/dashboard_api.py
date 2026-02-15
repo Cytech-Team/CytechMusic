@@ -472,6 +472,40 @@ class DashboardAPI(commands.Cog):
                 if cmd == "guild_settings_save":
                     return await self.post_guild_settings(request)
 
+            elif action == "skipto":
+                # Skip to specific index in queue
+                index = int(payload.get('value', 0))
+                if player and not player.queue.is_empty:
+                    try:
+                        # Safeguard: Remove tracks before the target index
+                        # Assuming queue.remove(index) works or we assume index 0 is next
+                        # We want the track at 'index' to become index 0 (Next)
+                        
+                        # Strategy: Pop first item 'index' times
+                        # Note: Check library specific implementation for 'skipto' first
+                        if hasattr(player.queue, "skipto"):
+                             player.queue.skipto(index)
+                        else:
+                             # Manual skipto: Remove items before index
+                             # We execute remove(0) multiple times
+                             for _ in range(index):
+                                 player.queue.remove(0)
+                        
+                        # Stop current track to play the new "first" track
+                        await player.stop()
+                        skip_update = True
+                    except Exception as e:
+                        print(f"[Dashboard] Skipto Error: {e}")
+
+            elif action == "remove":
+                # Remove specific track from queue
+                index = int(payload.get('value', 0))
+                if player and not player.queue.is_empty:
+                    try:
+                        player.queue.remove(index)
+                    except Exception as e:
+                         print(f"[Dashboard] Remove Error: {e}")
+
             # Update Controller Embed in Discord
             if hasattr(player, "update_controller") and not skip_update:
                 try:
@@ -580,21 +614,31 @@ class DashboardAPI(commands.Cog):
             # Get plan name, default to "Free" but we will override if premium detected without a plan name
             plan_name = user_data.get("premium_plan") 
 
+            # DEBUG: Print user data for inspection
+            print(f"[API] User Info Request: {user_id} | Data Found: {user_data}")
+
             # 1. Lifetime
-            if user_data.get("premium") is True:
+            # Check for truthiness rather than strict "is True" (handles 1, True, "true" etc.)
+            raw_prem = user_data.get("premium")
+            if raw_prem and str(raw_prem).lower() != "false": 
                 is_prem = True
                 expire_at = "Lifetime"
                 if not plan_name: plan_name = "Lifetime"
             
             # 2. Expiration based
             expire = user_data.get("premium_expire")
-            if expire and isinstance(expire, (int, float)):
-                import time
-                if time.time() < expire:
-                    is_prem = True
-                    if not plan_name: plan_name = "Premium"
-                if not expire_at: # Don't override Lifetime
-                    expire_at = expire 
+            if expire:
+                try: 
+                    expire_val = float(expire)
+                    import time
+                    if time.time() < expire_val:
+                        is_prem = True
+                        if not plan_name: plan_name = "Premium"
+                    
+                    if not expire_at: # Don't override Lifetime
+                        expire_at = expire_val
+                except:
+                    pass
 
             # Final fallback for plan name
             if not plan_name:
