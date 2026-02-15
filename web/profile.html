@@ -1,0 +1,676 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Cyori</title>
+    <link rel="icon" href="logo-circle.png" type="image/png">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        :root {
+            --profile-bg: #050505;
+            --card-glass: rgba(20, 20, 20, 0.85);
+            /* Slightly more transparent to match main theme */
+            --accent-gold: #FFD700;
+            /* Match main gold */
+            --discord-blurple: #5865F2;
+        }
+
+        body {
+            background-color: var(--profile-bg);
+            background-image:
+                radial-gradient(circle at 0% 0%, rgba(88, 101, 242, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(255, 204, 51, 0.05) 0%, transparent 50%);
+            min-height: 100vh;
+        }
+
+        .profile-wrapper {
+            max-width: 600px;
+            margin: 50px auto 30px;
+            /* Adjusted margin */
+            padding: 0 20px;
+            animation: fadeIn 0.8s ease-out;
+            min-height: auto;
+            /* Remove fill height */
+            display: block;
+            /* Default block display */
+        }
+
+        .profile-container {
+            background: var(--card-glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+            position: relative;
+            text-align: center;
+        }
+
+        /* Banner */
+        .profile-banner {
+            height: 220px;
+            background-color: #1a1a1a;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .banner-glow-gold {
+            box-shadow: inset 0 -40px 100px rgba(255, 204, 51, 0.2);
+        }
+
+        /* Content Layout */
+        .profile-content-inner {
+            padding: 0 30px 40px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Avatar */
+        .avatar-container {
+            margin-top: -75px;
+            position: relative;
+            z-index: 5;
+            margin-bottom: 20px;
+        }
+
+        .avatar-large {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 6px solid #141414;
+            background: #141414;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            object-fit: cover;
+        }
+
+        .premium-ring {
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 3px solid var(--accent-gold);
+            box-shadow: 0 0 30px rgba(255, 204, 51, 0.6);
+            z-index: -1;
+            display: none;
+        }
+
+        /* Identity */
+        .profile-identity h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin: 0;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+
+        .profile-identity .user-tag {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1rem;
+            font-weight: 500;
+            margin-top: 5px;
+            margin-bottom: 20px;
+        }
+
+        /* Badges */
+        .badge-list {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .badge-pill {
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .badge-discord-basic {
+            background: rgba(88, 101, 242, 0.15);
+            color: #b9bbbe;
+            border-color: transparent;
+        }
+
+        /* Nitro Variants */
+        .badge-nitro-basic {
+            background: linear-gradient(135deg, rgba(0, 168, 252, 0.2), rgba(0, 168, 252, 0.05));
+            border: 1px solid rgba(0, 168, 252, 0.4);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(0, 168, 252, 0.15);
+        }
+
+        .badge-nitro-basic i {
+            color: #00A8FC;
+            filter: drop-shadow(0 0 5px rgba(0, 168, 252, 0.8));
+        }
+
+        .badge-nitro-boost {
+            background: linear-gradient(135deg, rgba(255, 115, 250, 0.2), rgba(255, 115, 250, 0.05));
+            border: 1px solid rgba(255, 115, 250, 0.4);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(255, 115, 250, 0.15);
+        }
+
+        .badge-nitro-boost i {
+            color: #ff73fa;
+            filter: drop-shadow(0 0 5px rgba(255, 115, 250, 0.8));
+        }
+
+        .badge-premium {
+            background: rgba(255, 204, 51, 0.1);
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+            box-shadow: 0 0 15px rgba(255, 204, 51, 0.15);
+        }
+
+        .username-crown {
+            color: var(--accent-gold);
+            font-size: 1.5rem;
+            margin-left: 8px;
+            filter: drop-shadow(0 0 10px rgba(255, 204, 51, 0.5));
+            display: none;
+            /* Hidden by default */
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* --- INFO GRID (ส่วนที่เพิ่มกลับมา) --- */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 700;
+        }
+
+        .info-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .info-value.gold {
+            color: var(--accent-gold);
+            text-shadow: 0 0 10px rgba(255, 204, 51, 0.3);
+        }
+
+        /* Buttons */
+        .btn-discord-login {
+            background: #5865F2;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-discord-login:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(88, 101, 242, 0.4);
+        }
+
+        .btn-action {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 14px;
+            text-decoration: none;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-logout {
+            border-color: rgba(255, 77, 77, 0.3);
+            color: #ff4d4d;
+            cursor: pointer;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 77, 77, 0.1);
+            border-color: #ff4d4d;
+        }
+
+        /* Login Wall */
+        .wall-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .wall-icon {
+            font-size: 3.5rem;
+            color: var(--accent-gold);
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+
+        /* Mobile */
+        @media (max-width: 480px) {
+            .profile-wrapper {
+                margin-top: 80px;
+                padding: 0 15px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                text-align: left;
+                padding: 25px;
+            }
+
+            .info-item {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                padding-bottom: 10px;
+            }
+
+            .info-item:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+        }
+    </style>
+
+    <svg style="width:0;height:0;position:absolute;" aria-hidden="true" focusable="false">
+        <linearGradient id="nitro-gradient" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fff" />
+            <stop offset="100%" stop-color="#ff73fa" />
+        </linearGradient>
+        <linearGradient id="nitro-basic-gradient" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fff" />
+            <stop offset="100%" stop-color="#00A8FC" />
+        </linearGradient>
+    </svg>
+</head>
+
+<body>
+    <!-- Background Elements -->
+    <div class="bg-gradient"></div>
+    <div class="mesh-grid"></div>
+
+    <!-- Header -->
+    <header id="header">
+        <div class="container">
+            <a href="index.html" class="brand">
+                <img src="logo-circle.png" alt="Cyori" class="brand-logo">
+                <span class="brand-name">Cyori</span>
+            </a>
+
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html#hero" class="nav-link lang-text" data-en="Home" data-th="หน้าแรก">Home</a>
+                    </li>
+                    <li><a href="index.html#features" class="nav-link lang-text" data-en="Features"
+                            data-th="ฟีเจอร์">Features</a></li>
+                    <li><a href="index.html#commands" class="nav-link lang-text" data-en="Commands"
+                            data-th="คำสั่ง">Commands</a></li>
+                    <li><a href="dashboard.html" class="nav-link lang-text" data-en="Dashboard"
+                            data-th="แผงควบคุม">Dashboard</a></li>
+                    <li><a href="premium.html" class="nav-link lang-text" data-en="Premium"
+                            data-th="พรีเมียม">Premium</a></li>
+                </ul>
+            </nav>
+
+            <div class="header-actions">
+                <div class="lang-switch">
+                    <button id="lang-btn" onclick="toggleLanguage()" class="btn-glass"
+                        style="padding: 8px 16px; border-radius: 20px;">
+                        <i class="fas fa-globe"></i> <span id="curr-lang">EN</span>
+                    </button>
+                </div>
+
+                <a href="#" class="btn btn-primary login-btn" onclick="login()">
+                    <i class="fab fa-discord"></i>
+                    <span class="lang-text" data-en="Login" data-th="เข้าสู่ระบบ">Login</span>
+                </a>
+
+                <div class="hamburger mobile-toggle" onclick="toggleMenu()">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+
+
+
+
+
+
+
+
+    <main class="profile-wrapper">
+        <div id="login-wall" class="wall-wrapper">
+            <div class="wall-icon"><i class="fas fa-lock"></i></div>
+            <h1 class="lang-text" data-en="Profile Protected" data-th="ข้อมูลส่วนตัว">Profile Protected</h1>
+            <p style="color:rgba(255,255,255,0.5); margin-bottom: 10px;">Please login.</p>
+            <button class="btn-discord-login" onclick="login()">
+                <i class="fab fa-discord"></i> Login
+            </button>
+        </div>
+
+        <div id="profile-content" class="profile-container" style="display: none;">
+
+            <div id="p-banner" class="profile-banner"></div>
+
+            <div class="profile-content-inner">
+
+                <div class="avatar-container">
+                    <img id="p-avatar" src="logo-circle.png" alt="Avatar" class="avatar-large">
+                    <div id="p-ring" class="premium-ring"></div>
+                </div>
+
+                <div class="profile-identity">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <h1 id="p-username">Loading...</h1>
+                        <i id="username-crown" class="fas fa-crown username-crown" title="Premium Member"></i>
+                    </div>
+                    <div id="p-id" class="user-tag">@username</div>
+                </div>
+
+                <div class="badge-list">
+                    <div class="badge-pill badge-discord-basic">
+                        <i class="fab fa-discord"></i> User
+                    </div>
+                    <!-- Nitro Basic Badge -->
+                    <div id="badge-nitro-basic" class="badge-pill badge-nitro-basic" style="display: none;">
+                        <i class="fas fa-certificate"></i>
+                        <span class="lang-text" data-en="Nitro Basic" data-th="ไนโตรเบสิก">Nitro Basic</span>
+                    </div>
+                    <!-- Nitro Boost Badge -->
+                    <div id="badge-nitro-boost" class="badge-pill badge-nitro-boost" style="display: none;">
+                        <i class="fas fa-rocket"></i>
+                        <span class="lang-text" data-en="Nitro Boost" data-th="ไนโตรบูสท์">Nitro Boost</span>
+                    </div>
+                    <!-- Cyori Premium Badge -->
+                    <div id="badge-prem" class="badge-pill badge-premium" style="display: none;">
+                        <i class="fas fa-crown"></i> <span class="lang-text" data-en="Premium"
+                            data-th="พรีเมียม">Premium</span>
+                    </div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label lang-text" data-en="Plan" data-th="แพ็กเกจ">Plan</span>
+                        <span id="p-plan" class="info-value">Free</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label lang-text" data-en="Status" data-th="สถานะ">Status</span>
+                        <span id="p-status" class="info-value">Active</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label lang-text" data-en="Expires" data-th="วันหมดอายุ">Expires</span>
+                        <span id="p-expiry" class="info-value">-</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; width: 100%; justify-content: center;">
+                    <a href="dashboard.html" class="btn-action">
+                        <i class="fas fa-columns"></i> Dashboard
+                    </a>
+                    <button onclick="logout()" class="btn-action btn-logout">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="brand">
+                        <img src="logo-circle.png" alt="Cyori" class="brand-logo">
+                        <span class="brand-name">Cyori</span>
+                    </div>
+                    <p class="lang-text"
+                        data-en="The ultimate music experience for your Discord server. Remade for performance and style."
+                        data-th="ประสบการณ์การฟังเพลงที่ดีที่สุดสำหรับ Discord ของคุณ ออกแบบใหม่เพื่อประสิทธิภาพและสไตล์ที่เหนือกว่า">
+                        The ultimate music experience.
+                    </p>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="lang-text" data-en="Product" data-th="ผลิตภัณฑ์">Product</h4>
+                    <ul>
+                        <li><a href="index.html#features" class="lang-text" data-en="Features"
+                                data-th="ฟีเจอร์">Features</a></li>
+                        <li><a href="premium.html" class="lang-text" data-en="Premium" data-th="พรีเมียม">Premium</a>
+                        </li>
+                        <li><a href="dashboard.html" class="lang-text" data-en="Dashboard"
+                                data-th="แดชบอร์ด">Dashboard</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="lang-text" data-en="Resources" data-th="ทรัพยากร">Resources</h4>
+                    <ul>
+                        <li><a href="documentation.html" class="lang-text" data-en="Documentation"
+                                data-th="คู่มือการใช้">Documentation</a></li>
+                        <li><a href="#" class="lang-text" data-en="API Status" data-th="สถานะระบบ">API Status</a></li>
+                        <li><a href="https://discord.gg/jcJ2P6Bh2p" class="lang-text" data-en="Community"
+                                data-th="ชุมชน">Community</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="lang-text" data-en="Legal" data-th="กฎหมาย">Legal</h4>
+                    <ul>
+                        <li><a href="privacy.html" class="lang-text" data-en="Privacy Policy"
+                                data-th="นโยบายความเป็นส่วนตัว">Privacy Policy</a></li>
+                        <li><a href="terms.html" class="lang-text" data-en="Terms of Service"
+                                data-th="ข้อตกลงการใช้บริการ">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="copyright lang-text" data-en="© 2026 Cytech Team. All rights reserved."
+                data-th="© 2026 Cytech Team สงวนลิขสิทธิ์">
+                © 2026 Cytech Team. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+
+    <script>
+        const DEFAULT_BANNER_URL = "https://cdn.discordapp.com/banners/1469606905948405833/3b84c3a7799d846229b2b5b2921ed270.png?size=1024";
+
+        function syncProfileUI() {
+            try {
+                if (!window.userProfile) { toggleVisibility(true); return; }
+                toggleVisibility(false);
+
+                const profile = window.userProfile;
+                const isTH = (localStorage.getItem('preferred-lang') === 'th');
+
+                // Debug
+                console.log("[Profile] Syncing UI for:", profile.username, "Nitro Type:", profile.premium_type);
+
+                // 1. Identity
+                const avEl = document.getElementById('p-avatar');
+                if (avEl) {
+                    const avatarUrl = profile.avatar
+                        ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png?size=256`
+                        : `https://cdn.discordapp.com/embed/avatars/${parseInt(profile.id) % 5}.png`;
+                    avEl.src = avatarUrl;
+                }
+
+                document.getElementById('p-username').textContent = profile.username || "Unknown";
+                document.getElementById('p-id').textContent = `@${profile.username || profile.id}`;
+
+                // 2. Banner
+                const bannerEl = document.getElementById('p-banner');
+                if (bannerEl) {
+                    if (profile.banner) {
+                        const isGif = profile.banner.startsWith('a_');
+                        const bUrl = `https://cdn.discordapp.com/banners/${profile.id}/${profile.banner}.${isGif ? 'gif' : 'png'}?size=1024`;
+                        bannerEl.style.backgroundImage = `url('${bUrl}')`;
+                    } else if (profile.accent_color) {
+                        // Use accent color as fallback if no banner
+                        const hex = profile.accent_color.toString(16).padStart(6, '0');
+                        bannerEl.style.backgroundColor = `#${hex}`;
+                        bannerEl.style.backgroundImage = 'none';
+                    } else {
+                        bannerEl.style.backgroundImage = `url('${DEFAULT_BANNER_URL}')`;
+                    }
+                    bannerEl.style.backgroundSize = 'cover';
+                    bannerEl.style.backgroundPosition = 'center';
+                }
+
+                // 3. Badges (Fixed Nitro Logic)
+                const basicBadge = document.getElementById('badge-nitro-basic');
+                const boostBadge = document.getElementById('badge-nitro-boost');
+
+                // Discord Premium Types: 0 = None, 1 = Nitro Classic, 2 = Nitro, 3 = Nitro Basic
+                const pType = profile.premium_type !== undefined ? Number(profile.premium_type) : 0;
+
+                if (basicBadge) basicBadge.style.display = 'none';
+                if (boostBadge) boostBadge.style.display = 'none';
+
+                if (pType > 0) {
+                    if (pType === 1 || pType === 3) { // Classic or Basic
+                        if (basicBadge) basicBadge.style.display = 'flex';
+                    } else if (pType === 2) { // Full Nitro (Level 2)
+                        if (boostBadge) boostBadge.style.display = 'flex';
+                    }
+                }
+
+                // 4. PREMIUM INFO (ส่วนสำคัญ)
+                const ring = document.getElementById('p-ring');
+                const badge = document.getElementById('badge-prem');
+                const planEl = document.getElementById('p-plan');
+                const statusEl = document.getElementById('p-status');
+                const expiryEl = document.getElementById('p-expiry');
+                const crownIcon = document.getElementById('username-crown');
+
+                if (window.userPremium) {
+                    const isPrem = window.userPremium.premium;
+
+                    if (ring) ring.style.display = isPrem ? 'block' : 'none';
+                    if (badge) badge.style.display = isPrem ? 'flex' : 'none';
+                    if (crownIcon) crownIcon.style.display = isPrem ? 'inline-block' : 'none';
+
+                    if (isPrem) {
+                        if (bannerEl) bannerEl.classList.add('banner-glow-gold');
+                        if (statusEl) {
+                            statusEl.style.color = 'var(--accent-gold)';
+                            statusEl.textContent = isTH ? 'กำลังใช้งาน' : 'Active';
+                        }
+                        if (planEl) planEl.textContent = isTH ? 'พรีเมียม' : 'Premium';
+
+                        if (expiryEl) {
+                            expiryEl.classList.add('gold');
+                            if (window.userPremium.expire === 'Lifetime') {
+                                expiryEl.textContent = isTH ? "ถาวร" : "Lifetime";
+                            } else {
+                                const d = new Date(window.userPremium.expire * 1000);
+                                if (!isNaN(d.getTime())) {
+                                    expiryEl.textContent = d.toLocaleDateString(isTH ? 'th-TH' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+                                } else {
+                                    expiryEl.textContent = window.userPremium.expire;
+                                }
+                            }
+                        }
+                    } else {
+                        // Free
+                        if (bannerEl) bannerEl.classList.remove('banner-glow-gold');
+                        if (statusEl) {
+                            statusEl.style.color = '#fff';
+                            statusEl.textContent = isTH ? 'ไม่ได้ใช้งาน' : 'Inactive';
+                        }
+                        if (planEl) planEl.textContent = isTH ? 'ฟรี' : 'Free';
+                        if (expiryEl) {
+                            expiryEl.textContent = "-";
+                            expiryEl.classList.remove('gold');
+                        }
+                    }
+                }
+                // 5. Force Language Refresh for dynamic elements
+                if (typeof updateLanguage === 'function') updateLanguage();
+            } catch (e) {
+                console.error("UI Error:", e);
+                toggleVisibility(true);
+            }
+        }
+
+        function toggleVisibility(showLogin) {
+            const wall = document.getElementById('login-wall');
+            const content = document.getElementById('profile-content');
+            if (showLogin) {
+                if (wall) wall.style.display = 'flex';
+                if (content) content.style.display = 'none';
+            } else {
+                if (wall) wall.style.display = 'none';
+                if (content) content.style.display = 'block';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof handleAuth === 'function') handleAuth();
+            setTimeout(syncProfileUI, 200);
+            setTimeout(syncProfileUI, 1000);
+        });
+
+        function onUserLoggedIn(profile) { syncProfileUI(); }
+    </script>
+    <!-- Overlay for mobile menu -->
+    <div class="menu-overlay"></div>
+
+</body>
+
+</html>

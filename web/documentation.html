@@ -1,0 +1,805 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - Cyori</title>
+    <link rel="icon" href="logo-circle.png" type="image/png">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="docs.css">
+</head>
+
+<body>
+    <!-- Background Elements -->
+    <div class="bg-gradient"></div>
+    <div class="mesh-grid"></div>
+
+    <!-- Header -->
+    <header id="header">
+        <div class="container">
+            <a href="index.html" class="brand">
+                <img src="logo-circle.png" alt="Cyori" class="brand-logo">
+                <span class="brand-name">Cyori</span>
+            </a>
+
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html#hero" class="nav-link lang-text" data-en="Home" data-th="หน้าแรก">Home</a>
+                    </li>
+                    <li><a href="index.html#features" class="nav-link lang-text" data-en="Features"
+                            data-th="ฟีเจอร์">Features</a></li>
+                    <li><a href="index.html#commands" class="nav-link lang-text" data-en="Commands"
+                            data-th="คำสั่ง">Commands</a></li>
+                    <li><a href="dashboard.html" class="nav-link lang-text" data-en="Dashboard"
+                            data-th="แผงควบคุม">Dashboard</a></li>
+                    <li><a href="premium.html" class="nav-link lang-text" data-en="Premium"
+                            data-th="พรีเมียม">Premium</a></li>
+                </ul>
+            </nav>
+
+            <div class="header-actions">
+                <div class="lang-switch">
+                    <button id="lang-btn" onclick="toggleLanguage()" class="btn-glass"
+                        style="padding: 8px 16px; border-radius: 20px;">
+                        <i class="fas fa-globe"></i> <span id="curr-lang">EN</span>
+                    </button>
+                </div>
+
+                <a href="#" class="btn btn-primary login-btn" onclick="login()">
+                    <i class="fab fa-discord"></i>
+                    <span class="lang-text" data-en="Login" data-th="เข้าสู่ระบบ">Login</span>
+                </a>
+
+                <div class="hamburger mobile-toggle" onclick="toggleMenu()">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+
+
+
+
+
+
+
+
+    <!-- MAIN CONTAINER -->
+    <div class="docs-container">
+
+        <!-- SIDEBAR -->
+        <aside class="docs-sidebar">
+            <h3 class="lang-text" data-en="Getting Started" data-th="เริ่มต้นใช้งาน">Getting
+                Started</h3>
+            <ul>
+                <li><a href="#introduction" class="active lang-text" data-en="Introduction"
+                        data-th="บทนำ">Introduction</a></li>
+                <li><a href="#installation" class="lang-text" data-en="Installation / Invite"
+                        data-th="ติดตั้ง / เชิญบอท">Installation / Invite</a></li>
+                <li><a href="#setup" class="lang-text" data-en="Initial Setup" data-th="การตั้งค่าเริ่มต้น">Initial
+                        Setup</a></li>
+            </ul>
+
+            <h3 class="lang-text" data-en="Commands" data-th="คำสั่งต่างๆ">Commands</h3>
+            <ul>
+                <li><a href="#music-commands" class="lang-text" data-en="Music Commands" data-th="คำสั่งเพลง">Music
+                        Commands</a></li>
+                <li><a href="#filter-commands" class="lang-text" data-en="Filter Commands"
+                        data-th="คำสั่งเอฟเฟกต์">Filter Commands</a></li>
+                <li><a href="#dj-commands" class="lang-text" data-en="DJ & Settings" data-th="ตั้งค่า & DJ">DJ &
+                        Settings</a></li>
+                <li><a href="#premium-commands" class="lang-text" data-en="Premium Commands"
+                        data-th="คำสั่งพรีเมียม">Premium Commands</a></li>
+            </ul>
+
+            <h3 class="lang-text" data-en="Features" data-th="ฟีเจอร์เด่น">Features</h3>
+            <ul>
+                <li><a href="#247-mode" class="lang-text" data-en="24/7 Mode" data-th="โหมด 24/7">24/7 Mode</a>
+                </li>
+                <li><a href="#autoplay" class="lang-text" data-en="Autoplay" data-th="เล่นเพลงต่อเนื่อง">Autoplay</a>
+                </li>
+                <li><a href="#dashboard" class="lang-text" data-en="Web Dashboard" data-th="เว็บไซต์แดชบอร์ด">Web
+                        Dashboard</a></li>
+            </ul>
+
+            <h3 class="lang-text" data-en="Support" data-th="ช่วยเหลือ">Support</h3>
+            <ul>
+                <li><a href="#faq" class="lang-text" data-en="FAQ" data-th="คำถามที่พบบ่อย">FAQ</a></li>
+                <li><a href="https://discord.gg/jcJ2P6Bh2p" target="_blank" class="lang-text"
+                        data-en="Join Support Server" data-th="เข้าดิสคอร์ดซัพพอร์ต">Join Support Server</a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- CONTENT -->
+        <main class="docs-content">
+
+            <!-- INTRODUCTION -->
+            <section id="introduction">
+                <h1 class="lang-text" data-en="Introduction" data-th="บทนำ">Introduction</h1>
+                <p class="lang-text"
+                    data-en="Cyori is a high-quality, feature-rich Discord music bot designed to deliver the best audio experience for your community. With support for high-fidelity streaming, advanced audio filters, and a user-friendly dashboard, Cyori stands out as a premium choice for any server."
+                    data-th="Cyori เป็นบอทเพลงคุณภาพสูงสำหรับ Discord ที่ออกแบบมาเพื่อมอบประสบการณ์เสียงที่ดีที่สุดให้กับคอมมูนิตี้ของคุณ รองรับการสตรีมเสียงความละเอียดสูง เอฟเฟกต์เสียงขั้นสูง และแดชบอร์ดที่ใช้งานง่าย">
+                    Cyori is a high-quality, feature-rich Discord music bot designed to deliver the best audio
+                    experience for your community. With support for high-fidelity streaming, advanced audio filters, and
+                    a user-friendly dashboard, Cyori stands out as a premium choice for any server.
+                </p>
+                <div class="feature-card" style="text-align: left; padding: 20px;">
+                    <h3 style="margin-top:0"><i class="fas fa-star"></i> <span class="lang-text" data-en="Key Features"
+                            data-th="ฟีเจอร์หลัก">Key Features</span></h3>
+                    <ul>
+                        <li class="lang-text" data-en="Lossless Audio Quality" data-th="คุณภาพเสียงระดับ Lossless">
+                            Lossless Audio Quality</li>
+                        <li class="lang-text" data-en="24/7 Music Playback (Premium)"
+                            data-th="เล่นเพลงต่อเนื่อง 24/7 (พรีเมียม)">
+                            24/7 Music Playback (Premium)</li>
+                        <li class="lang-text" data-en="Advanced Audio Filters (Nightcore, Vaporwave, 8D, etc.)"
+                            data-th="เอฟเฟกต์เสียงขั้นสูง (Nightcore, Vaporwave, 8D, ฯลฯ)">
+                            Advanced Audio Filters
+                            (Nightcore, Vaporwave, 8D, etc.)</li>
+                        <li class="lang-text" data-en="Web Dashboard & Lyrics Support"
+                            data-th="แดชบอร์ดจัดการบนเว็บและเนื้อเพลง">
+                            Web Dashboard & Lyrics Support</li>
+                        <li class="lang-text" data-en="Multi-Language Support (English / Thai)"
+                            data-th="รองรับหลายภาษา (อังกฤษ / ไทย)">
+                            Multi-Language Support (English / Thai)</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- INSTALLATION -->
+            <section id="installation">
+                <h2 class="lang-text" data-en="Installation" data-th="การติดตั้ง">Installation</h2>
+                <p class="lang-text"
+                    data-en="Inviting Cyori to your server is simple. Just click the link below and authorize the bot."
+                    data-th="การเชิญบอทเข้าเซิร์ฟเวอร์ทำได้ง่ายๆ เพียงคลิกลิงก์ด้านล่างและอนุญาตสิทธิ์">
+                    Inviting Cyori to your server is simple. Just click the link below and authorize the bot.
+                </p>
+                <a href="invite.html" class="btn btn-primary" target="_blank">
+                    <i class="fab fa-discord"></i> <span class="lang-text" data-en="Invite Bot" data-th="เชิญบอท">Invite
+                        Bot</span>
+                </a>
+                <p style="margin-top: 20px;">
+                    <strong class="lang-text" data-en="Note:" data-th="หมายเหตุ:">Note:</strong>
+                    <span class="lang-text"
+                        data-en="The bot requires Connect, Speak, and Read Messages permissions to function correctly."
+                        data-th="บอทต้องการสิทธิ์ในการ เชื่อมต่อ (Connect), พูด (Speak), และ อ่านข้อความ (Read Messages) เพื่อให้ทำงานได้อย่างถูกต้อง">
+                        The bot requires <code>Connect</code>, <code>Speak</code>, and <code>Read Messages</code>
+                        permissions to function correctly.
+                    </span>
+                </p>
+            </section>
+
+            <!-- INITIAL SETUP -->
+            <section id="setup">
+                <h2 class="lang-text" data-en="Initial Setup" data-th="การตั้งค่าเริ่มต้น">Initial Setup</h2>
+                <p class="lang-text"
+                    data-en="After inviting Cyori, you can configure it for your server using the following steps:"
+                    data-th="หลังจากที่เชิญ Cyori เข้ามาแล้ว คุณสามารถตั้งค่าสำหรับเซิร์ฟเวอร์ของคุณได้ตามขั้นตอนต่อไปนี้:">
+                    After inviting Cyori, you can configure it for your server using the following steps:
+                </p>
+                <ol>
+                    <li class="lang-text" data-en="Join a voice channel where you want the bot to play music."
+                        data-th="เข้าร่วมช่องเสียงที่คุณต้องการให้บอทเล่นเพลง">
+                        Join a voice channel where you want the bot to play music.
+                    </li>
+                    <li class="lang-text" data-en="Use the <code>/play</code> command to start playing a song."
+                        data-th="ใช้คำสั่ง <code>/play</code> เพื่อเริ่มเล่นเพลง">
+                        Use the <code>/play</code> command to start playing a song.
+                    </li>
+                    <li class="lang-text"
+                        data-en="(Optional) Use <code>/language th</code> to switch the bot's language to Thai."
+                        data-th="(ทางเลือก) ใช้คำสั่ง <code>/language th</code> เพื่อเปลี่ยนภาษาของบอทเป็นภาษาไทย">
+                        (Optional) Use <code>/language th</code> to switch the bot's language to Thai.
+                    </li>
+                    <li class="lang-text"
+                        data-en="(Optional) Set a DJ role using <code>/djrole</code> to manage permissions."
+                        data-th="(ทางเลือก) ตั้งค่าบทบาท DJ โดยใช้ <code>/djrole</code> เพื่อจัดการสิทธิ์">
+                        (Optional) Set a DJ role using <code>/djrole</code> to manage permissions.
+                    </li>
+                </ol>
+            </section>
+
+            <!-- COMMANDS -->
+            <section id="music-commands">
+                <h2 class="lang-text" data-en="Music Commands" data-th="คำสั่งเพลง">Music Commands
+                </h2>
+                <p class="lang-text" data-en="Basic commands to control music playback."
+                    data-th="คำสั่งพื้นฐานในการควบคุมการเล่นเพลง">
+                    Basic commands to control music playback.</p>
+
+                <table class="cmd-table">
+                    <thead>
+                        <tr>
+                            <th width="33%" class="lang-text" data-en="Command" data-th="คำสั่ง">Command
+                            </th>
+                            <th class="lang-text" data-en="Description" data-th="คำอธิบาย">Description
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>/play [query/url]</code></td>
+                            <td><span class="lang-text" data-en="Play a song from YouTube, SoundCloud, Spotify, etc."
+                                    data-th="เล่นเพลงจาก YouTube, SoundCloud, Spotify ฯลฯ">Play
+                                    a song from YouTube,
+                                    SoundCloud, Spotify, etc.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/pause</code> / <code>/resume</code></td>
+                            <td><span class="lang-text" data-en="Pause or resume the current track."
+                                    data-th="หยุดชั่วคราวหรือเล่นเพลงต่อ">Pause
+                                    or resume the current track.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/skip [index]</code></td>
+                            <td><span class="lang-text" data-en="Skip to the next song or a specific number of songs."
+                                    data-th="ข้ามไปยังเพลงถัดไป หรือข้ามตามจำนวนที่ระบุ">Skip
+                                    to the next song or a
+                                    specific number of songs.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/skipto [index]</code></td>
+                            <td><span class="lang-text" data-en="Skip to a specific song position in the queue."
+                                    data-th="ข้ามไปยังตำแหน่งเพลงที่ระบุในคิว">Skip
+                                    to a specific song position in the
+                                    queue.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/stop</code> / <code>/leave</code></td>
+                            <td><span class="lang-text" data-en="Stop playback and leave the voice channel."
+                                    data-th="หยุดการเล่นและออกจากช่องเสียง">Stop
+                                    playback and leave the voice
+                                    channel.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/queue</code> / <code>/history</code></td>
+                            <td><span class="lang-text" data-en="Show the current queue or recently played history."
+                                    data-th="แสดงคิวเพลงปัจจุบัน หรือประวัติการเล่นเพลงที่ผ่านมา">Show
+                                    the current queue
+                                    or recently played history.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/nowplaying</code></td>
+                            <td><span class="lang-text" data-en="Show details of the currently playing song."
+                                    data-th="แสดงรายละเอียดของเพลงที่กำลังเล่นอยู่">Show
+                                    details of the currently
+                                    playing song.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/volume [1-100]</code></td>
+                            <td><span class="lang-text" data-en="Adjust playback volume (Premium can go up to 200%)."
+                                    data-th="ปรับระดับเสียงเพลง (พรีเมียมสามารถปรับได้ถึง 200%)">Adjust
+                                    playback volume
+                                    (Premium can go up to 200%).</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/shuffle</code> / <code>/clear</code></td>
+                            <td><span class="lang-text" data-en="Shuffle the queue or clear all songs from it."
+                                    data-th="สุ่มลำดับเพลงในคิว หรือล้างเพลงทั้งหมดออกจากคิว">Shuffle
+                                    the queue or clear
+                                    all songs from it.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/remove [index]</code></td>
+                            <td><span class="lang-text" data-en="Remove a specific song from the queue by its index."
+                                    data-th="ลบเพลงที่ต้องการออกจากคิวตามลำดับเลข">Remove
+                                    a specific song from the queue
+                                    by its index.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/seek [time]</code></td>
+                            <td><span class="lang-text"
+                                    data-en="Jump to a specific time in the current song (e.g. 1:30)."
+                                    data-th="เลื่อนไปยังช่วงเวลาที่ต้องการในเพลง (เช่น 1:30)">Jump
+                                    to a specific time in
+                                    the current song.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/lyrics</code> / <code>/grab</code></td>
+                            <td><span class="lang-text" data-en="Get lyrics or save the current song to your DMs."
+                                    data-th="ดูเนื้อเพลง หรือบันทึกข้อมูลเพลงส่งเข้าช่องข้อความส่วนตัว (DM)">Get
+                                    lyrics
+                                    or save the current song.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/move [from] [to]</code></td>
+                            <td><span class="lang-text" data-en="Change the position of a song in the queue."
+                                    data-th="ย้ายตำแหน่งเพลงในคิวจากลำดับหนึ่งไปยังอีกลำดับหนึ่ง">Change
+                                    the position of
+                                    a song in the queue.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/fix_region</code></td>
+                            <td><span class="lang-text" data-en="Try fixing voice lag by switching server regions."
+                                    data-th="พยายามแก้ปัญหาเสียงกระตุกโดยการเปลี่ยน Region ของเซิร์ฟเวอร์">Try
+                                    fixing
+                                    voice lag by switching regions.</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="filter-commands">
+                <h2 class="lang-text" data-en="Filter Commands" data-th="คำสั่งเอฟเฟกต์">
+                    Filter Commands</h2>
+                <p class="lang-text" data-en="Enhance your listening experience with real-time audio effects."
+                    data-th="ยกระดับการฟังของคุณด้วยเอฟเฟกต์เสียงแบบเรียลไทม์">
+                    Enhance your listening experience with
+                    real-time audio effects.</p>
+                <table class="cmd-table">
+                    <thead>
+                        <tr>
+                            <th width="33%" class="lang-text" data-en="Command" data-th="คำสั่ง">Command
+                            </th>
+                            <th class="lang-text" data-en="Description" data-th="คำอธิบาย">Description
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>/nightcore</code> / <code>/vaporwave</code></td>
+                            <td><span class="lang-text" data-en="Apply Nightcore or Vaporwave sound effects."
+                                    data-th="เปิดโหมดเสียงแบบ Nightcore หรือ Vaporwave">Apply
+                                    Nightcore or Vaporwave
+                                    effects.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/8d</code> / <code>/rotation</code></td>
+                            <td><span class="lang-text" data-en="Apply 8D Audio effect (Rotate audio around your head)."
+                                    data-th="เปิดโหมดเสียง 8D (เสียงหมุนรอบทิศทาง)">Apply
+                                    8D Audio / Rotation
+                                    effect.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/speed [0.1-2.0]</code></td>
+                            <td><span class="lang-text" data-en="Change music playback speed (Default: 1.0)."
+                                    data-th="ปรับความเร็วในการเล่นเพลง (ค่าเริ่มต้น: 1.0)">Change
+                                    music playback
+                                    speed.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/karaoke</code> / <code>/distortion</code></td>
+                            <td><span class="lang-text" data-en="Apply Karaoke (vocal removal) or Distortion effect."
+                                    data-th="เปิดโหมดคาราโอเกะ (ตัดเสียงร้อง) หรือเอฟเฟกต์เสียงแตก">Apply
+                                    Karaoke or
+                                    Distortion effect.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/lowpass</code> / <code>/tremolo</code></td>
+                            <td><span class="lang-text" data-en="Apply Lowpass filter or Tremolo (vibrant) effect."
+                                    data-th="เปิด Lowpass filter หรือเอฟเฟกต์เสียงสั่น (Tremolo)">Apply
+                                    Lowpass or
+                                    Tremolo effect.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/cleareffect</code></td>
+                            <td><span class="lang-text" data-en="Remove all active audio effects and reset to normal."
+                                    data-th="ลบเอฟเฟกต์เสียงทั้งหมดและกลับสู่โหมดปกติ">Remove
+                                    all active audio
+                                    effects.</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="dj-commands">
+                <h2 class="lang-text" data-en="DJ & Settings" data-th="ตั้งค่า & DJ">DJ & Settings</h2>
+                <table class="cmd-table">
+                    <thead>
+                        <tr>
+                            <th width="33%" class="lang-text" data-en="Command" data-th="คำสั่ง">Command
+                            </th>
+                            <th class="lang-text" data-en="Description" data-th="คำอธิบาย">Description
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>/setup</code> / <code>/reset</code></td>
+                            <td><span class="lang-text" data-en="Setup bot's controller channel or reset all settings."
+                                    data-th="ตั้งค่าช่องควบคุมของบอท หรือรีเซ็ตการตั้งค่าทั้งหมด">Setup
+                                    or Reset bot
+                                    settings.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/language</code> / <code>/prefix</code></td>
+                            <td><span class="lang-text" data-en="Change bot's language or command prefix."
+                                    data-th="เปลี่ยนภาษา หรือเปลี่ยนคำนำหน้าคำสั่ง (Prefix)">Change
+                                    bot's language or
+                                    prefix.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/djrole</code> / <code>/djmode</code></td>
+                            <td><span class="lang-text" data-en="Set DJ roles or toggle DJ-only control mode."
+                                    data-th="ตั้งค่าบทบาท DJ หรือเปิด/ปิดโหมดจำกัดการใช้เฉพาะ DJ">Set
+                                    DJ role or toggle
+                                    DJ mode.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/autoplay</code> / <code>/vote_mode</code></td>
+                            <td><span class="lang-text" data-en="Toggle Autoplay or Voting system for skips."
+                                    data-th="เปิด/ปิดระบบเล่นเพลงอัตโนมัติ หรือระบบโหวตเพื่อข้ามเพลง">Toggle
+                                    Autoplay or
+                                    Vote mode.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/view_settings</code></td>
+                            <td><span class="lang-text" data-en="Viewing the current server configuration."
+                                    data-th="ดูรายการค่าที่ตั้งไว้ในปัจจุบันของเซิร์ฟเวอร์">Viewing
+                                    server
+                                    settings.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/voicefix</code> / <code>/cleanup</code></td>
+                            <td><span class="lang-text" data-en="Fix voice connection or clean up bot messages."
+                                    data-th="แก้ปัญหาการเชื่อมต่อเสียง หรือล้างข้อความของบอทในห้อง">Fix
+                                    voice or cleanup
+                                    messages.</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Premium Commands -->
+            <section id="premium-commands">
+                <h2 class="lang-text" data-en="Premium Commands" data-th="คำสั่งพรีเมียม">
+                    Premium Commands</h2>
+                <p class="lang-text" data-en="Exclusive commands available for premium subscribers and supporters."
+                    data-th="คำสั่งพิเศษสำหรับสมาชิกพรีเมียมและผู้สนับสนุน">
+                    Exclusive commands available for premium
+                    subscribers and supporters.</p>
+                <table class="cmd-table">
+                    <thead>
+                        <tr>
+                            <th width="33%" class="lang-text" data-en="Command" data-th="คำสั่ง">Command
+                            </th>
+                            <th class="lang-text" data-en="Description" data-th="คำอธิบาย">Description
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>/volume [101-200]</code></td>
+                            <td><span class="lang-text" data-en="Boost volume beyond 100% (up to 200%)."
+                                    data-th="เพิ่มระดับเสียงเกิน 100% (สูงสุดได้ถึง 200%)">Boost
+                                    volume beyond
+                                    100%.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/247 [playforever]</code></td>
+                            <td><span class="lang-text" data-en="Stay in voice channel indefinitely even when idle."
+                                    data-th="ให้บอทอยู่ในห้องเสียงตลอดเวลาแม้ไม่มีคนฟังหรือไม่ได้เล่นเพลง">Enable
+                                    24/7
+                                    mode.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/autoplay</code></td>
+                            <td><span class="lang-text" data-en="Automatically play recommended tracks when queue ends."
+                                    data-th="เล่นเพลงแนะนำอัตโนมัติอย่างต่อเนื่องเมื่อคิวเพลงหลักจบลง">Enable
+                                    Autoplay.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>/speed [0.1-2.0]</code></td>
+                            <td><span class="lang-text" data-en="Freely adjust playback speed beyond normal limits."
+                                    data-th="ปรับความเร็วการเล่นเพลงได้อย่างอิสระ">Access
+                                    custom playback speed.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>/buy</code></td>
+                            <td><span class="lang-text" data-en="Purchase premium plans directly via Stripe."
+                                    data-th="ซื้อแพ็กเกจพรีเมียมผ่าน Stripe โดยตรง">Purchase
+                                    premium plans.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>/redeem [key]</code></td>
+                            <td><span class="lang-text" data-en="Redeem a premium key to activate your subscription."
+                                    data-th="เติมคีย์พรีเมียมเพื่อขยายเวลาการใช้งาน">Redeem
+                                    a premium key.</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Features -->
+            <section id="247-mode">
+                <h2 class="lang-text" data-en="24/7 Mode" data-th="โหมด 24/7">24/7 Mode</h2>
+                <p class="lang-text"
+                    data-en="The 24/7 Mode allows the bot to stay in your voice channel even when no music is playing or when everyone leaves. This is perfect for radio stations, ambient music, or simply keeping the bot ready for the next track."
+                    data-th="โหมด 24/7 ช่วยให้บอทอยู่ในห้องเสียงของคุณตลอดเวลาแม้ว่าจะไม่มีเพลงเล่นหรือทุกคนออกจากห้องไปแล้ว เหมาะสำหรับสถานีวิทยุ เพลงบรรยากาศ หรือเพื่อให้บอทพร้อมเล่นเพลงถัดไปเสมอ">
+                    The 24/7 Mode allows the bot to stay in your voice channel even when no music is playing.
+                </p>
+                <p class="lang-text" data-en="This feature requires a Premium Subscription."
+                    data-th="ฟีเจอร์นี้ต้องใช้การสมัครสมาชิก พรีเมียม (Premium Subscription)">
+                    This feature requires a <strong>Premium Subscription</strong>.
+                </p>
+            </section>
+
+            <section id="autoplay">
+                <h2 class="lang-text" data-en="Autoplay" data-th="เล่นเพลงอัตโนมัติ">
+                    Autoplay</h2>
+                <p class="lang-text"
+                    data-en="Never run out of music! When your queue ends, Autoplay will automatically find and play songs similar to your recent tracks. It analyzes your listening history in the current session to recommend the best matches."
+                    data-th="เพลงไม่มีวันหมด! เมื่อคิวเพลงของคุณจบลง Autoplay จะค้นหาและเล่นเพลงที่คล้ายกับเพลงล่าสุดของคุณโดยอัตโนมัติ มันจะวิเคราะห์ประวัติการฟังในเซสชันปัจจุบันเพื่อแนะนำเพลงที่เข้ากันที่สุด">
+                    When your queue ends, Autoplay will automatically find and play similar songs.
+                </p>
+            </section>
+
+            <section id="dashboard">
+                <h2 class="lang-text" data-en="Web Dashboard" data-th="เว็บแดชบอร์ด">Web
+                    Dashboard</h2>
+                <p class="lang-text"
+                    data-en="Control the bot directly from your browser with our interactive Web Dashboard. You can manage the queue, skip tracks, adjust volume, and control playback without using Discord commands."
+                    data-th="ควบคุมบอทได้โดยตรงจากเบราว์เซอร์ของคุณด้วย Web Dashboard แบบโต้ตอบ คุณสามารถจัดการคิว ข้ามเพลง ปรับระดับเสียง และควบคุมการเล่นได้โดยไม่ต้องใช้คำสั่ง Discord">
+                    Control the bot directly from your browser. Manage queue, volume, and playback easily.
+                </p>
+                <a href="dashboard.html" class="btn btn-primary"
+                    style="display: inline-flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-columns"></i> <span class="lang-text" data-en="Open Dashboard"
+                        data-th="เปิดแผงควบคุมบนเว็บ">Open Dashboard</span>
+                </a>
+            </section>
+
+            <!-- FAQ -->
+            <section id="faq">
+                <h2 class="lang-text" data-en="FAQ" data-th="คำถามที่พบบ่อย">FAQ</h2>
+
+                <div
+                    style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; margin-bottom: 15px;">
+                    <h4 class="lang-text" data-en="Why can't I hear any sound?" data-th="ทำไมฉันถึงไม่ได้ยินเสียงเพลง?"
+                        style="color: var(--accent-gold); margin-bottom: 10px;">Why can't I hear any sound?</h4>
+                    <p class="lang-text"
+                        data-en="Make sure you are in a voice channel and the bot has permissions to Speak. Check if you have server deafened yourself or the bot."
+                        data-th="ตรวจสอบให้แน่ใจว่าคุณอยู่ในห้องเสียงและบอทมีสิทธิ์ในการพูด (Speak) ตรวจสอบว่าคุณไม่ได้ปิดเสียงแบบ Server Deafen ตัวเองหรือบอท">
+                        Make sure you are in a voice channel and the bot has permissions to Speak. Check if you have
+                        server deafened yourself or the bot.
+                    </p>
+                </div>
+
+                <div
+                    style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; margin-bottom: 15px;">
+                    <h4 class="lang-text" data-en="How do I get Premium?" data-th="ฉันจะสมัครพรีเมียมได้อย่างไร?"
+                        style="color: var(--accent-gold); margin-bottom: 10px;">How do I get Premium?</h4>
+                    <p class="lang-text"
+                        data-en="You can purchase Premium via our dashboard or by using the /buy command. We offer monthly, yearly, and lifetime (789 THB) plans. Premium gives you access to 24/7 mode, Volume control up to 200%, and exclusive customization."
+                        data-th="คุณสามารถซื้อพรีเมียมได้ผ่านทางหน้าแดชบอร์ดหรือใช้คำสั่ง /buy เรามีแผนรายเดือน รายปี และถาวร (789 บาท) พรีเมียมจะช่วยให้คุณเข้าถึงโหมด 24/7, การควบคุมระดับเสียงสูงสุด 200% และการปรับแต่งสไตล์ของบอท">
+                        You can purchase Premium via our dashboard or by using the /buy command. We offer monthly,
+                        yearly, and lifetime (789 THB) plans. Premium gives you access
+                        to 24/7 mode, Volume control up to 200%, and exclusive customization.
+                    </p>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="brand">
+                        <img src="logo-circle.png" alt="Cyori" class="brand-logo">
+                        <span class="brand-name">Cyori</span>
+                    </div>
+                    <p class="lang-text"
+                        data-en="The ultimate music experience for your Discord server. Remade for performance and style."
+                        data-th="ประสบการณ์การฟังเพลงที่ดีที่สุดสำหรับ Discord ของคุณ ออกแบบใหม่เพื่อประสิทธิภาพและสไตล์ที่เหนือกว่า">
+                        The ultimate music experience.
+                    </p>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="lang-text" data-en="Product" data-th="ผลิตภัณฑ์">Product</h4>
+                    <ul>
+                        <li><a href="index.html#features" class="lang-text" data-en="Features"
+                                data-th="ฟีเจอร์">Features</a></li>
+                        <li><a href="premium.html" class="lang-text" data-en="Premium" data-th="พรีเมียม">Premium</a>
+                        </li>
+                        <li><a href="dashboard.html" class="lang-text" data-en="Dashboard"
+                                data-th="แดชบอร์ด">Dashboard</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="lang-text" data-en="Resources" data-th="ทรัพยากร">Resources</h4>
+                    <ul>
+                        <li><a href="documentation.html" class="lang-text" data-en="Documentation"
+                                data-th="คู่มือการใช้">Documentation</a></li>
+                        <li><a href="#" class="lang-text" data-en="API Status" data-th="สถานะระบบ">API Status</a></li>
+                        <li><a href="https://discord.gg/jcJ2P6Bh2p" class="lang-text" data-en="Community"
+                                data-th="ชุมชน">Community</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="lang-text" data-en="Legal" data-th="กฎหมาย">Legal</h4>
+                    <ul>
+                        <li><a href="privacy.html" class="lang-text" data-en="Privacy Policy"
+                                data-th="นโยบายความเป็นส่วนตัว">Privacy Policy</a></li>
+                        <li><a href="terms.html" class="lang-text" data-en="Terms of Service"
+                                data-th="ข้อตกลงการใช้บริการ">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="copyright lang-text" data-en="© 2026 Cytech Team. All rights reserved."
+                data-th="© 2026 Cytech Team สงวนลิขสิทธิ์">
+                © 2026 Cytech Team. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        // Active link on scroll
+        const sections = document.querySelectorAll('section');
+        const navLi = document.querySelectorAll('.docs-sidebar ul li a');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+
+            // Standard Scrollspy
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 200) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            // If at bottom, force select last one
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50) {
+                if (sections.length > 0) {
+                    current = sections[sections.length - 1].getAttribute('id');
+                }
+            }
+
+            navLi.forEach(a => {
+                a.classList.remove('active');
+                if (current && a.getAttribute('href').includes(current)) {
+                    a.classList.add('active');
+                }
+            });
+        });
+
+        // Overscroll to Redirect Logic
+        let overscrollCount = 0;
+        const OVERSCROLL_THRESHOLD = 500; // Pixels of "effort" to scroll past bottom
+        let isRedirecting = false;
+
+        function updateRedirectToast(value) {
+            let toast = document.getElementById('redirect-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'redirect-toast';
+                toast.style.cssText = `
+                    position: fixed;
+                    bottom: 40px;
+                    left: 50%;
+                    transform: translateX(-50%) translateY(20px);
+                    background: rgba(10, 10, 12, 0.95);
+                    border: 1px solid var(--accent-gold);
+                    color: #fff;
+                    padding: 15px 25px;
+                    border-radius: 30px;
+                    z-index: 9999;
+                    box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+                    font-family: 'Space Grotesk', sans-serif;
+                    font-weight: 600;
+                    transition: opacity 0.2s, transform 0.2s;
+                    opacity: 0;
+                    pointer-events: none;
+                    text-align: center;
+                    min-width: 300px;
+                `;
+                document.body.appendChild(toast);
+            }
+
+            const percentage = Math.min((value / OVERSCROLL_THRESHOLD) * 100, 100);
+
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateX(-50%) translateY(0)';
+            toast.innerHTML = `
+                <div style="display:flex; align-items:center; justify-content: center; gap:10px; margin-bottom: 8px;">
+                    <i class="fab fa-discord" style="color: #5865F2;"></i>
+                    <span>Scroll more to join Support...</span>
+                </div>
+                <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden;">
+                    <div style="width: ${percentage}%; height: 100%; background: var(--accent-gold); border-radius: 2px; transition: width 0.1s linear;"></div>
+                </div>
+            `;
+        }
+
+        function hideRedirectToast() {
+            const toast = document.getElementById('redirect-toast');
+            if (toast) {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(-50%) translateY(20px)';
+                // Reset content after hiding
+                setTimeout(() => {
+                    if (overscrollCount === 0) toast.innerHTML = '';
+                }, 300);
+            }
+        }
+
+        // Desktop Wheel Support
+        window.addEventListener('wheel', (e) => {
+            if (isRedirecting) return;
+
+            // Check if at bottom (within 5px)
+            const atBottom = (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 5;
+
+            if (atBottom && e.deltaY > 0) {
+                // User is trying to scroll down while at bottom
+                overscrollCount += e.deltaY;
+
+                // Cap the visual feedback slightly above threshold
+                if (overscrollCount > OVERSCROLL_THRESHOLD + 100) overscrollCount = OVERSCROLL_THRESHOLD + 100;
+
+                updateRedirectToast(overscrollCount);
+
+                if (overscrollCount >= OVERSCROLL_THRESHOLD) {
+                    isRedirecting = true;
+                    const toast = document.getElementById('redirect-toast');
+                    if (toast) toast.innerHTML = `<div style="padding: 10px;"><i class="fas fa-spinner fa-spin"></i> Jumping to Discord...</div>`;
+                    window.location.href = "https://discord.gg/jcJ2P6Bh2p";
+                }
+            } else {
+                // Reset if they scroll up or aren't at bottom
+                if (overscrollCount > 0) {
+                    overscrollCount = 0;
+                    hideRedirectToast();
+                }
+            }
+        });
+
+        // Mobile Touch Support
+        let touchStartY = 0;
+        window.addEventListener('touchstart', e => {
+            touchStartY = e.touches[0].clientY;
+        });
+
+        window.addEventListener('touchmove', e => {
+            if (isRedirecting) return;
+            const touchY = e.touches[0].clientY;
+            const atBottom = (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 5;
+
+            // Dragging finger UP (scrolling down)
+            if (atBottom && touchStartY > touchY) {
+                const diff = touchStartY - touchY;
+                overscrollCount += diff * 1.5; // multiplier for touch feel
+
+                if (overscrollCount > OVERSCROLL_THRESHOLD + 100) overscrollCount = OVERSCROLL_THRESHOLD + 100;
+
+                updateRedirectToast(overscrollCount);
+
+                if (overscrollCount >= OVERSCROLL_THRESHOLD) {
+                    isRedirecting = true;
+                    // Vibrate if supported
+                    if (navigator.vibrate) navigator.vibrate(50);
+                    window.location.href = "https://discord.gg/jcJ2P6Bh2p";
+                }
+            } else {
+                if (overscrollCount > 0) {
+                    overscrollCount = 0;
+                    hideRedirectToast();
+                }
+            }
+            touchStartY = touchY;
+        });
+    </script>
+    <!-- Overlay for mobile menu -->
+    <div class="menu-overlay"></div>
+
+</body>
+
+</html>

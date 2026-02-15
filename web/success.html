@@ -1,0 +1,174 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="logo-circle.png" type="image/png">
+    <title>Payment Successful! - Cyori</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body class="success-body">
+    <!-- Background Elements -->
+    <div class="bg-gradient"></div>
+    <div class="mesh-grid"></div>
+
+    <!-- Header -->
+    <header id="header">
+        <div class="container">
+            <a href="index.html" class="brand">
+                <img src="logo-circle.png" alt="Cyori" class="brand-logo">
+                <span class="brand-name">Cyori</span>
+            </a>
+
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html#hero" class="nav-link lang-text" data-en="Home"
+                            data-th="หน้าแรก">Home</a></li>
+                    <li><a href="index.html#features" class="nav-link lang-text" data-en="Features"
+                            data-th="ฟีเจอร์">Features</a></li>
+                    <li><a href="index.html#commands" class="nav-link lang-text" data-en="Commands"
+                            data-th="คำสั่ง">Commands</a></li>
+                    <li><a href="dashboard.html" class="nav-link lang-text" data-en="Dashboard"
+                            data-th="แผงควบคุม">Dashboard</a></li>
+                    <li><a href="premium.html" class="nav-link lang-text" data-en="Premium"
+                            data-th="พรีเมียม">Premium</a></li>
+                </ul>
+            </nav>
+
+            <div class="header-actions">
+                <div class="lang-switch">
+                    <button id="lang-btn" onclick="toggleLanguage()" class="btn-glass"
+                        style="padding: 8px 16px; border-radius: 20px;">
+                        <i class="fas fa-globe"></i> <span id="curr-lang">EN</span>
+                    </button>
+                </div>
+
+                <a href="#" class="btn btn-primary login-btn" onclick="login()">
+                    <i class="fab fa-discord"></i>
+                    <span class="lang-text" data-en="Login" data-th="เข้าสู่ระบบ">Login</span>
+                </a>
+
+                <div class="hamburger mobile-toggle" onclick="toggleMenu()">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+
+
+    <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
+
+    <div class="success-container">
+        <div class="success-icon-box">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <h1 class="success-title lang-text" data-en="Payment Successful!" data-th="ชำระเงินสำเร็จ!">Payment Successful!
+        </h1>
+        <p class="success-desc lang-text"
+            data-en="Your transaction has been completed. <br>Your premium status will be updated shortly."
+            data-th="การทำรายการเสร็จสมบูรณ์ <br>สถานะพรีเมียมของคุณจะถูกอัปเดตเร็วๆ นี้">Your transaction has been
+            completed. <br>Your premium status will be updated shortly.</p>
+
+        <a href="discord://-" onclick="window.close()" class="btn btn-primary">
+            <i class="fa-brands fa-discord"></i> <span class="lang-text" data-en="Close & Return to Discord"
+                data-th="ปิดและกลับไปที่ Discord">Close & Return to Discord</span>
+        </a>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script>
+        // Trigger Confetti on Load
+        window.addEventListener('load', () => {
+            var duration = 3 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+            function randomInOut(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            var interval = setInterval(function () {
+                var timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                var particleCount = 50 * (timeLeft / duration);
+
+                // since particles fall down, start a bit higher than random
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInOut(0.1, 0.3), y: Math.random() - 0.2 } }));
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInOut(0.7, 0.9), y: Math.random() - 0.2 } }));
+            }, 250);
+        });
+    </script>
+    <!-- Overlay for mobile menu -->
+    <div class="menu-overlay"></div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="brand">
+                        <img src="logo-circle.png" alt="Cyori" class="brand-logo">
+                        <span class="brand-name">Cyori</span>
+                    </div>
+                    <p class="lang-text"
+                        data-en="The ultimate music experience for your Discord server. Remade for performance and style."
+                        data-th="ประสบการณ์การฟังเพลงที่ดีที่สุดสำหรับ Discord ของคุณ ออกแบบใหม่เพื่อประสิทธิภาพและสไตล์ที่เหนือกว่า">
+                        The ultimate music experience.
+                    </p>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="lang-text" data-en="Product" data-th="ผลิตภัณฑ์">Product</h4>
+                    <ul>
+                        <li><a href="index.html#features" class="lang-text" data-en="Features"
+                                data-th="ฟีเจอร์">Features</a></li>
+                        <li><a href="premium.html" class="lang-text" data-en="Premium" data-th="พรีเมียม">Premium</a>
+                        </li>
+                        <li><a href="dashboard.html" class="lang-text" data-en="Dashboard"
+                                data-th="แดชบอร์ด">Dashboard</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="lang-text" data-en="Resources" data-th="ทรัพยากร">Resources</h4>
+                    <ul>
+                        <li><a href="documentation.html" class="lang-text" data-en="Documentation"
+                                data-th="คู่มือการใช้">Documentation</a></li>
+                        <li><a href="#" class="lang-text" data-en="API Status" data-th="สถานะระบบ">API Status</a></li>
+                        <li><a href="https://discord.gg/jcJ2P6Bh2p" class="lang-text" data-en="Community"
+                                data-th="ชุมชน">Community</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="lang-text" data-en="Legal" data-th="กฎหมาย">Legal</h4>
+                    <ul>
+                        <li><a href="privacy.html" class="lang-text" data-en="Privacy Policy"
+                                data-th="นโยบายความเป็นส่วนตัว">Privacy Policy</a></li>
+                        <li><a href="terms.html" class="lang-text" data-en="Terms of Service"
+                                data-th="ข้อตกลงการใช้บริการ">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="copyright lang-text" data-en="© 2026 Cytech Team. All rights reserved."
+                data-th="© 2026 Cytech Team สงวนลิขสิทธิ์">
+                © 2026 Cytech Team. All rights reserved.
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

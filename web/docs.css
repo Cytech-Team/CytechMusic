@@ -1,0 +1,232 @@
+﻿/* Docs Specific Styles */
+.docs-container {
+    padding-top: 100px;
+    padding-bottom: 50px;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    gap: 40px;
+    min-height: 100vh;
+}
+
+/* Custom Scrollbar for Sidebar */
+.docs-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.docs-sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+}
+
+.docs-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 215, 0, 0.3);
+    border-radius: 10px;
+}
+
+.docs-sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-gold);
+}
+
+/* Sidebar */
+.docs-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 100px;
+    height: calc(100vh - 120px);
+    overflow-y: auto;
+    background: rgba(10, 10, 12, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 20px;
+    /* Hide scrollbar for Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-gold) rgba(255, 255, 255, 0.02);
+}
+
+.docs-sidebar h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    color: var(--accent-gold);
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    margin-top: 25px;
+    padding-left: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.docs-sidebar h3:first-child {
+    margin-top: 0;
+}
+
+.docs-sidebar ul {
+    list-style: none;
+}
+
+.docs-sidebar li {
+    margin-bottom: 5px;
+}
+
+.docs-sidebar a {
+    display: block;
+    padding: 10px 15px;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: 0.2s;
+    font-size: 0.95rem;
+}
+
+.docs-sidebar a:hover,
+.docs-sidebar a.active {
+    background: rgba(255, 215, 0, 0.1);
+    color: var(--accent-gold);
+    font-weight: 600;
+    border-left: 3px solid var(--accent-gold);
+    padding-left: 12px;
+}
+
+/* Content */
+.docs-content {
+    flex-grow: 1;
+    padding: 20px;
+    padding-right: 5%;
+    max-width: 900px;
+}
+
+.docs-content h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 3rem;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 20px;
+}
+
+.docs-content h1 span {
+    color: var(--accent-gold);
+}
+
+.docs-content h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2rem;
+    color: var(--text-primary);
+    margin-top: 50px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.docs-content h3 {
+    font-size: 1.4rem;
+    color: var(--accent-gold);
+    margin-top: 30px;
+    margin-bottom: 15px;
+}
+
+.docs-content p {
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    line-height: 1.7;
+    font-size: 1.05rem;
+}
+
+.docs-content ul,
+.docs-content ol {
+    margin-bottom: 20px;
+    padding-left: 25px;
+    color: var(--text-muted);
+}
+
+.docs-content li {
+    margin-bottom: 10px;
+}
+
+.docs-content code {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Space Grotesk', monospace;
+    color: var(--accent-gold);
+    font-size: 0.9em;
+}
+
+.docs-content pre {
+    background: #111;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    overflow-x: auto;
+    margin-bottom: 25px;
+}
+
+.docs-content pre code {
+    background: transparent;
+    padding: 0;
+    color: #e0e0e0;
+}
+
+.cmd-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+}
+
+.cmd-table th,
+.cmd-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.cmd-table th {
+    background: rgba(255, 215, 0, 0.1);
+    color: var(--accent-gold);
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.cmd-table tr:last-child td {
+    border-bottom: none;
+}
+
+.cmd-table tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .docs-container {
+        flex-direction: column;
+        padding-top: 100px;
+    }
+
+    .docs-sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        max-height: 250px;
+        margin-bottom: 20px;
+        z-index: 10;
+        background: var(--bg-secondary);
+    }
+
+    .docs-content {
+        padding: 0 15px;
+    }
+
+    .docs-content h1 {
+        font-size: 2rem;
+        padding-bottom: 10px;
+    }
+
+    .docs-content h2 {
+        font-size: 1.5rem;
+        margin-top: 30px;
+    }
+}

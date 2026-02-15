@@ -1,0 +1,797 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Cyori - The Next-Gen Discord Music Bot</title>
+        <link rel="icon" href="logo-circle.png" type="image/png">
+        <meta name="description"
+                content="The ultimate high-fidelity Discord music bot with a high-performance audio engine. Experience clear sound and advanced features.">
+
+        <!-- Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+                rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+        <!-- Styles -->
+        <link rel="stylesheet" href="style.css">
+
+        <!-- Open Graph / Social Media Embed -->
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://cyori.pages.dev/">
+        <meta property="og:title" content="Cyori - The Next-Gen Discord Music Bot">
+        <meta property="og:description"
+                content="The ultimate high-fidelity Discord music bot with a high-performance audio engine.">
+        <meta property="og:image"
+                content="https://cdn.discordapp.com/banners/1469606905948405833/3b84c3a7799d846229b2b5b2921ed270.png?size=1024">
+        <meta name="theme-color" content="#D4AF37">
+</head>
+
+<body>
+        <!-- Background Elements -->
+        <div class="bg-gradient"></div>
+        <div class="mesh-grid"></div>
+
+        <!-- Header -->
+        <header id="header">
+                <div class="container">
+                        <a href="#" class="brand">
+                                <img src="logo-circle.png" alt="Cyori" class="brand-logo">
+                                <span class="brand-name">Cyori</span>
+                        </a>
+
+                        <nav>
+                                <ul class="nav-links">
+                                        <li><a href="#hero" class="nav-link active lang-text" data-en="Home"
+                                                        data-th="หน้าแรก">Home</a></li>
+                                        <li><a href="#features" class="nav-link lang-text" data-en="Features"
+                                                        data-th="ฟีเจอร์">Features</a></li>
+                                        <li><a href="#commands" class="nav-link lang-text" data-en="Commands"
+                                                        data-th="คำสั่ง">Commands</a></li>
+                                        <li><a href="dashboard.html" class="nav-link lang-text" data-en="Dashboard"
+                                                        data-th="แผงควบคุม">Dashboard</a></li>
+                                        <li><a href="premium.html" class="nav-link lang-text" data-en="Premium"
+                                                        data-th="พรีเมียม">Premium</a></li>
+                                </ul>
+                        </nav>
+
+                        <div class="header-actions">
+                                <div class="lang-switch">
+                                        <button id="lang-btn" onclick="toggleLanguage()" class="btn-glass"
+                                                style="padding: 8px 16px; border-radius: 20px;">
+                                                <i class="fas fa-globe"></i> <span id="curr-lang">EN</span>
+                                        </button>
+                                </div>
+
+                                <a href="#" class="btn btn-primary login-btn" onclick="login()">
+                                        <i class="fab fa-discord"></i>
+                                        <span class="lang-text" data-en="Login" data-th="เข้าสู่ระบบ">Login</span>
+                                </a>
+
+                                <div class="hamburger mobile-toggle" onclick="toggleMenu()">
+                                        <i class="fas fa-bars"></i>
+                                </div>
+                        </div>
+                </div>
+        </header>
+
+        <main>
+                <!-- Hero Section -->
+                <section id="hero" class="hero">
+                        <div class="hero-content">
+                                <span class="hero-badge lang-text" data-en="With a very high-quality music bot system."
+                                        data-th="ด้วยระบบบอทเพลงคุณภาพสูงมาก">With a very high-quality music bot
+                                        system.</span>
+
+                                <h1 class="hero-title">
+                                        <span class="lang-text" data-en="The Future of" data-th="อนาคตของ">The Future
+                                                of</span><br>
+                                        <span class="text-gradient lang-text" data-en="Discord Music"
+                                                data-th="บอทเพลง Discord">Discord Music</span>
+                                </h1>
+
+                                <p class="hero-desc lang-text"
+                                        data-en="Experience high-fidelity audio powered by advanced serverless architecture. Seamless, fast, and premium."
+                                        data-th="สัมผัสประสบการณ์เสียงคุณภาพสูงด้วยสถาปัตยกรรม Serverless อัจฉริยะ ลื่นไหล รวดเร็ว และพรีเมียม">
+                                        Experience high-fidelity audio powered by advanced serverless architecture.
+                                        Seamless, fast, and premium.
+                                </p>
+
+                                <div class="hero-cta">
+                                        <a href="invite.html" class="btn btn-primary">
+                                                <i class="fas fa-robot"></i>
+                                                <span class="lang-text" data-en="Invite Bot" data-th="เชิญบอท">Invite
+                                                        Bot</span>
+                                        </a>
+                                        <a href="dashboard.html" class="btn btn-glass">
+                                                <i class="fas fa-tachometer-alt"></i>
+                                                <span class="lang-text" data-en="Open Dashboard"
+                                                        data-th="ไปที่แดชบอร์ด">Open Dashboard</span>
+                                        </a>
+                                </div>
+
+                                <!-- Stats Floating -->
+                                <div class="stats-container">
+                                        <div class="stat-box">
+                                                <span class="stat-number" id="stat-servers">--</span>
+                                                <span class="stat-label lang-text" data-en="Active Servers"
+                                                        data-th="เซิร์ฟเวอร์ที่ใช้งาน">Active Servers</span>
+                                        </div>
+                                        <div class="stat-box">
+                                                <span class="stat-number" id="stat-users">--</span>
+                                                <span class="stat-label lang-text" data-en="Happy Users"
+                                                        data-th="ผู้ใช้งานทั้งหมด">Happy Users</span>
+                                        </div>
+                                        <div class="stat-box">
+                                                <span class="stat-number">99.9%</span>
+                                                <span class="stat-label lang-text" data-en="Uptime"
+                                                        data-th="เวลาทำงาน">Uptime</span>
+                                        </div>
+                                </div>
+                        </div>
+                </section>
+
+                <!-- Features Section -->
+                <section id="features" class="section">
+                        <div class="container">
+                                <div class="section-header">
+                                        <span class="hero-badge lang-text" data-en="Why Choose Us"
+                                                data-th="ทำไมต้องเลือกเรา">Why Choose Us</span>
+                                        <h2 class="section-title lang-text" data-en="Premium Features"
+                                                data-th="ฟีเจอร์ระดับพรีเมียม">Premium Features</h2>
+                                </div>
+
+                                <div class="grid-3">
+                                        <div class="card">
+                                                <i class="fas fa-bolt card-icon"></i>
+                                                <h3 class="card-title lang-text" data-en="Lightning Fast"
+                                                        data-th="รวดเร็วทันใจ">Lightning Fast</h3>
+                                                <p class="card-text lang-text"
+                                                        data-en="Powered by high-performance core engine for low-latency command execution and interactions."
+                                                        data-th="ขับเคลื่อนด้วยระบบ Core Engine ประสิทธิภาพสูง เพื่อการสั่งงานที่รวดเร็วและตอบสนองทันที">
+                                                        Powered by high-performance engine.
+                                                </p>
+                                        </div>
+                                        <div class="card">
+                                                <i class="fas fa-compact-disc card-icon"></i>
+                                                <h3 class="card-title lang-text" data-en="Hi-Res Audio"
+                                                        data-th="เสียงคุณภาพสูง">Hi-Res Audio</h3>
+                                                <p class="card-text lang-text"
+                                                        data-en="Crystal clear audio streaming with support for advanced filters like Nightcore and 8D."
+                                                        data-th="สตรีมเสียงคมชัดระดับ Crystal Clear พร้อมรองรับเอฟเฟกต์ Nightcore และ 8D">
+                                                        Crystal clear audio streaming.
+                                                </p>
+                                        </div>
+                                        <div class="card">
+                                                <i class="fas fa-shield-alt card-icon"></i>
+                                                <h3 class="card-title lang-text" data-en="Secure & Reliable"
+                                                        data-th="ปลอดภัยและเชื่อถือได้">Secure & Reliable</h3>
+                                                <p class="card-text lang-text"
+                                                        data-en="Enterprise-grade stability with 99.9% uptime guarantee for premium guilds."
+                                                        data-th="ความเสถียรระดับ Enterprise พร้อมการันตี Uptime 99.9% สำหรับพรีเมียม">
+                                                        Enterprise-grade stability.
+                                                </p>
+                                        </div>
+                                        <div class="card">
+                                                <i class="fas fa-server card-icon"></i>
+                                                <h3 class="card-title lang-text" data-en="CytechCore Engine"
+                                                        data-th="ขุมพลัง CytechCore">CytechCore Engine</h3>
+                                                <p class="card-text lang-text"
+                                                        data-en="Advanced proprietary engine designed for maximum stability and speed that scales with demand."
+                                                        data-th="ระบบประมวลผลพิเศษที่ถูกออกแบบมาเพื่อความเสถียรและความเร็วสูงสุด">
+                                                        Advanced proprietary engine.
+                                                </p>
+                                        </div>
+                                        <div class="card">
+                                                <i class="fas fa-gem card-icon"></i>
+                                                <h3 class="card-title lang-text" data-en="Premium Value"
+                                                        data-th="คุ้มค่าราคา">Premium Value</h3>
+                                                <p class="card-text lang-text"
+                                                        data-en="Get features that other bots charge double for, starting at just 29 THB."
+                                                        data-th="ได้รับฟีเจอร์ที่คุ้มค่ากว่าบอทอื่นถึง 2 เท่า ในราคาเริ่มต้นเพียง 29 บาท">
+                                                        Unbeatable value proposition.
+                                                </p>
+                                        </div>
+                                        <div class="card">
+                                                <i class="fas fa-mobile-alt card-icon"></i>
+                                                <h3 class="card-title lang-text" data-en="Mobile Optimized"
+                                                        data-th="รองรับมือถือ">Mobile Optimized</h3>
+                                                <p class="card-text lang-text"
+                                                        data-en="Control your music from anywhere with our fully responsive dashboard."
+                                                        data-th="ควบคุมเพลงของคุณได้ทุกที่ด้วยแดชบอร์ดที่รองรับมือถืออย่างสมบูรณ์แบบ">
+                                                        Fully responsive control.
+                                                </p>
+                                        </div>
+                                </div>
+                        </div>
+                </section>
+
+                <!-- Commands Section -->
+                <section id="commands" class="section">
+                        <div class="container">
+                                <div class="section-header">
+                                        <span class="hero-badge lang-text" data-en="Full Control"
+                                                data-th="ควบคุมได้เต็มที่">Full Control</span>
+                                        <h2 class="section-title lang-text" data-en="Command Center"
+                                                data-th="ศูนย์รวมคำสั่ง">Command Center</h2>
+                                </div>
+
+                                <div class="tabs-container">
+                                        <div class="tabs">
+                                                <button class="tab-btn active" onclick="openTab('music')"><i
+                                                                class="fas fa-play"></i> Music</button>
+                                                <button class="tab-btn" onclick="openTab('filter')"><i
+                                                                class="fas fa-wave-square"></i> Filter</button>
+                                                <button class="tab-btn" onclick="openTab('settings')"><i
+                                                                class="fas fa-cog"></i> Settings</button>
+                                                <button class="tab-btn" onclick="openTab('info')"><i
+                                                                class="fas fa-info-circle"></i> Info</button>
+                                                <button class="tab-btn" onclick="openTab('premium-cmds')"><i
+                                                                class="fas fa-crown"></i> Premium</button>
+                                        </div>
+
+                                        <div id="music" class="tab-content active">
+                                                <div class="grid-3">
+                                                        <div class="card command-card">
+                                                                <code>/play [query]</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Play music from any source"
+                                                                        data-th="เล่นเพลงจากแหล่งต่างๆ">Play music from
+                                                                        any source</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/pause</code>
+                                                                <span class="lang-text" data-en="Pause/Resume playback"
+                                                                        data-th="หยุด/เล่นต่อ">Pause/Resume
+                                                                        playback</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/skip</code>
+                                                                <span class="lang-text" data-en="Skip current track"
+                                                                        data-th="ข้ามเพลงปัจจุบัน">Skip current
+                                                                        track</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/stop</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Stop playback and disconnect"
+                                                                        data-th="หยุดเล่นและตัดการเชื่อมต่อ">Stop
+                                                                        playback and disconnect</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/volume [1-200]</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Set music volume (Premium: up to 200%)"
+                                                                        data-th="ปรับระดับเสียง (พรีเมียม: ถึง 200%)">Set
+                                                                        music volume</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/queue</code>
+                                                                <span class="lang-text" data-en="Show current queue"
+                                                                        data-th="แสดงคิวเพลง">Show current queue</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/nowplaying</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Show currently playing song"
+                                                                        data-th="แสดงเพลงที่กำลังเล่น">Show currently
+                                                                        playing song</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/shuffle</code>
+                                                                <span class="lang-text" data-en="Shuffle the queue"
+                                                                        data-th="สลับคิวเพลง">Shuffle the queue</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/lyrics</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Show lyrics for current song"
+                                                                        data-th="แสดงเนื้อเพลง">Show lyrics</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/join</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Join your voice channel"
+                                                                        data-th="เข้าร่วมช่องเสียง">Join voice
+                                                                        channel</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/leave</code>
+                                                                <span class="lang-text" data-en="Disconnect from voice"
+                                                                        data-th="ออกจากช่องเสียง">Disconnect from
+                                                                        voice</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/seek [time]</code>
+                                                                <span class="lang-text" data-en="Seek to specific time"
+                                                                        data-th="กรอไปยังเวลาที่ต้องการ">Seek to
+                                                                        time</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/remove [position]</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Remove track from queue"
+                                                                        data-th="ลบเพลงออกจากคิว">Remove from
+                                                                        queue</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/loop [mode]</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Repeat current song or queue"
+                                                                        data-th="วนลูปเพลงหรือคิว">Repeat
+                                                                        track/queue</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/skipto [position]</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Skip to specific song in queue"
+                                                                        data-th="ข้ามไปยังเพลงที่กำหนด">Skip to specific
+                                                                        song</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/move [from] [to]</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Change track position in queue"
+                                                                        data-th="ย้ายตำแหน่งเพลงในคิว">Move track in
+                                                                        queue</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/history</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Show recently played songs"
+                                                                        data-th="แสดงประวัติเพลงที่เล่นไปแล้ว">Recently
+                                                                        played</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/removedupes</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Remove duplicates from queue"
+                                                                        data-th="ลบเพลงซ้ำในคิว">Remove
+                                                                        duplicates</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/clear</code>
+                                                                <span class="lang-text" data-en="Clear the queue"
+                                                                        data-th="ล้างคิวทั้งหมด">Clear queue</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/grab</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Save current track to DM"
+                                                                        data-th="บันทึกเพลงไปยัง DM">Save track to
+                                                                        DM</span>
+                                                        </div>
+                                                </div>
+                                        </div>
+
+                                        <div id="filter" class="tab-content">
+                                                <div class="grid-3">
+                                                        <div class="card command-card">
+                                                                <code>/nightcore</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Nightcore effect (Vote Required)"
+                                                                        data-th="เปิดโหมด Nightcore (ต้องโหวต)">Nightcore
+                                                                        effect</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/vaporwave</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Vaporwave effect (Vote Required)"
+                                                                        data-th="เปิดโหมด Vaporwave (ต้องโหวต)">Vaporwave
+                                                                        effect</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/8d</code>
+                                                                <span class="lang-text"
+                                                                        data-en="8D Audio effect (Vote Required)"
+                                                                        data-th="เปิดโหมด 8D (ต้องโหวต)">8D Audio
+                                                                        effect</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/speed</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Set playback speed (Premium)"
+                                                                        data-th="ปรับความเร็วเพลง (พรีเมียม)">Set
+                                                                        playback speed</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/karaoke</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Remove vocals (Premium)"
+                                                                        data-th="ตัดเสียงร้อง (พรีเมียม)">Remove
+                                                                        vocals</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/tremolo</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Tremolo effect (Premium)"
+                                                                        data-th="เอฟเฟกต์ Tremolo (พรีเมียม)">Tremolo
+                                                                        effect</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/vibrato</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Vibrato effect (Premium)"
+                                                                        data-th="เอฟเฟกต์ Vibrato (พรีเมียม)">Vibrato
+                                                                        effect</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/rotation</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Rotation effect (Premium)"
+                                                                        data-th="เอฟเฟกต์หมุนเสียง (พรีเมียม)">Rotation
+                                                                        effect</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/distortion</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Distortion effect (Premium)"
+                                                                        data-th="เอฟเฟกต์ Distortion (พรีเมียม)">Distortion
+                                                                        effect</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/lowpass</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Lowpass filter (Premium)"
+                                                                        data-th="Lowpass Filter (พรีเมียม)">Lowpass
+                                                                        filter</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/channelmix</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Channel mixer (Premium)"
+                                                                        data-th="ปรับแต่ง Channel (พรีเมียม)">Channel
+                                                                        mixer</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/cleareffect</code>
+                                                                <span class="lang-text" data-en="Remove all effects"
+                                                                        data-th="ลบเอฟเฟกต์ทั้งหมด">Remove all
+                                                                        effects</span>
+                                                        </div>
+                                                </div>
+                                        </div>
+
+                                        <div id="settings" class="tab-content">
+                                                <div class="grid-3">
+                                                        <div class="card command-card">
+                                                                <code>/setup</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Create music request channel"
+                                                                        data-th="สร้างห้องขอเพลง">Create music
+                                                                        request</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/247</code>
+                                                                <span class="lang-text"
+                                                                        data-en="Toggle 24/7 mode (Premium)"
+                                                                        data-th="โหมด 24/7 (พรีเมียม)">Toggle 24/7
+                                                                        mode</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/autoplay</code>
+                                                                <span class="lang-text" data-en="Toggle autoplay mode"
+                                                                        data-th="เล่นอัตโนมัติ">Toggle autoplay</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/language</code>
+                                                                <span class="lang-text" data-en="Change bot language"
+                                                                        data-th="เปลี่ยนภาษา">Change bot language</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/prefix</code>
+                                                                <span class="lang-text" data-en="Change bot prefix"
+                                                                        data-th="เปลี่ยนคำนำหน้า">Change bot
+                                                                        prefix</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/djrole</code>
+                                                                <span class="lang-text" data-en="Set DJ Role"
+                                                                        data-th="ตั้งค่า DJ Role">Set DJ Role</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/djmode</code>
+                                                                <span class="lang-text" data-en="Toggle DJ Mode"
+                                                                        data-th="เปิด-ปิดโหมด DJ">Toggle DJ Mode</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/vote_mode</code>
+                                                                <span class="lang-text" data-en="Toggle Vote Mode"
+                                                                        data-th="เปิด-ปิดโหมดโหวต">Toggle Vote
+                                                                        Mode</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/viewsettings</code>
+                                                                <span class="lang-text"
+                                                                        data-en="View server configuration"
+                                                                        data-th="ดูการตั้งค่าทั้งหมด">View
+                                                                        settings</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/fix</code>
+                                                                <span class="lang-text" data-en="Fix voice connection"
+                                                                        data-th="แก้ปัญหาเสียงหาย">Fix voice
+                                                                        issues</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/voicefix</code>
+                                                                <span class="lang-text" data-en="Force reconnect voice"
+                                                                        data-th="บังคับเชื่อมต่อใหม่">Force
+                                                                        reconnect</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/cleanup</code>
+                                                                <span class="lang-text" data-en="Clean bot messages"
+                                                                        data-th="ลบข้อความบอท">Clean bot messages</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/reset</code>
+                                                                <span class="lang-text" data-en="Reset server settings"
+                                                                        data-th="รีเซ็ตการตั้งค่า">Reset settings</span>
+                                                        </div>
+                                                </div>
+                                        </div>
+
+                                        <div id="info" class="tab-content">
+                                                <div class="grid-3">
+                                                        <div class="card command-card">
+                                                                <code>/help</code>
+                                                                <span class="lang-text" data-en="Show help menu"
+                                                                        data-th="แสดงเมนูช่วยเหลือ">Show help
+                                                                        menu</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/ping</code>
+                                                                <span class="lang-text" data-en="Check bot latency"
+                                                                        data-th="เช็คปิงบอท">Check bot latency</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/uptime</code>
+                                                                <span class="lang-text" data-en="Check bot uptime"
+                                                                        data-th="เช็คระยะเวลาที่เปิด">Check bot
+                                                                        uptime</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/stats</code>
+                                                                <span class="lang-text" data-en="Show system stats"
+                                                                        data-th="แสดงสถานะระบบ">Show system stats</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/botinfo</code>
+                                                                <span class="lang-text" data-en="Bot information"
+                                                                        data-th="ข้อมูลบอท">Bot information</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/serverinfo</code>
+                                                                <span class="lang-text" data-en="Server information"
+                                                                        data-th="ข้อมูลเซิร์ฟเวอร์">Server info</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/userinfo</code>
+                                                                <span class="lang-text" data-en="User information"
+                                                                        data-th="ข้อมูลผู้ใช้">User info</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/avatar</code>
+                                                                <span class="lang-text" data-en="Show user avatar"
+                                                                        data-th="ดูรูปโปรไฟล์">Show avatar</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/invite</code>
+                                                                <span class="lang-text" data-en="Invite bot to server"
+                                                                        data-th="เชิญบอทเข้าเซิร์ฟ">Invite bot</span>
+                                                        </div>
+                                                </div>
+                                        </div>
+
+                                        <div id="premium-cmds" class="tab-content">
+                                                <div class="grid-3">
+                                                        <div class="card command-card">
+                                                                <code>/buy</code>
+                                                                <span class="lang-text" data-en="Buy premium plans"
+                                                                        data-th="ซื้อแพ็คเกจพรีเมียม">Buy premium</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/redeem</code>
+                                                                <span class="lang-text" data-en="Redeem premium code"
+                                                                        data-th="แลกโค้ดพรีเมียม">Redeem code</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/branding</code>
+                                                                <span class="lang-text" data-en="Customize bot branding"
+                                                                        data-th="ปรับแต่งแบรนด์บอท">Bot branding</span>
+                                                        </div>
+                                                        <div class="card command-card">
+                                                                <code>/premium</code>
+                                                                <span class="lang-text" data-en="Check premium status"
+                                                                        data-th="ดูสถานะพรีเมียม">Check status</span>
+                                                        </div>
+                                                </div>
+                                        </div>
+                                </div>
+                        </div>
+                </section>
+
+                <!-- Premium Pricing -->
+                <section id="premium" class="section premium-showcase">
+                        <div class="container">
+                                <div class="section-header">
+                                        <span class="hero-badge lang-text" data-en="Unlock Potential"
+                                                data-th="ปลดล็อคขีดจำกัด">Unlock Potential</span>
+                                        <h2 class="section-title lang-text" data-en="Simple Pricing"
+                                                data-th="ราคาที่เข้าถึงง่าย">Simple Pricing</h2>
+                                </div>
+
+                                <div class="grid-3"
+                                        style="align-items: center; justify-content: center; max-width: 1000px; margin: 0 auto;">
+
+                                        <!-- Monthly -->
+                                        <div class="pricing-card">
+                                                <h3 class="pricing-title lang-text" data-en="Starter"
+                                                        data-th="เริ่มต้น">Starter</h3>
+                                                <span class="pricing-amount">29<span
+                                                                style="font-size: 1rem;">฿</span></span>
+                                                <span class="pricing-period lang-text" data-en="/ Month"
+                                                        data-th="/ เดือน">/ Month</span>
+
+                                                <ul class="features-list">
+                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
+                                                                        data-en="24/7 Mode" data-th="โหมด 24/7">24/7
+                                                                        Mode</span></li>
+                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
+                                                                        data-en="Basic Filters"
+                                                                        data-th="ฟิลเตอร์พื้นฐาน">Basic Filters</span>
+                                                        </li>
+                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
+                                                                        data-en="High Quality"
+                                                                        data-th="เสียงคุณภาพสูง">High Quality</span>
+                                                        </li>
+                                                </ul>
+
+                                                <a href="payment.html" class="btn btn-glass" style="width: 100%;">
+                                                        <span class="lang-text" data-en="Choose Plan"
+                                                                data-th="เลือกแผนนี้">Choose Plan</span>
+                                                </a>
+                                        </div>
+
+                                        <!-- Lifetime (Featured) -->
+                                        <div class="pricing-card featured">
+                                                <div
+                                                        style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); background: var(--accent-primary); color: black; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.8rem;">
+                                                        BEST VALUE
+                                                </div>
+                                                <h3 class="pricing-title lang-text" data-en="Lifetime" data-th="ถาวร">
+                                                        Lifetime</h3>
+                                                <span class="pricing-amount">789<span
+                                                                style="font-size: 1rem;">฿</span></span>
+                                                <span class="pricing-period lang-text" data-en="One-time Payment"
+                                                        data-th="จ่ายครั้งเดียวจบ">One-time Payment</span>
+
+                                                <ul class="features-list">
+                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
+                                                                        data-en="Everything in Starter"
+                                                                        data-th="ทุกอย่างในแพ็กเกจเริ่มต้น">Everything
+                                                                        in Starter</span></li>
+                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
+                                                                        data-en="Server-wide Premium"
+                                                                        data-th="พรีเมียมทั้งเซิร์ฟเวอร์">Server-wide
+                                                                        Premium</span></li>
+                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
+                                                                        data-en="Custom Branding"
+                                                                        data-th="ปรับแต่งชื่อ/รูปบอท">Custom
+                                                                        Branding</span></li>
+                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
+                                                                        data-en="Priority Support"
+                                                                        data-th="ซัพพอร์ตด่วนพิเศษ">Priority
+                                                                        Support</span></li>
+                                                </ul>
+
+                                                <a href="payment.html" class="btn btn-primary" style="width: 100%;">
+                                                        <span class="lang-text" data-en="Get Lifetime"
+                                                                data-th="จัดเลย! ถาวร">Get Lifetime</span>
+                                                </a>
+                                        </div>
+
+                                        <!-- Yearly -->
+                                        <div class="pricing-card">
+                                                <h3 class="pricing-title lang-text" data-en="Yearly" data-th="รายปี">
+                                                        Yearly</h3>
+                                                <span class="pricing-amount">289<span
+                                                                style="font-size: 1rem;">฿</span></span>
+                                                <span class="pricing-period lang-text" data-en="/ Year" data-th="/ ปี">/
+                                                        Year</span>
+
+                                                <ul class="features-list">
+                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
+                                                                        data-en="Save 15%" data-th="ประหยัด 15%">Save
+                                                                        15%</span></li>
+                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
+                                                                        data-en="All Features" data-th="ฟีเจอร์ครบ">All
+                                                                        Features</span></li>
+                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
+                                                                        data-en="Unique Badge" data-th="ยศพิเศษ">Unique
+                                                                        Badge</span></li>
+                                                </ul>
+
+                                                <a href="payment.html" class="btn btn-glass" style="width: 100%;">
+                                                        <span class="lang-text" data-en="Choose Plan"
+                                                                data-th="เลือกแผนนี้">Choose Plan</span>
+                                                </a>
+                                        </div>
+
+                                </div>
+                        </div>
+                </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer>
+                <div class="container">
+                        <div class="footer-content">
+                                <div class="footer-brand">
+                                        <div class="brand">
+                                                <img src="logo-circle.png" alt="Cyori" class="brand-logo">
+                                                <span class="brand-name">Cyori</span>
+                                        </div>
+                                        <p class="lang-text"
+                                                data-en="The ultimate music experience for your Discord server. Remade for performance and style."
+                                                data-th="ประสบการณ์การฟังเพลงที่ดีที่สุดสำหรับ Discord ของคุณ ออกแบบใหม่เพื่อประสิทธิภาพและสไตล์ที่เหนือกว่า">
+                                                The ultimate music experience.
+                                        </p>
+                                </div>
+
+                                <div class="footer-col">
+                                        <h4 class="lang-text" data-en="Product" data-th="ผลิตภัณฑ์">Product</h4>
+                                        <ul>
+                                                <li><a href="#features" class="lang-text" data-en="Features"
+                                                                data-th="ฟีเจอร์">Features</a></li>
+                                                <li><a href="premium.html" class="lang-text" data-en="Premium"
+                                                                data-th="พรีเมียม">Premium</a></li>
+                                                <li><a href="dashboard.html" class="lang-text" data-en="Dashboard"
+                                                                data-th="แดชบอร์ด">Dashboard</a></li>
+                                        </ul>
+                                </div>
+
+                                <div class="footer-col">
+                                        <h4 class="lang-text" data-en="Resources" data-th="ทรัพยากร">Resources</h4>
+                                        <ul>
+                                                <li><a href="documentation.html" class="lang-text"
+                                                                data-en="Documentation"
+                                                                data-th="คู่มือการใช้">Documentation</a></li>
+                                                <li><a href="#" class="lang-text" data-en="API Status"
+                                                                data-th="สถานะระบบ">API Status</a></li>
+                                                <li><a href="https://discord.gg/jcJ2P6Bh2p" class="lang-text"
+                                                                data-en="Community" data-th="ชุมชน">Community</a></li>
+                                        </ul>
+                                </div>
+
+                                <div class="footer-col">
+                                        <h4 class="lang-text" data-en="Legal" data-th="กฎหมาย">Legal</h4>
+                                        <ul>
+                                                <li><a href="privacy.html" class="lang-text" data-en="Privacy Policy"
+                                                                data-th="นโยบายความเป็นส่วนตัว">Privacy Policy</a></li>
+                                                <li><a href="terms.html" class="lang-text" data-en="Terms of Service"
+                                                                data-th="ข้อตกลงการใช้บริการ">Terms of Service</a></li>
+                                        </ul>
+                                </div>
+                        </div>
+
+                        <div class="copyright lang-text" data-en="© 2026 Cytech Team. All rights reserved."
+                                data-th="© 2026 Cytech Team สงวนลิขสิทธิ์">
+                                © 2026 Cytech Team. All rights reserved.
+                        </div>
+                </div>
+        </footer>
+
+        <!-- Overlay for mobile menu -->
+        <div class="menu-overlay"></div>
+
+        <!-- Script -->
+        <script src="script.js?v=4.0"></script>
+</body>
+
+</html>

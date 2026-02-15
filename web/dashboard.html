@@ -1,0 +1,373 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Cyori</title>
+    <link rel="icon" href="logo-circle.png" type="image/png">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <!-- Open Graph / Social Media Embed -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://cyori.pages.dev/">
+    <meta property="og:title" content="Cyori - The Next-Gen Discord Music Bot">
+    <meta property="og:description"
+        content="The ultimate high-fidelity Discord music bot with a high-performance audio engine.">
+    <meta property="og:image"
+        content="https://cdn.discordapp.com/banners/1469606905948405833/3b84c3a7799d846229b2b5b2921ed270.png?size=1024">
+    <meta name="theme-color" content="#D4AF37">
+</head>
+
+<body>
+    <!-- Background Elements -->
+    <div class="bg-gradient"></div>
+    <div class="mesh-grid"></div>
+
+    <!-- Header (Standard) -->
+    <header id="header">
+        <div class="container">
+            <a href="index.html" class="brand">
+                <img src="logo-circle.png" alt="Cyori" class="brand-logo">
+                <span class="brand-name">Cyori</span>
+            </a>
+
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html#hero" class="nav-link lang-text" data-en="Home" data-th="หน้าแรก">Home</a>
+                    </li>
+                    <li><a href="index.html#features" class="nav-link lang-text" data-en="Features"
+                            data-th="ฟีเจอร์">Features</a></li>
+                    <li><a href="index.html#commands" class="nav-link lang-text" data-en="Commands"
+                            data-th="คำสั่ง">Commands</a></li>
+                    <li><a href="dashboard.html" class="nav-link active lang-text" data-en="Dashboard"
+                            data-th="แผงควบคุม">Dashboard</a></li>
+                    <li><a href="premium.html" class="nav-link lang-text" data-en="Premium"
+                            data-th="พรีเมียม">Premium</a></li>
+                </ul>
+            </nav>
+
+            <div class="header-actions">
+                <div class="lang-switch">
+                    <button id="lang-btn" onclick="toggleLanguage()" class="btn-glass"
+                        style="padding: 8px 16px; border-radius: 20px;">
+                        <i class="fas fa-globe"></i> <span id="curr-lang">EN</span>
+                    </button>
+                </div>
+
+                <a href="#" class="btn btn-primary login-btn" onclick="login()">
+                    <i class="fab fa-discord"></i>
+                    <span class="lang-text" data-en="Login" data-th="เข้าสู่ระบบ">Login</span>
+                </a>
+
+                <div class="hamburger mobile-toggle" onclick="toggleMenu()">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 1. LOGIN WALL -->
+    <div id="login-wall" class="login-wall" style="display: none; padding-top: 150px; text-align: center;">
+        <div class="container">
+            <h1 class="lang-text" data-en="Login to Dashboard" data-th="เข้าสู่ระบบ Dashboard"
+                style="font-size: 3rem; margin-bottom: 20px;">Login to Dashboard</h1>
+            <p class="lang-text" style="color: var(--text-muted); margin-bottom: 40px; font-size: 1.2rem;"
+                data-en="Control music, manage queue, and more." data-th="ควบคุมเพลง จัดการคิว และอื่นๆ">
+                Control music, manage queue, and more.
+            </p>
+            <button class="btn btn-primary" onclick="login()" style="font-size: 1.2rem; padding: 15px 40px;">
+                <i class="fab fa-discord"></i> <span class="lang-text" data-en="Login with Discord"
+                    data-th="เข้าสู่ระบบด้วย Discord">Login with Discord</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. DASHBOARD MAIN AREA -->
+    <main class="container" id="dashboard-container" style="display: none; padding-top: 120px;">
+        <div class="dashboard-grid">
+
+            <!-- SIDEBAR -->
+            <aside class="sidebar">
+                <div class="user-profile-mini"
+                    style="text-align: center; padding-bottom: 20px; border-bottom: 1px solid var(--glass-border);">
+                    <img id="user-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="User"
+                        style="width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--gold-primary); margin-bottom: 10px;">
+                    <h3 id="user-name" style="margin-bottom: 5px;">Guest</h3>
+                    <p id="user-discriminator" style="color: var(--text-muted); font-size: 0.9rem;">#0000</p>
+                </div>
+
+                <ul class="sidebar-menu" style="margin-top: 20px; list-style: none; padding: 0;">
+                    <li>
+                        <a href="#" class="sidebar-btn active" onclick="switchTab('player', this)">
+                            <i class="fas fa-play-circle"></i> <span class="lang-text" data-en="Player"
+                                data-th="เครื่องเล่น">Player</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-btn" onclick="switchTab('queue', this)">
+                            <i class="fas fa-list-ol"></i> <span class="lang-text" data-en="Queue"
+                                data-th="คิวเพลง">Queue</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="settings.html" class="sidebar-btn">
+                            <i class="fas fa-cog"></i> <span class="lang-text" data-en="Settings"
+                                data-th="ตั้งค่า">Settings</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- BOT STATS -->
+                <div class="bot-stats-mini"
+                    style="margin-top: 30px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                    <h4 style="color: var(--gold-dim); margin-bottom: 15px; font-size: 0.8rem; letter-spacing: 1px;">
+                        SYSTEM STATUS</h4>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.9rem;">
+                        <span style="color: var(--text-muted);"><i class="fas fa-server"></i> Servers</span>
+                        <span id="dash-server-count" style="color: var(--gold-primary);">...</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                        <span style="color: var(--text-muted);"><i class="fas fa-users"></i> Users</span>
+                        <span id="dash-user-count" style="color: var(--gold-primary);">...</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- MAIN CONTENT AREA -->
+            <section class="player-main">
+
+                <!-- TAB: PLAYER -->
+                <div id="tab-player" class="dash-tab-content">
+                    <div class="search-section-top" style="margin-bottom: 30px;">
+                        <div class="search-box-wrapper"
+                            style="display: flex; gap: 10px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 12px; border: 1px solid var(--glass-border);">
+                            <input type="text" id="song-input" class="form-control"
+                                style="margin: 0; background: transparent; border: none;"
+                                placeholder="Search or Paste URL..."
+                                onkeydown="if(event.key === 'Enter') performSearch()">
+                            <button class="btn btn-primary" onclick="performSearch()" style="border-radius: 8px;">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="now-playing-panel" style="text-align: center;">
+                        <div style="position: relative; display: inline-block;">
+                            <img id="np-art"
+                                src="https://cdn.discordapp.com/banners/1469606905948405833/3b84c3a7799d846229b2b5b2921ed270.png?size=1024"
+                                alt="Album Art" class="now-playing-art"
+                                style="max-width: 520px; width: 100%; height: auto; border-radius: 16px; border: 1px solid rgba(212, 175, 55, 0.3); box-shadow: 0 20px 60px rgba(0,0,0,0.7); object-fit: contain;">
+                            <div class="live-badge"
+                                style="position: absolute; top: 10px; right: 10px; background: red; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; display: none;">
+                                LIVE</div>
+                        </div>
+
+                        <div class="track-info" style="margin-top: 25px;">
+                            <h2 id="np-title" style="font-size: 1.8rem;">No music playing</h2>
+                            <p id="np-artist" style="color: var(--gold-dim); font-size: 1.1rem; margin-top: 5px;">Ready
+                                to play</p>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="progress-container" style="margin: 30px 0;">
+                            <div class="progress-bar" id="progress-bar" onclick="seekTrack(event)">
+                                <div class="progress-fill" id="progress-fill"></div>
+                            </div>
+                            <div
+                                style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">
+                                <span id="current-time">0:00</span>
+                                <span id="total-duration">--:--</span>
+                            </div>
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="controls" style="gap: 20px;">
+                            <button class="control-btn" onclick="control('prev')" title="Previous"><i
+                                    class="fas fa-step-backward"></i></button>
+                            <button class="control-btn play-btn" onclick="control('playpause')" id="btn-playpause"
+                                title="Play/Pause" style="width: 80px; height: 80px; font-size: 2rem;"><i
+                                    class="fas fa-play" id="play-icon"></i></button>
+                            <button class="control-btn" onclick="control('stop')" title="Stop"><i
+                                    class="fas fa-stop"></i></button>
+                            <button class="control-btn" onclick="control('next')" title="Next"><i
+                                    class="fas fa-step-forward"></i></button>
+                        </div>
+
+                        <div class="controls-secondary"
+                            style="margin-top: 30px; display: flex; justify-content: center; gap: 20px;">
+                            <button class="btn-glass" onclick="control('shuffle')" id="btn-shuffle" title="Shuffle"
+                                style="width: 40px; height: 40px; border-radius: 50%;"><i
+                                    class="fas fa-random"></i></button>
+                            <button class="btn-glass" onclick="control('loop')" id="btn-loop" title="Loop"
+                                style="width: 40px; height: 40px; border-radius: 50%;"><i
+                                    class="fas fa-redo"></i></button>
+                            <div class="volume-control"
+                                style="display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 5px 15px; border-radius: 20px;">
+                                <i class="fas fa-volume-up" style="color: var(--text-muted);"></i>
+                                <input type="range" min="0" max="100" value="100" class="volume-slider"
+                                    style="position: relative; width: 80px;" oninput="control('volume', this.value)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: QUEUE -->
+                <div id="tab-queue" class="dash-tab-content" style="display: none;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 class="lang-text" data-en="Current Queue" data-th="คิวเพลงปัจจุบัน">Current Queue</h3>
+                        <button class="btn-glass" onclick="control('clear')"
+                            style="font-size: 0.9rem; padding: 5px 15px;"><i class="fas fa-trash"></i> Clear</button>
+                    </div>
+                    <div id="queue-list" class="queue-list" style="max-height: 500px; overflow-y: auto;">
+                        <div class="queue-empty" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                            <i class="fas fa-music" style="font-size: 3rem; margin-bottom: 10px; opacity: 0.3;"></i>
+                            <p>Queue is empty</p>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </main>
+
+    <!-- FOOTER (Full Version) -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="brand">
+                        <img src="logo-circle.png" alt="Cyori" class="brand-logo">
+                        <span class="brand-name">Cyori</span>
+                    </div>
+                    <p class="lang-text"
+                        data-en="The ultimate music experience for your Discord server. Remade for performance and style."
+                        data-th="ประสบการณ์การฟังเพลงที่ดีที่สุดสำหรับ Discord ของคุณ ออกแบบใหม่เพื่อประสิทธิภาพและสไตล์ที่เหนือกว่า">
+                        The ultimate music experience.
+                    </p>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="lang-text" data-en="Product" data-th="ผลิตภัณฑ์">Product</h4>
+                    <ul>
+                        <li><a href="index.html#features" class="lang-text" data-en="Features"
+                                data-th="ฟีเจอร์">Features</a></li>
+                        <li><a href="premium.html" class="lang-text" data-en="Premium" data-th="พรีเมียม">Premium</a>
+                        </li>
+                        <li><a href="dashboard.html" class="lang-text" data-en="Dashboard"
+                                data-th="แดชบอร์ด">Dashboard</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="lang-text" data-en="Resources" data-th="ทรัพยากร">Resources</h4>
+                    <ul>
+                        <li><a href="documentation.html" class="lang-text" data-en="Documentation"
+                                data-th="คู่มือการใช้">Documentation</a></li>
+                        <li><a href="#" class="lang-text" data-en="API Status" data-th="สถานะระบบ">API Status</a></li>
+                        <li><a href="https://discord.gg/jcJ2P6Bh2p" class="lang-text" data-en="Community"
+                                data-th="ชุมชน">Community</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="lang-text" data-en="Legal" data-th="กฎหมาย">Legal</h4>
+                    <ul>
+                        <li><a href="privacy.html" class="lang-text" data-en="Privacy Policy"
+                                data-th="นโยบายความเป็นส่วนตัว">Privacy Policy</a></li>
+                        <li><a href="terms.html" class="lang-text" data-en="Terms of Service"
+                                data-th="ข้อตกลงการใช้บริการ">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="copyright lang-text" data-en="© 2026 Cytech Team. All rights reserved."
+                data-th="© 2026 Cytech Team สงวนลิขสิทธิ์">
+                © 2026 Cytech Team. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- SEARCH MODAL -->
+    <div id="search-modal" class="modal" style="display: none;">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h3>Search Results</h3>
+                <button class="close-btn"
+                    onclick="document.getElementById('search-modal').style.display='none'">&times;</button>
+            </div>
+            <div id="modal-results-list" class="modal-body">
+                <!-- Results injected here -->
+            </div>
+        </div>
+    </div>
+    <!-- NOTIFICATION MODAL -->
+    <div id="notification-modal" class="modal" style="display: none;">
+        <div class="modal-content glass-effect" style="max-width: 450px;">
+            <div class="modal-header" style="background: rgba(255, 68, 68, 0.1); border-bottom-color: rgba(255, 68, 68, 0.2);">
+                <h3 id="notify-title" style="color: #FF4444;">Alert</h3>
+                <button class="close-btn" onclick="document.getElementById('notification-modal').style.display='none'">&times;</button>
+            </div>
+            <div class="modal-body" style="text-align: center; padding: 30px 20px;">
+                <div id="notify-icon" style="font-size: 3rem; color: #FF4444; margin-bottom: 20px;">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <p id="notify-message" style="font-size: 1.1rem; line-height: 1.6; color: var(--text-main);"></p>
+                <button class="btn btn-primary" style="margin-top: 25px; width: 100%;" onclick="document.getElementById('notification-modal').style.display='none'">
+                    OK / ตกลง
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay for mobile menu -->
+    <div class="menu-overlay"></div>
+
+    <script src="script.js"></script>
+    <script src="dashboard.js"></script>
+    <script>
+        // Simple Tab Switcher for Dashboard
+        function switchTab(tabName, btn) {
+            // Hide all tabs
+            document.querySelectorAll('.dash-tab-content').forEach(el => el.style.display = 'none');
+            // Show target tab
+            document.getElementById('tab-' + tabName).style.display = 'block';
+
+            // Update buttons
+            document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+        }
+
+        // Integration to update stats in sidebar
+        async function updateDashStats() {
+            if (document.hidden) return; // Save requests
+
+            try {
+                // Call the global fetch function if available
+                if (window.fetchGlobalStats) {
+                    await window.fetchGlobalStats();
+                    const s = document.getElementById('stat-servers');
+                    const u = document.getElementById('stat-users');
+
+                    if (s) document.getElementById('dash-server-count').textContent = s.textContent;
+                    if (u) document.getElementById('dash-user-count').textContent = u.textContent;
+                }
+            } catch (e) {
+                console.log(e);
+            }
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            setInterval(updateDashStats, 60000); // 1 minute is enough for global stats
+        });
+    </script>
+</body>
+
+</html>

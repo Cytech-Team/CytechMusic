@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Settings - Cyori</title>
+    <link rel="icon" href="logo-circle.png" type="image/png">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Background Elements -->
+    <div class="bg-gradient"></div>
+    <div class="mesh-grid"></div>
+
+    <!-- Header -->
+    <header id="header">
+        <div class="container">
+            <a href="index.html" class="brand">
+                <img src="logo-circle.png" alt="Cyori" class="brand-logo">
+                <span class="brand-name">Cyori</span>
+            </a>
+
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html#hero" class="nav-link lang-text" data-en="Home" data-th="หน้าแรก">Home</a>
+                    </li>
+                    <li><a href="index.html#features" class="nav-link lang-text" data-en="Features"
+                            data-th="ฟีเจอร์">Features</a></li>
+                    <li><a href="index.html#commands" class="nav-link lang-text" data-en="Commands"
+                            data-th="คำสั่ง">Commands</a></li>
+                    <li><a href="dashboard.html" class="nav-link lang-text" data-en="Dashboard"
+                            data-th="แผงควบคุม">Dashboard</a></li>
+                    <li><a href="premium.html" class="nav-link lang-text" data-en="Premium"
+                            data-th="พรีเมียม">Premium</a></li>
+                </ul>
+            </nav>
+
+            <div class="header-actions">
+                <div class="lang-switch">
+                    <button id="lang-btn" onclick="toggleLanguage()" class="btn-glass"
+                        style="padding: 8px 16px; border-radius: 20px;">
+                        <i class="fas fa-globe"></i> <span id="curr-lang">EN</span>
+                    </button>
+                </div>
+
+                <a href="#" class="btn btn-primary login-btn" onclick="login()">
+                    <i class="fab fa-discord"></i>
+                    <span class="lang-text" data-en="Login" data-th="เข้าสู่ระบบ">Login</span>
+                </a>
+
+                <div class="hamburger mobile-toggle" onclick="toggleMenu()">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
+        <div id="login-wall" class="login-wall" style="padding: 100px 20px; text-align: center;">
+            <i class="fas fa-lock"
+                style="font-size: 5rem; color: var(--gold-primary); margin-bottom: 30px; filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.3));"></i>
+            <h1 class="lang-text" data-en="Manager Vault" data-th="ห้องทำงานผู้ดูแล">Manager Vault</h1>
+            <p class="lang-text" style="color: var(--text-muted); margin-bottom: 40px; font-size: 1.1rem;"
+                data-en="Authenticated access required to manage server core systems."
+                data-th="ต้องผ่านการยืนยันตนเพื่อเข้าจัดการระบบหลักของเซิร์ฟเวอร์">
+                Please login with Discord to continue.
+            </p>
+            <button class="btn btn-primary" onclick="login()" style="padding: 18px 40px; font-size: 1.1rem;">
+                <i class="fab fa-discord"></i> Authenticate via Discord
+            </button>
+        </div>
+
+        <div id="settings-container" style="display: none; padding: 40px 0;">
+
+            <div id="server-selection-screen">
+                <div class="server-header">
+                    <div>
+                        <h2 class="lang-text" data-en="Select Server" data-th="เลือกเซิร์ฟเวอร์">Select Server</h2>
+                        <p class="lang-text" data-en="Choose a server to configure Cyori Music System"
+                            data-th="เลือกเซิร์ฟเวอร์ที่คุณต้องการตั้งค่าระบบเพลง">Choose your server</p>
+                    </div>
+                    <div class="search-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="server-search" placeholder="Search servers..." onkeyup="filterServers()"
+                            class="lang-text" data-en-placeholder="Search servers..."
+                            data-th-placeholder="ค้นหาเซิร์ฟเวอร์...">
+                    </div>
+                </div>
+
+                <div id="loading-servers" style="text-align: center; padding: 100px 0;">
+                    <div class="loader"></div>
+                    <p class="lang-text" data-en="Syncing with Discord..." data-th="กำลังซิงค์ข้อมูลจาก Discord...">
+                        Syncing...</p>
+                    <button class="btn btn-glass lang-text" data-en="Retry if stuck" data-th="ลองใหม่อีกครั้ง"
+                        onclick="loadServerList()" style="margin-top: 20px; font-size: 0.8rem;">Retry</button>
+                </div>
+
+                <div id="server-grid" class="server-grid"></div>
+            </div>
+
+            <div id="settings-content" style="display: none; max-width: 900px; margin: 0 auto;">
+                <button class="back-btn" onclick="closeSettings()">
+                    <i class="fas fa-arrow-left"></i> <span class="lang-text" data-en="Back to Fleet"
+                        data-th="กลับไปหน้าเซิร์ฟเวอร์">Back to Fleet</span>
+                </button>
+
+                <div class="settings-header">
+                    <img id="guild-icon" src="logo-circle.png" class="guild-icon" alt="Server Icon">
+                    <div>
+                        <h2 id="guild-name" class="text-gradient">Server Settings</h2>
+                        <p id="guild-id" style="color: var(--text-muted); font-family: monospace; letter-spacing: 1px;">
+                            ID: -</p>
+                    </div>
+                </div>
+
+                <div class="settings-form">
+                    <div class="form-group" style="margin-bottom: 30px;">
+                        <label class="lang-text" data-en="Command Prefix" data-th="คำนำหน้าคำสั่ง">Command
+                            Prefix</label>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">The character used
+                            to trigger bot commands (Default: !)</p>
+                        <input type="text" id="setting-prefix" placeholder="cm!">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 30px;">
+                        <label class="lang-text" data-en="System Language" data-th="ภาษาของระบบ">System Language</label>
+                        <select id="setting-lang">
+                            <option value="en">English (US)</option>
+                            <option value="th">ภาษาไทย (TH)</option>
+                        </select>
+                    </div>
+
+                    <div
+                        style="background: rgba(255,255,255,0.03); border-radius: 15px; padding: 20px; border: 1px solid var(--glass-border); margin-bottom: 30px;">
+                        <div class="toggle-group">
+                            <div style="flex: 1;">
+                                <h4 class="lang-text" data-en="24/7 Mode" data-th="โหมด 24/7">24/7 Mode</h4>
+                                <p style="font-size: 0.8rem; color: var(--text-muted);">Stay in voice channel forever
+                                    (Premium Only)</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="setting-247">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-group">
+                            <div style="flex: 1;">
+                                <h4 class="lang-text" data-en="Autoplay" data-th="เล่นเพลงอัตโนมัติ">Autoplay</h4>
+                                <p style="font-size: 0.8rem; color: var(--text-muted);">Suggest related songs after
+                                    queue ends</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="setting-autoplay">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-group" style="border-bottom: none;">
+                            <div style="flex: 1;">
+                                <h4 class="lang-text" data-en="DJ Only Mode" data-th="โหมด DJ เท่านั้น">DJ Only Mode
+                                </h4>
+                                <p style="font-size: 0.8rem; color: var(--text-muted);">Only users with DJ role can
+                                    control music</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="setting-dj-mode">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="lang-text" data-en="Managerial Role (DJ)" data-th="บทบาทผู้จัดการเพลง (DJ)">DJ
+                            Role</label>
+                        <select id="setting-dj-role">
+                            <option value="">None (Everyone can control)</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-primary save-bar" onclick="saveSettings()">
+                        <i class="fas fa-save" style="margin-right: 10px;"></i> <span class="lang-text"
+                            data-en="Confirm & Save" data-th="ยืนยันและบันทึก">Confirm & Save Changes</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="brand">
+                        <img src="logo-circle.png" alt="Cyori" class="brand-logo">
+                        <span class="brand-name">Cyori</span>
+                    </div>
+                    <p class="lang-text"
+                        data-en="The ultimate music experience for your Discord server. Remade for performance and style."
+                        data-th="ประสบการณ์การฟังเพลงที่ดีที่สุดสำหรับ Discord ของคุณ ออกแบบใหม่เพื่อประสิทธิภาพและสไตล์ที่เหนือกว่า">
+                        The ultimate music experience.
+                    </p>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="lang-text" data-en="Product" data-th="ผลิตภัณฑ์">Product</h4>
+                    <ul>
+                        <li><a href="index.html#features" class="lang-text" data-en="Features"
+                                data-th="ฟีเจอร์">Features</a></li>
+                        <li><a href="premium.html" class="lang-text" data-en="Premium" data-th="พรีเมียม">Premium</a>
+                        </li>
+                        <li><a href="dashboard.html" class="lang-text" data-en="Dashboard"
+                                data-th="แดชบอร์ด">Dashboard</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="lang-text" data-en="Resources" data-th="ทรัพยากร">Resources</h4>
+                    <ul>
+                        <li><a href="documentation.html" class="lang-text" data-en="Documentation"
+                                data-th="คู่มือการใช้">Documentation</a></li>
+                        <li><a href="#" class="lang-text" data-en="API Status" data-th="สถานะระบบ">API Status</a></li>
+                        <li><a href="https://discord.gg/jcJ2P6Bh2p" class="lang-text" data-en="Community"
+                                data-th="ชุมชน">Community</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="lang-text" data-en="Legal" data-th="กฎหมาย">Legal</h4>
+                    <ul>
+                        <li><a href="privacy.html" class="lang-text" data-en="Privacy Policy"
+                                data-th="นโยบายความเป็นส่วนตัว">Privacy Policy</a></li>
+                        <li><a href="terms.html" class="lang-text" data-en="Terms of Service"
+                                data-th="ข้อตกลงการใช้บริการ">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="copyright lang-text" data-en="© 2026 Cytech Team. All rights reserved."
+                data-th="© 2026 Cytech Team สงวนลิขสิทธิ์">
+                © 2026 Cytech Team. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Overlay for mobile menu -->
+    <div class="menu-overlay"></div>
+
+    <script src="script.js"></script>
+    <script src="settings.js"></script>
+</body>
+
+</html>

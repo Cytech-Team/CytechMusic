@@ -1,0 +1,75 @@
+# Bot Commands Inventory
+# Generated to match website Command Center section
+
+## Music Commands (music.py)
+1. /join - Joins your voice channel
+2. /leave (disconnect, dc) - Disconnect the bot from voice channel
+3. /play [query] (pla, p) - Play music from any source
+4. /nowplaying (np) - Show the currently playing song
+5. /volume [1-200] (vol, v) - Set music volume
+6. /pause (pa, pau, res, unpau) - Pause/Resume playback
+7. /skip (ski, sk) - Skip current track
+8. /skipto [position] (jump) - Skip to specific track
+9. /clear (cl) - Clear the queue
+10. /stop (sto, st) - Stop playback and disconnect
+11. /seek [time] - Seek to specific time
+12. /queue (qu, que) - Show current queue
+13. /remove [position] (rm) - Remove track from queue
+14. /shuffle (sh) - Shuffle the queue
+15. /lyrics (ly) - Show lyrics for current song
+16. /grab (save, yoink) - Save current track to DM
+17. /removedupes (rmd, dedupe) - Remove duplicate tracks
+18. /move [from] [to] (mv) - Move track in queue
+19. /history (played) - Show recently played songs
+
+## Filter Commands (filter.py)
+1. /speed [0.1-2.0] - Set playback speed (PREMIUM)
+2. /karaoke - Apply karaoke effect (PREMIUM)
+3. /tremolo - Apply tremolo effect (PREMIUM)
+4. /vibrato - Apply vibrato effect (PREMIUM)
+5. /rotation - Apply rotation effect (8D audio) (PREMIUM)
+6. /distortion - Apply distortion effect (PREMIUM)
+7. /lowpass - Apply lowpass filter (PREMIUM)
+8. /channelmix - Mix audio channels (PREMIUM)
+9. /nightcore - Apply Nightcore effect (VOTE)
+10. /8d (eightD) - Apply 8D Audio effect (VOTE)
+11. /vaporwave - Apply Vaporwave effect (VOTE)
+12. /cleareffect [effect] - Clear sound effects
+
+## Info Commands (info.py)
+1. /help - Show help info and command list
+2. /ping - Check bot latency
+3. /uptime - Check bot uptime
+4. /stats - Show system & node stats
+5. /botinfo - Show bot information
+6. /avatar [member] - Show member's avatar
+7. /serverinfo - Show server information
+8. /userinfo [member] - Show user information
+9. /invite - Invite the bot to your server
+
+## Settings Commands (settings.py)
+1. /reset - Reset settings to default
+2. /setup - Create music request channel
+3. /prefix [new_prefix] - Change bot prefix
+4. /language [en/th] - Change bot language
+5. /247 - Toggle 24/7 mode (PREMIUM)
+6. /autoplay - Toggle Autoplay (VOTE)
+7. /djrole [role] - Set DJ Role
+8. /djmode - Toggle DJ Mode (Strict Mode)
+9. /vote_mode - Toggle Vote Mode
+10. /viewsettings (settings, config) - View current server settings
+11. /fix - Fix voice connection issues
+12. /voicefix - Force Reconnect Voice
+13. /cleanup [amount] - Clean up bot messages
+
+## Premium Commands (premium.py)
+1. /redeem [code] - Redeem premium code
+2. /branding - Customize Bot Appearance & Music Embed (PREMIUM)
+
+## Payment Commands (payment.py)
+- Internal webhook handling only
+
+## Dashboard API (dashboard_api.py)
+- Internal API only
+
+## Owner Commands (owner.py) - NOT INCLUDED IN WEBSITE
