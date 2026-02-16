@@ -209,6 +209,15 @@ class DashboardAPI(commands.Cog):
         
         try:
             skip_update = False 
+            member = guild.get_member(int(user_id)) if user_id and str(user_id).isdigit() else None
+            
+            # 1. Voice Channel Logic (Security + UX)
+            if action in ["pause", "skip", "stop", "volume", "shuffle", "loop", "random", "play"]:
+                if not member or not member.voice or not member.voice.channel:
+                    return web.json_response({'error': 'You must be in a voice channel to use this command! / คุณต้องอยู่ในห้องเสียงเพื่อใช้คำสั่งนี้'}, status=403, headers=self.cors_headers)
+                
+                if player and member.voice.channel.id != player.channel.id:
+                    return web.json_response({'error': 'You must be in the same voice channel as the bot! / คุณต้องอยู่ในห้องเสียงเดียวกับบอท'}, status=403, headers=self.cors_headers)
 
             if action == "random":
                 import random
@@ -256,7 +265,6 @@ class DashboardAPI(commands.Cog):
                 query = value
                 print(f"[Dashboard] Play Request: {query} (User: {user_id})")
                 
-                member = guild.get_member(int(user_id)) if user_id and str(user_id).isdigit() else None
                 target_channel = None
 
                 # 1. Resolve Text Channel for feedback

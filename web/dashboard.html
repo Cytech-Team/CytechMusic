@@ -152,18 +152,24 @@
                 <div id="tab-player" class="dash-tab-content">
                     <div class="search-section-top" style="margin-bottom: 30px;">
                         <div class="search-box-wrapper"
-                            style="display: flex; gap: 10px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 12px; border: 1px solid var(--glass-border);">
+                            style="display: flex; gap: 15px; background: rgba(0,0,0,0.5); padding: 8px 15px; border-radius: 16px; border: 1px solid var(--gold-primary-faded); box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
+                            <i class="fas fa-search" style="align-self: center; color: var(--gold-dim);"></i>
                             <input type="text" id="song-input" class="form-control"
-                                style="margin: 0; background: transparent; border: none;"
+                                style="margin: 0; background: transparent; border: none; flex: 1; padding: 5px 0;"
                                 placeholder="Search or Paste URL..."
                                 onkeydown="if(event.key === 'Enter') performSearch()">
-                            <button class="btn btn-primary" onclick="performSearch()" style="border-radius: 8px;">
-                                <i class="fas fa-search"></i>
-                            </button>
-                            <button class="btn btn-gold" onclick="playRandom()" style="border-radius: 8px;"
-                                title="Surprise Me / สุ่มเพลง">
-                                <i class="fas fa-dice"></i>
-                            </button>
+                            <div
+                                style="display: flex; gap: 8px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
+                                <button class="btn-glass" onclick="performSearch()"
+                                    style="width: 38px; height: 38px; border-radius: 10px; background: var(--button-primary);">
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                                <button class="btn btn-gold" onclick="playRandom()"
+                                    style="width: 38px; height: 38px; border-radius: 10px;"
+                                    title="Surprise Me / สุ่มเพลง">
+                                    <i class="fas fa-dice"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -249,6 +255,9 @@
                             <button class="btn-glass" onclick="control('loop')" id="btn-loop" title="Loop"
                                 style="width: 40px; height: 40px; border-radius: 50%;"><i
                                     class="fas fa-redo"></i></button>
+                            <button class="btn-glass" onclick="playRandom()" id="btn-random-bar"
+                                title="Random / สุ่มเพลง" style="width: 40px; height: 40px; border-radius: 50%;"><i
+                                    class="fas fa-dice"></i></button>
                             <button class="btn-glass" onclick="addToFavorite()" id="btn-favorite"
                                 title="Add to Favorites" style="width: 40px; height: 40px; border-radius: 50%;"><i
                                     class="far fa-heart"></i></button>
