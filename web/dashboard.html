@@ -175,18 +175,19 @@
                         </div>
                     </div>
 
-                    <!-- RECOMMENDED CLIPS (YouTube Music Style) -->
-                    <div class="recommended-section" style="margin-bottom: 40px;">
+                    <!-- PREMIUM RECOMMENDED AREA -->
+                    <div class="recommended-section">
                         <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h3 style="font-size: 1.2rem; display: flex; align-items: center; gap: 10px;">
-                                <i class="fas fa-sparkles" style="color: var(--gold-primary);"></i>
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3 class="text-gradient"
+                                style="font-size: 1.4rem; display: flex; align-items: center; gap: 12px; margin: 0;">
+                                <i class="fas fa-magic"></i>
                                 <span class="lang-text" data-en="Recommended for you"
                                     data-th="แนะนำสำหรับคุณ">Recommended for you</span>
                             </h3>
-                            <button class="btn-glass" onclick="fetchRecommendations()"
-                                style="font-size: 0.8rem; padding: 4px 10px;">
-                                <i class="fas fa-sync-alt"></i> Refresh
+                            <button class="btn-refresh-mini" onclick="fetchRecommendations()">
+                                <i class="fas fa-sync-alt"></i>
+                                <span class="lang-text" data-en="Refresh" data-th="รีเฟรช">Refresh</span>
                             </button>
                         </div>
                         <div id="recommended-list" class="recommended-list">

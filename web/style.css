@@ -597,12 +597,40 @@ header .container {
 }
 
 /* --- DASHBOARD SPECIFIC --- */
-/* Recommended Section Styles */
+/* --- PREMIUM RECOMMENDED SECTION --- */
+.recommended-section {
+    background: rgba(20, 20, 20, 0.4);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 25px;
+    margin-bottom: 40px;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.6);
+    position: relative;
+    overflow: hidden;
+}
+
+.recommended-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--gold-metallic);
+    opacity: 0.5;
+}
+
 .recommended-list {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
+    gap: 15px;
     margin-top: 20px;
+    scrollbar-width: none;
+}
+
+.recommended-list::-webkit-scrollbar {
+    display: none;
 }
 
 @media (max-width: 1200px) {
@@ -624,22 +652,21 @@ header .container {
 }
 
 .recommended-card {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 16px;
-    padding: 12px;
-    border: 1px solid var(--glass-border);
-    transition: all 0.3s var(--ease-smooth);
+    padding: 10px;
+    transition: all 0.4s var(--ease-smooth);
     cursor: pointer;
     position: relative;
-    overflow: hidden;
     user-select: none;
 }
 
 .recommended-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-8px);
     border-color: var(--gold-primary);
-    background: rgba(255, 215, 0, 0.05);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    background: rgba(255, 215, 0, 0.08);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), 0 0 15px rgba(255, 215, 0, 0.1);
 }
 
 .recommended-card .thumbnail-wrapper {
@@ -647,15 +674,15 @@ header .container {
     border-radius: 12px;
     overflow: hidden;
     aspect-ratio: 16/9;
-    background: #000;
+    background: #050505;
 }
 
 .recommended-card img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    opacity: 0.8;
-    transition: all 0.5s var(--ease-smooth);
+    opacity: 0.85;
+    transition: all 0.6s var(--ease-smooth);
 }
 
 .recommended-card:hover img {
@@ -665,21 +692,30 @@ header .container {
 
 .recommended-card .play-overlay {
     position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    background: var(--gold-metallic);
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: all 0.3s var(--ease-smooth);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    z-index: 2;
 }
 
 .recommended-card:hover .play-overlay {
     opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
 }
 
 .recommendation-info {
     margin-top: 12px;
+    padding: 0 5px;
 }
 
 .recommendation-info h4 {
@@ -689,37 +725,63 @@ header .container {
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--text-main);
+    font-weight: 600;
 }
 
 .recommendation-info p {
     font-size: 0.75rem;
-    color: var(--text-muted);
+    color: var(--gold-dim);
     margin: 4px 0 0 0;
+    opacity: 0.8;
 }
 
 /* Skeleton Loading Pulse */
 .skeleton-card {
     min-width: 100%;
     aspect-ratio: 16/9;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.03);
     border-radius: 12px;
     position: relative;
     overflow: hidden;
-    animation: skeleton-pulse 1.5s infinite var(--ease-smooth);
+    animation: skeleton-pulse 1.8s infinite var(--ease-smooth);
 }
 
 @keyframes skeleton-pulse {
     0% {
         opacity: 0.5;
+        background: rgba(255, 255, 255, 0.03);
     }
 
     50% {
         opacity: 1;
+        background: rgba(255, 215, 0, 0.05);
     }
 
     100% {
         opacity: 0.5;
+        background: rgba(255, 255, 255, 0.03);
     }
+}
+
+.btn-refresh-mini {
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px solid var(--gold-primary-faded);
+    color: var(--gold-primary);
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-refresh-mini:hover {
+    background: var(--gold-primary);
+    color: #000;
+    transform: translateY(-2px);
 }
 
 .dashboard-grid {
