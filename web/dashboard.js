@@ -827,6 +827,27 @@ function updatePlayerUI(data) {
 
     updateProgressUI(playerState.position, playerState.duration);
 
+    // Update Favorite Icon Color
+    const favIcon = document.querySelector('#btn-favorite i');
+    if (favIcon) {
+        const favorites = (window.userPremium && window.userPremium.favorites) ? window.userPremium.favorites : [];
+        const currentUri = data.uri || (window.currentTrack ? window.currentTrack.uri : "");
+        const currentEncoded = data.encoded || (window.currentTrack ? window.currentTrack.encoded : "");
+
+        const isFav = favorites.some(f =>
+            (f.uri && currentUri && f.uri === currentUri) ||
+            (f.encoded && currentEncoded && f.encoded === currentEncoded)
+        );
+
+        if (isFav) {
+            favIcon.className = 'fas fa-heart';
+            favIcon.style.color = '#ff5555'; // Red color
+        } else {
+            favIcon.className = 'far fa-heart';
+            favIcon.style.color = ''; // Default color
+        }
+    }
+
     if (data.queue) renderQueue(data.queue);
 }
 
@@ -1103,6 +1124,12 @@ async function addToFavorite() {
     }
 
     await sendControl('favorite', window.currentTrack);
+
+    // Refresh favorites list from backend to sync UI
+    if (typeof fetchPremiumStatus === 'function') {
+        await fetchPremiumStatus();
+    }
+
     showNotification("Added to Favorites", "เพิ่มแล้ว", "Saved to your collection.", "บันทึกเพลงลงคอลเลคชันแล้ว", "success");
 }
 
