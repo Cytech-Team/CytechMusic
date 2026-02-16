@@ -1,33 +1,39 @@
 /**
- * CYORI REALTIME GATEWAY PROXY (Improved)
- * Relays WebSocket connections from Cloudflare to the VPS Bot
+ * CYORI REALTIME GATEWAY PROXY (Force Header)
+ * Ensures 'Upgrade' header is explicitly sent to the VPS Bot
  */
 
-const BOT_WS_URL = "ws://bkk.fe-grp.com:11050/api/gateway";
+const BOT_WS_URL = "http://bkk.fe-grp.com:11050/api/gateway";
 
 export async function onRequest(context) {
     const { request } = context;
-    const upgradeHeader = request.headers.get("Upgrade");
 
-    if (!upgradeHeader || upgradeHeader.toLowerCase() !== "websocket") {
-        return new Response("Expected Upgrade: websocket", { status: 426 });
-    }
+    // Explicitly reconstruct the request to ensure headers are preserved/set correctly
+    // for a WebSocket upgrade over HTTP
+    const init = {
+        method: request.method,
+        headers: new Headers(request.headers),
+        // body: request.body // WS handshake has no body
+    };
 
-    try {
-        // Standard Fetch Proxying for WebSockets
-        // This is the most reliable way in Cloudflare Workers to proxy a WS handshake
-        const response = await fetch(BOT_WS_URL, {
-            headers: request.headers,
-            method: request.method,
-            // body: request.body // WS Handshake doesn't have body usually
-        });
+    // Force key headers if missing (though browser usually sends them)
+    if (!init.headers.has("Upgrade")) init.headers.set("Upgrade", "websocket");
+    if (!init.headers.has("Connection")) init.headers.set("Connection", "Upgrade");
 
-        // Ensure the response is passed through
-        return response;
-    } catch (err) {
-        return new Response("Gateway Proxy Error: " + err.message, {
-            status: 502,
-            headers: { "Access-Control-Allow-Origin": "*" }
-        });
-    }
+    // Create a new Request object to avoid immutable properties of the original
+    const newRequest = new Request(BOT_WS_URL, init);
+
+    // Fetch from origin
+    const response = await fetch(newRequest, {
+        cf: {
+            // Essential: Cloudflare specific flag to handle WebSocket upgrades
+            cacheTtl: -1,
+            polish: false,
+            minify: { javascript: false, css: false, html: false }
+        }
+    });
+
+    // If the response is a 101 Switching Protocols, we return it as is.
+    // Cloudflare handles the underlying TCP connection upgrade.
+    return response;
 }

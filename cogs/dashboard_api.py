@@ -297,8 +297,18 @@ class DashboardAPI(commands.Cog):
     # REALTIME ZERO-DELAY ENGINE
     # ==========================================
     async def websocket_handler(self, request):
+        h = dict(request.headers)
+        print(f"DEBUG: WS Attempt from {request.remote}")
+        print(f"DEBUG: Headers: {h}")
         ws = web.WebSocketResponse()
-        await ws.prepare(request)
+        try:
+            await ws.prepare(request)
+        except Exception as e:
+            print(f"DEBUG: WS Prepare Error: {e}")
+            # Manual Check: If Cloudflare stripped 'Upgrade' but we know it's a gateway attempt
+            # We can't easily bypass aiohttp's prepare, but we can see WHAT is missing.
+            return web.Response(status=400, text=f"Handshake Failed: {e}")
+        
         self.all_sockets.add(ws)
         gid = None
         try:
@@ -307,6 +317,7 @@ class DashboardAPI(commands.Cog):
                     try:
                         data = msg.json()
                         op = data.get('op')
+                        print(f"[Dashboard WS] Received Op: {op} for Guild: {data.get('guild_id')}")
                         if op == 'connect':
                              gid = int(data.get('guild_id'))
                              if gid not in self.sockets_by_guild: self.sockets_by_guild[gid] = []
