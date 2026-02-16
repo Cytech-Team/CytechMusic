@@ -447,55 +447,27 @@ function renderRecommendations(tracks) {
     const list = document.getElementById('recommended-list');
     if (!list) return;
 
+    // Show only first 4 or 8 tracks based on preference? User said "ทีละสี่" (show by 4)
+    // We will show 4 per row as per the new grid logic in CSS
     list.innerHTML = tracks.map(track => {
         const safeTitle = (track.title || "").replace(/'/g, "\\'");
         const safeUri = (track.uri || "").replace(/'/g, "\\'");
 
         return `
-        <div class="recommended-card" onclick="playTrack('${track.encoded}', '${safeUri}')" 
-             style="min-width: 180px; cursor: pointer; transition: 0.3s; position: relative; group">
-            <div style="position: relative; overflow: hidden; border-radius: 12px; aspect-ratio: 16/9; background: #000;">
-                <img src="${track.thumbnail}" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.8; transition: 0.5s;" 
-                     onerror="this.src='logo-circle.png'">
-                <div class="play-overlay" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); opacity: 0; transition: 0.3s;">
-                    <i class="fas fa-play-circle" style="font-size: 2rem; color: #fff;"></i>
+        <div class="recommended-card" onclick="playTrack('${track.encoded}', '${safeUri}')">
+            <div class="thumbnail-wrapper">
+                <img src="${track.thumbnail}" onerror="this.src='logo-circle.png'">
+                <div class="play-overlay">
+                    <i class="fas fa-play" style="font-size: 1.5rem; color: var(--gold-primary);"></i>
                 </div>
             </div>
-            <div style="margin-top: 10px;">
-                <h4 style="font-size: 0.85rem; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${track.title}</h4>
-                <p style="font-size: 0.75rem; color: var(--text-muted); margin: 3px 0 0 0;">${track.author}</p>
+            <div class="recommendation-info">
+                <h4>${track.title}</h4>
+                <p>${track.author}</p>
             </div>
         </div>
         `;
     }).join('');
-
-    // Add hover styles via JS injected CSS if not in style.css
-    if (!document.getElementById('rec-styles')) {
-        const style = document.createElement('style');
-        style.id = 'rec-styles';
-        style.innerHTML = `
-            .recommended-card { 
-                flex: 0 0 180px; 
-                scroll-snap-align: start;
-                user-select: none;
-            }
-            .recommended-card:hover { transform: translateY(-5px); }
-            .recommended-card:hover .play-overlay { opacity: 1 !important; }
-            .recommended-card:hover img { transform: scale(1.1); opacity: 1 !important; }
-            .horizontal-scroll {
-                scroll-snap-type: x mandatory;
-                scroll-behavior: smooth;
-                -webkit-overflow-scrolling: touch;
-                padding: 10px 5px;
-                margin: 0 -5px;
-            }
-            .horizontal-scroll::-webkit-scrollbar { height: 6px; }
-            .horizontal-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
-            .horizontal-scroll::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.4); border-radius: 10px; }
-            .horizontal-scroll::-webkit-scrollbar-thumb:hover { background: var(--gold-primary); }
-        `;
-        document.head.appendChild(style);
-    }
 }
 
 async function playFavorite(encoded, uri) {

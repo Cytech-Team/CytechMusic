@@ -597,6 +597,131 @@ header .container {
 }
 
 /* --- DASHBOARD SPECIFIC --- */
+/* Recommended Section Styles */
+.recommended-list {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-top: 20px;
+}
+
+@media (max-width: 1200px) {
+    .recommended-list {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .recommended-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .recommended-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+.recommended-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    padding: 12px;
+    border: 1px solid var(--glass-border);
+    transition: all 0.3s var(--ease-smooth);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+}
+
+.recommended-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--gold-primary);
+    background: rgba(255, 215, 0, 0.05);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.recommended-card .thumbnail-wrapper {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 16/9;
+    background: #000;
+}
+
+.recommended-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.8;
+    transition: all 0.5s var(--ease-smooth);
+}
+
+.recommended-card:hover img {
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+.recommended-card .play-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.recommended-card:hover .play-overlay {
+    opacity: 1;
+}
+
+.recommendation-info {
+    margin-top: 12px;
+}
+
+.recommendation-info h4 {
+    font-size: 0.9rem;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-main);
+}
+
+.recommendation-info p {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: 4px 0 0 0;
+}
+
+/* Skeleton Loading Pulse */
+.skeleton-card {
+    min-width: 100%;
+    aspect-ratio: 16/9;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    animation: skeleton-pulse 1.5s infinite var(--ease-smooth);
+}
+
+@keyframes skeleton-pulse {
+    0% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.5;
+    }
+}
+
 .dashboard-grid {
     display: grid;
     grid-template-columns: 280px 1fr;
