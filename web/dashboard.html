@@ -150,22 +150,24 @@
 
                 <!-- TAB: PLAYER -->
                 <div id="tab-player" class="dash-tab-content">
-                    <div class="search-section-top" style="margin-bottom: 30px;">
+                    <div class="search-section-top"
+                        style="margin-bottom: 30px; max-width: 800px; margin-left: auto; margin-right: auto;">
                         <div class="search-box-wrapper"
                             style="display: flex; gap: 15px; background: rgba(0,0,0,0.5); padding: 8px 15px; border-radius: 16px; border: 1px solid var(--gold-primary-faded); box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
-                            <i class="fas fa-search" style="align-self: center; color: var(--gold-dim);"></i>
+                            <i class="fas fa-search"
+                                style="align-self: center; color: var(--gold-dim); margin-left: 5px;"></i>
                             <input type="text" id="song-input" class="form-control"
-                                style="margin: 0; background: transparent; border: none; flex: 1; padding: 5px 0;"
+                                style="margin: 0; background: transparent; border: none; flex: 1; padding: 5px 0; box-shadow: none;"
                                 placeholder="Search or Paste URL..."
                                 onkeydown="if(event.key === 'Enter') performSearch()">
                             <div
-                                style="display: flex; gap: 8px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px;">
-                                <button class="btn-glass" onclick="performSearch()"
-                                    style="width: 38px; height: 38px; border-radius: 10px; background: var(--button-primary);">
+                                style="display: flex; gap: 10px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px;">
+                                <button class="btn btn-gold" onclick="performSearch()"
+                                    style="width: 42px; height: 42px; border-radius: 12px; padding: 0;">
                                     <i class="fas fa-arrow-right"></i>
                                 </button>
-                                <button class="btn btn-gold" onclick="playRandom()"
-                                    style="width: 38px; height: 38px; border-radius: 10px;"
+                                <button class="btn btn-glass" onclick="playRandom()"
+                                    style="width: 42px; height: 42px; border-radius: 12px; padding: 0;"
                                     title="Surprise Me / สุ่มเพลง">
                                     <i class="fas fa-dice"></i>
                                 </button>

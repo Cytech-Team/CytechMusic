@@ -23,6 +23,7 @@
     --glass-border: rgba(255, 215, 0, 0.15);
     --glass-shine: rgba(255, 255, 255, 0.05);
     --gold-primary-faded: rgba(255, 215, 0, 0.3);
+    --button-primary: var(--gold-metallic);
 
     /* --- ANIMATIONS --- */
     --ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
@@ -33,17 +34,20 @@
 .search-box-wrapper {
     transition: all 0.3s var(--ease-smooth);
 }
+
 .search-box-wrapper:focus-within {
     border-color: var(--gold-primary) !important;
     box-shadow: 0 8px 30px rgba(255, 215, 0, 0.15) !important;
     transform: translateY(-2px);
 }
 
-#btn-random-bar i, .btn-gold i {
+#btn-random-bar i,
+.btn-gold i {
     transition: transform 0.5s var(--ease-elastic);
 }
 
-#btn-random-bar:hover i, .btn-gold:hover i {
+#btn-random-bar:hover i,
+.btn-gold:hover i {
     transform: rotate(180deg) scale(1.2);
 }
 
@@ -160,6 +164,18 @@ h6 {
     background: rgba(255, 215, 0, 0.1);
     border-color: var(--gold-primary);
     color: var(--gold-primary);
+}
+
+.btn-gold {
+    background: var(--gold-metallic);
+    color: #000;
+    border: none;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
+}
+
+.btn-gold:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
 }
 
 /* --- COMPONENTS: CONTAINERS --- */
