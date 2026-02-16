@@ -55,6 +55,7 @@ class DashboardAPI(commands.Cog):
             self.bot.web_app.router.add_options('/api/control', self.handle_options)
             self.bot.web_app.router.add_get('/api/status', self.get_status)
             self.bot.web_app.router.add_post('/api/control', self.post_control)
+            self.bot.web_app.router.add_get('/api/control', self.control_get_handler) # Handle GET gracefully
             self.bot.web_app.router.add_get('/api/search', self.get_search)
             self.bot.web_app.router.add_get('/api/find_voice', self.find_voice_channel)
             self.bot.web_app.router.add_get('/api/stats', self.get_global_stats) # NEW: Public Stats
@@ -71,6 +72,13 @@ class DashboardAPI(commands.Cog):
     async def handle_options(self, request):
         resp = web.Response(headers=self.cors_headers)
         return resp
+
+    async def control_get_handler(self, request):
+        """Handle GET to /api/control to avoid log spam (Return 200 to silence logs)."""
+        return web.json_response({
+            'error': 'Method Not Allowed',
+            'message': 'Please use POST method for control actions.'
+        }, status=200, headers=self.cors_headers)
 
     async def get_bot_guilds(self, request):
         guilds = [str(g.id) for g in self.bot.guilds]
@@ -761,13 +769,46 @@ class DashboardAPI(commands.Cog):
                 except Exception as e:
                      print(f"[Dashboard] Remove Error: {e}")
             
+            elif action == "skipto":
+                try:
+                    index = int(payload.get('value', 0))
+                    if player and not player.queue.is_empty:
+                        if 0 <= index < len(player.queue):
+                            # Move target track to front and skip current
+                            target_track = player.queue[index]
+                            del player.queue[index]
+                            player.queue.put_at_front(target_track)
+                            await player.stop()
+                except Exception as e:
+                     print(f"[Dashboard] SkipTo Error: {e}")
+
+            elif action == "favorite":
+                try:
+                    track_data = payload.get('value')
+                    if track_data and user_id:
+                        # Ensure track data is clean (remove internal objects if any)
+                        clean_track = {
+                            "title": track_data.get("title"),
+                            "uri": track_data.get("uri"),
+                            "author": track_data.get("author"),
+                            "length": track_data.get("length", 0),
+                            "encoded": track_data.get("encoded"),
+                            "thumbnail": track_data.get("thumbnail")
+                        }
+                        
+                        await collection_myasync.update_one(
+                             {"user_id": str(user_id)},
+                             {"$addToSet": {"favorites": clean_track}},
+                             upsert=True
+                        )
+                except Exception as e:
+                    print(f"[Dashboard] Favorite Error: {e}")
+
             elif action == "seek":
                 try:
                     position = int(payload.get('value', 0))
                     if player:
                         await player.seek(position)
-                        # Force update UI immediately via event? 
-                        # Or let the next status poll handle it.
                 except Exception as e:
                     print(f"[Dashboard] Seek Error: {e}")
 

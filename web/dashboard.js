@@ -7,7 +7,11 @@
 // ==========================================
 // --- ZERO-DELAY INTERNAL RUNNER ---
 // ยิงเข้าหาตัวเอง (Pages Function) เพื่อประหยัดเวลาและไม่มี Delay
-const IS_LOCAL_DASH = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const IS_LOCAL_DASH = window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.protocol === 'file:' ||
+    window.location.hostname === '';
+
 const BOT_API = IS_LOCAL_DASH ? "http://localhost:8000/api/proxy" : "/api/proxy";
 
 async function smartFetch(endpoint, options = {}) {
@@ -512,6 +516,17 @@ function handleVolume(value) {
 function updatePlayerUI(data) {
     if (!data) return;
 
+    // Ensure we have current track data for Favorites feature using a simpler object to avoid large payload
+    window.currentTrack = {
+        title: data.title,
+        author: data.author,
+        uri: data.uri || data.web_url, // Fallback
+        thumbnail: data.thumbnail,
+        length: data.duration,
+        is_stream: data.is_stream,
+        encoded: data.encoded // Important for playback
+    };
+
     const img = document.getElementById('np-art');
     const title = document.getElementById('np-title');
     const artist = document.getElementById('np-artist');
@@ -547,11 +562,40 @@ function updatePlayerUI(data) {
     // Update Icons
     if (playIcon) playIcon.className = data.paused ? 'fas fa-play' : 'fas fa-pause';
 
+    // Update Icons
+    if (playIcon) playIcon.className = data.paused ? 'fas fa-play' : 'fas fa-pause';
+
     if (btnShuffle) {
         data.shuffle ? btnShuffle.classList.add('active') : btnShuffle.classList.remove('active');
     }
 
+    // Add Favorite Button Logic (Insert if not exists)
+    const secondaryControls = document.querySelector('.controls-secondary');
+    if (secondaryControls && !document.getElementById('btn-favorite')) {
+        const favBtn = document.createElement('button');
+        favBtn.className = 'btn-glass';
+        favBtn.id = 'btn-favorite';
+        favBtn.title = 'Add to Favorites / เพิ่มในรายการโปรด';
+        favBtn.style.width = '40px';
+        favBtn.style.height = '40px';
+        favBtn.style.borderRadius = '50%';
+        favBtn.innerHTML = '<i class="far fa-heart"></i>'; // Empty heart
+        favBtn.onclick = () => addToFavorite();
+
+        // Insert before volume control
+        const volume = secondaryControls.querySelector('.volume-control');
+        secondaryControls.insertBefore(favBtn, volume);
+    }
+
+    // Check if current song is favored? (Need data from backend, or check locally vs list)
+    // For now, just allow adding.
+
     if (btnLoop) {
+        // ... (loop logic)
+
+        // ...
+
+
         const loopMode = (data.loop_mode || "off").toLowerCase();
         if (loopMode !== "off") {
             btnLoop.classList.add('active');
@@ -709,21 +753,47 @@ function renderQueue(queue) {
     }
 
     list.innerHTML = queue.map((track, index) => `
-        <div class="queue-item" id="q-item-${index}" onclick="handleQueueAction('skipto', ${index})" title="Play Now / เล่นทันที">
-            <div class="result-icon" style="width:30px; height:30px; font-size:0.8rem; margin-right:10px;">${index + 1}</div>
-            <div class="queue-details">
-                <span class="queue-title">
-                    ${track.title || 'Unknown'} 
-                    <span class="play-now-badge" style="font-size:0.7em; opacity:0; margin-left:6px; transition:opacity 0.2s;"><i class="fas fa-forward"></i> Play Now</span>
-                </span>
-                <span class="queue-artist">${track.author || '-'}</span>
+        <div class="queue-item" id="q-item-${index}" 
+             onclick="handleQueueAction('skipto', ${index})" 
+             title="Play Now / เล่นทันที"
+             style="display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; gap: 10px; padding: 10px; background: rgba(255,255,255,0.05); margin-bottom: 5px; border-radius: 8px; cursor: pointer; transition: background 0.2s;">
+            
+            <div class="result-icon" style="text-align: center; color: var(--gold-primary); font-weight: bold;">
+                ${index + 1}
             </div>
-            <div class="queue-action" onclick="event.stopPropagation(); handleQueueAction('remove', ${index});" title="Remove / ลบเพลง" style="cursor:pointer; padding:8px; color:#ff4d4d;">
+            
+            <div class="queue-details" style="overflow: hidden; white-space: nowrap;">
+                <div class="queue-title" style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; color: var(--text-main);">
+                    ${track.title || 'Unknown'} 
+                </div>
+                <div class="queue-artist" style="font-size: 0.85em; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis;">
+                    ${track.author || '-'}
+                </div>
+            </div>
+            
+            <div class="queue-action" 
+                 onclick="event.stopPropagation(); handleQueueAction('remove', ${index});" 
+                 title="Remove / ลบเพลง" 
+                 style="text-align: center; color: #ff4d4d; padding: 5px; border-radius: 50%;">
                 <i class="fas fa-trash"></i>
             </div>
         </div>
     `).join('');
 }
+
+async function addToFavorite() {
+    if (!window.currentTrack) return;
+
+    const icon = document.querySelector('#btn-favorite i');
+    if (icon) {
+        icon.className = 'fas fa-heart';
+        icon.style.color = '#ff5555';
+    }
+
+    await sendControl('favorite', window.currentTrack);
+    showNotification("Added to Favorites", "เพิ่มแล้ว", "Saved to your collection.", "บันทึกเพลงลงคอลเลคชันแล้ว", "success");
+}
+
 
 function handleQueueAction(action, index) {
     const item = document.getElementById(`q-item-${index}`);

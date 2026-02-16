@@ -124,7 +124,7 @@ class Cyori(commands.Bot):
         
         embed = discord.Embed(title="🎵 Music Player Error", color=discord.Color.orange())
         embed.add_field(name="Track", value=f"[{track.title}]({track.uri})", inline=False)
-        embed.add_field(name="Guild", value=f"{player.guild.name} ({player.guild.idhttps://github.com/ChocoMeow/Vocard})", inline=True)
+        embed.add_field(name="Guild", value=f"{player.guild.name} ({player.guild.id})", inline=True)
         embed.description = f"```py\n{exception}\n```"
         embed.timestamp = discord.utils.utcnow()
 

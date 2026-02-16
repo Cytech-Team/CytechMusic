@@ -587,8 +587,10 @@ class MusicControls(discord.ui.View):
         
     @discord.ui.button(emoji="❤️", label="Save", custom_id='fav_button', style=discord.ButtonStyle.secondary, row=1)
     async def fav_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer(ephemeral=True)
+        
         if not self.player.current:
-            return await interaction.response.send_message("❌ Nothing is playing.", ephemeral=True)
+            return await interaction.followup.send("❌ Nothing is playing.", ephemeral=True)
             
         track = self.player.current
         # Compact Track Data
@@ -604,23 +606,18 @@ class MusicControls(discord.ui.View):
         
         user_id = str(interaction.user.id)
         
-        # MongoDB: Add to favorites collection (or user profile)
-        # Using addToSet to prevent duplicates based on exact object match
-        # Ideally check URI uniqueness, but object match is OK for now.
         try:
-            # We use 'users' collection structure implicitly via user_id key in main DB
             await collection_myasync.update_one(
                 {"user_id": user_id},
                 {"$addToSet": {"favorites": song_data}},
                 upsert=True
             )
             
-            lang = await self.player.bot.get_lang(interaction.guild.id)
-            # Todo: Add i18n for helpers
-            await interaction.response.send_message(f"❤️ **Saved to Collection:**\n[{track.title}]({track.uri})", ephemeral=True)
+            # lang = await self.player.bot.get_lang(interaction.guild.id)
+            await interaction.followup.send(f"❤️ **Saved to Collection:**\n[{track.title}]({track.uri})", ephemeral=True)
         except Exception as e:
             print(f"Fav Error: {e}")
-            await interaction.response.send_message("❌ Failed to save track.", ephemeral=True)
+            await interaction.followup.send("❌ Failed to save track.", ephemeral=True)
 
 async def connect_channel(ctx: Union[commands.Context, Interaction], channel: VoiceChannel = None):
     try:
@@ -700,6 +697,76 @@ class Player(VoiceProtocol):
         self.is_closing: bool = False
         self.last_message_update = 0 # Rate limit handling
         self.update_pending: bool = False
+        
+        # Auto-Load Queue (Persistent)
+        if self._guild:
+             asyncio.create_task(self.load_queue())
+
+    async def save_queue(self):
+        """Save current queue to MongoDB for persistence."""
+        if not self.guild: return
+        
+        # Serialize Queue
+        queue_data = []
+        for track in self.queue:
+            encoded = track.track_id
+            if not encoded: continue
+            
+            queue_data.append({
+                "encoded": encoded,
+                "info": { 
+                    "title": track.title,
+                    "author": track.author,
+                    "uri": track.uri,
+                    "identifier": track.identifier,
+                    "length": track.length,
+                    "is_stream": track.is_stream,
+                }
+            })
+            if len(queue_data) > 30: break # Cap at 30
+        
+        try:
+            guild_id_str = str(self.guild.id)
+            await collection_myasync.update_one(
+                 {"guild_id": guild_id_str},
+                 {"$set": {"saved_queue": queue_data, "updated_at": time.time()}},
+                 upsert=True
+            )
+        except Exception as e:
+            print(f"[Player] Save Queue Error: {e}")
+
+    async def load_queue(self):
+        """Load saved queue from MongoDB."""
+        try:
+             await asyncio.sleep(2) # Wait for connection stabilization
+             if not self.guild: return
+             
+             data = await collection_myasync.find_one({"guild_id": str(self.guild.id)})
+             if data and "saved_queue" in data:
+                 saved = data["saved_queue"]
+                 if not saved: return
+                 
+                 tracks = []
+                 for item in saved:
+                     try:
+                         encoded = item.get("encoded")
+                         info = item.get("info", {})
+                         if encoded:
+                             t_info = info
+                             if not t_info:
+                                 t_info = decode(encoded)
+                                 
+                             track = Track(encoded, t_info, requester=self.bot.user)
+                             tracks.append(track)
+                     except Exception as e:
+                         pass
+                 
+                 if tracks:
+                     if self.queue.is_empty:
+                         self.queue.extend(tracks)
+                         print(f"[Player] Loaded {len(tracks)} tracks from saved queue for {self.guild.name}")
+        except Exception as e:
+            print(f"[Player] Load Queue Error: {e}")
 
     def __repr__(self):
         return (
@@ -1212,6 +1279,9 @@ class Player(VoiceProtocol):
             for v in ("pause_votes","resume_votes","skip_votes","previous_votes","shuffle_votes","stop_votes"):
                 if hasattr(self, v):
                     getattr(self, v).clear()
+
+            # Save Queue State
+            asyncio.create_task(self.save_queue())
 
             # ensure guild data present
             data = await collection_myasync.find_one({}) or {"guilds": {}}

@@ -632,11 +632,13 @@ class Music(commands.Cog):
             if isinstance(results, cytechlink.Playlist):
                 if results.tracks:
                     await player.add_track(results.tracks)
+                    asyncio.create_task(player.save_queue()) # Save Queue Persistently
                 else:
                     return await ctx.reply(self.bot.i18n.get("playlist_empty", lang), delete_after=7)
             else:
                 track = results[0]
                 await player.add_track(track)
+                asyncio.create_task(player.save_queue()) # Save Queue Persistently
         except Exception:
             return await ctx.reply(self.bot.i18n.get("queue_full", lang), delete_after=7)
 
