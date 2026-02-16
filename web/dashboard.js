@@ -766,40 +766,11 @@ function updatePlayerUI(data) {
     // Update Icons
     if (playIcon) playIcon.className = data.paused ? 'fas fa-play' : 'fas fa-pause';
 
-    // Update Icons
-    if (playIcon) playIcon.className = data.paused ? 'fas fa-play' : 'fas fa-pause';
-
     if (btnShuffle) {
         data.shuffle ? btnShuffle.classList.add('active') : btnShuffle.classList.remove('active');
     }
 
-    // Add Favorite Button Logic (Insert if not exists)
-    const secondaryControls = document.querySelector('.controls-secondary');
-    if (secondaryControls && !document.getElementById('btn-favorite')) {
-        const favBtn = document.createElement('button');
-        favBtn.className = 'btn-glass';
-        favBtn.id = 'btn-favorite';
-        favBtn.title = 'Add to Favorites / เพิ่มในรายการโปรด';
-        favBtn.style.width = '40px';
-        favBtn.style.height = '40px';
-        favBtn.style.borderRadius = '50%';
-        favBtn.innerHTML = '<i class="far fa-heart"></i>'; // Empty heart
-        favBtn.onclick = () => addToFavorite();
-
-        // Insert before volume control
-        const volume = secondaryControls.querySelector('.volume-control');
-        secondaryControls.insertBefore(favBtn, volume);
-    }
-
-    // Check if current song is favored? (Need data from backend, or check locally vs list)
-    // For now, just allow adding.
-
     if (btnLoop) {
-        // ... (loop logic)
-
-        // ...
-
-
         const loopMode = (data.loop_mode || "off").toLowerCase();
         if (loopMode !== "off") {
             btnLoop.classList.add('active');
