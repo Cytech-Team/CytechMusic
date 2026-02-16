@@ -181,30 +181,38 @@ function formatTime(ms) {
 // 3. AUTH & CONNECTION
 // ==========================================
 
+let isInitialized = false;
+
 function onUserLoggedIn(user) {
+    if (!user) return;
+
+    // GUARD: Prevent double initialization on same session
+    if (isInitialized && currentUserId === user.id) return;
+    isInitialized = true;
+    currentUserId = user.id;
+
     showDashboard();
-    if (user) {
-        const nameEl = document.getElementById('user-name');
-        const avatarEl = document.getElementById('user-avatar');
-        const discEl = document.getElementById('user-discriminator');
 
-        if (nameEl) nameEl.textContent = user.username;
-        if (discEl) discEl.textContent = `#${user.discriminator || '0000'}`;
-        if (avatarEl) {
-            const avatarUrl = user.avatar
-                ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
-                : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.id) % 5}.png`;
-            avatarEl.src = avatarUrl;
-        }
-        currentUserId = user.id;
-        startAutoConnect(user.id);
+    const nameEl = document.getElementById('user-name');
+    const avatarEl = document.getElementById('user-avatar');
+    const discEl = document.getElementById('user-discriminator');
 
-        // Init Favorites & Recommendations
-        setTimeout(() => {
-            renderCollection();
-            fetchRecommendations();
-        }, 500);
+    if (nameEl) nameEl.textContent = user.username;
+    if (discEl) discEl.textContent = `#${user.discriminator || '0000'}`;
+    if (avatarEl) {
+        const avatarUrl = user.avatar
+            ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
+            : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.id) % 5}.png`;
+        avatarEl.src = avatarUrl;
     }
+
+    startAutoConnect(user.id);
+
+    // Init Favorites & Recommendations
+    setTimeout(() => {
+        renderCollection();
+        fetchRecommendations();
+    }, 500);
 }
 
 function switchTab(tabId, btn) {
@@ -515,6 +523,11 @@ function selectServer(guildId) {
 // REALTIME ENGINE (ZERO DELAY)
 // =========================================
 function initRealtime(guildId) {
+    // GUARD: Avoid redundant connections to same guild
+    if (wsConnection && wsConnection.readyState === WebSocket.OPEN && selectedGuildId === guildId) {
+        return;
+    }
+
     if (wsConnection) {
         try { wsConnection.close(); } catch (e) { }
     }

@@ -861,17 +861,25 @@ class DashboardAPI(commands.Cog):
         
         # Try to get a music node
         node = None
-        if guild_id:
-            try: guild = self.bot.get_guild(int(guild_id))
-            except: guild = None
-            if guild and guild.voice_client:
-                node = guild.voice_client.node
+        if guild_id and str(guild_id).isdigit():
+            try: 
+                guild = self.bot.get_guild(int(guild_id))
+                if guild and guild.voice_client:
+                    node = guild.voice_client.node
+            except: pass
         
         if not node:
-            try: node = list(self.bot.cytech.nodes.values())[0] if self.bot.cytech.nodes else None
-            except: pass
-            
+            try: 
+                # Use a specific library method if available or pick first node
+                if hasattr(self.bot.cytech, 'get_node'):
+                    node = self.bot.cytech.get_node()
+                elif self.bot.cytech.nodes:
+                    node = list(self.bot.cytech.nodes.values())[0]
+            except Exception as e:
+                print(f"[Dashboard API] Node discovery error: {e}")
+
         if not node:
+            print("[Dashboard API] No music node available for recommendations")
             return web.json_response({'error': 'No music node available'}, status=503, headers=self.cors_headers)
 
         try:
