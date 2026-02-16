@@ -619,6 +619,42 @@ class MusicControls(discord.ui.View):
             print(f"Fav Error: {e}")
             await interaction.followup.send("❌ Failed to save track.", ephemeral=True)
 
+    @discord.ui.button(emoji="🎲", label="Random", custom_id='random_button', style=discord.ButtonStyle.gray, row=2)
+    async def random_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+        lang = await self.player.bot.get_lang(interaction.guild.id)
+        
+        # 1. VC Check
+        if not interaction.user.voice or not interaction.user.voice.channel:
+             return await interaction.followup.send(self.player.bot.i18n.get("error_voice_required", lang), ephemeral=True)
+             
+        # 2. Check privileges
+        if not await self.player.is_privileged(interaction.user):
+             return await interaction.followup.send(self.player.bot.i18n.get("dj_required", lang), ephemeral=True)
+
+        import random
+        search_query = "ytmsearch:Trending Music Thailand" if lang == "th" else "ytmsearch:Trending Global Hits"
+        
+        # UI Feedback
+        await interaction.followup.send("🎲 **Searching for a surprise...**", ephemeral=True)
+        
+        try:
+            load_res = await self.player.node.get_tracks(search_query, requester=interaction.user)
+            tracks = load_res if isinstance(load_res, list) else getattr(load_res, 'tracks', [])
+            
+            if tracks:
+                track = random.choice(tracks[:15]) # Pick from top 15
+                await self.player.add_track(track)
+                await interaction.followup.send(f"🎲 | **Random Selection:** [{track.title}]({track.uri})", ephemeral=True)
+                
+                if not self.player.is_playing:
+                    await self.player.do_next()
+                else:
+                    await self.player.update_controller()
+            else:
+                await interaction.followup.send("❌ Could not find random tracks.", ephemeral=True)
+        except Exception as e:
+            await interaction.followup.send(f"❌ Random search failed: {e}", ephemeral=True)
+
 async def connect_channel(ctx: Union[commands.Context, Interaction], channel: VoiceChannel = None):
     try:
         channel = channel or ctx.author.voice.channel if isinstance(ctx, commands.Context) else ctx.user.voice.channel

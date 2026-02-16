@@ -181,29 +181,182 @@ class DashboardAPI(commands.Cog):
             }
         except: pass
 
-    # ... get_search ...
+    async def post_control(self, request):
+        try:
+            payload = await request.json()
+        except:
+            return web.json_response({'error': 'Invalid JSON'}, status=400, headers=self.cors_headers)
 
-        # 1. OPTIMIZED AUTO JOIN (No Sleep)
-        member = guild.get_member(int(user_id)) if user_id else None
-        target_channel = None
-        
-        # ... (Target Channel Logic) ...
-        # (Simplified for insertion context - keeping core logic)
-        
-        if member and member.voice and member.voice.channel:
-             target_channel = member.voice.channel
-        
-        if not player and member and target_channel:
-             try:
-                 fake_ctx = FakeContext(self.bot, guild, target_channel, member)
-                 player = await target_channel.connect(cls=cytechlink.Player(self.bot, target_channel, fake_ctx))
-                 # NO SLEEP HERE - ZERO DELAY
-             except: pass
+        guild_id_raw = payload.get('guild_id')
+        user_id_raw = payload.get('user_id')
+        action = payload.get('action')
+        value = payload.get('value')
 
-        # ... (Search & Play Logic) ...
-        query = payload.get('value')
-        # Simple return for now to close function, actual implementation needs full restoration
-        return web.json_response({'status': 'ok', 'msg': 'Play request received'}, headers=self.cors_headers)
+        if not guild_id_raw:
+            return web.json_response({'error': 'Missing guild_id'}, status=400, headers=self.cors_headers)
+        
+        try:
+            guild_id = int(guild_id_raw)
+        except (ValueError, TypeError):
+            return web.json_response({'error': 'Invalid guild_id'}, status=400, headers=self.cors_headers)
+        
+        guild = self.bot.get_guild(guild_id)
+        if not guild: 
+            return web.json_response({'error': f'Guild {guild_id} not found or bot not in guild'}, status=404, headers=self.cors_headers)
+        
+        player = guild.voice_client
+        user_id = user_id_raw
+        
+        try:
+            skip_update = False 
+
+            if action == "random":
+                import random
+                from bot import collection_myasync
+                try:
+                    db_data = await collection_myasync.find_one({})
+                    lang = db_data.get("guilds", {}).get(str(guild.id), {}).get("lang", "th")
+                except: lang = "th"
+                
+                search_query = "ytmsearch:Trending Music Thailand" if lang == "th" else "ytmsearch:Trending Global Hits"
+                node = player.node if player else None
+                if not node and hasattr(self.bot, 'cytech') and self.bot.cytech.nodes:
+                    node = list(self.bot.cytech.nodes.values())[0]
+                
+                if node:
+                    load_res = await node.get_tracks(search_query, requester=guild.me)
+                    tracks = load_res if isinstance(load_res, list) else getattr(load_res, 'tracks', [])
+                    if tracks:
+                        track = random.choice(tracks[:15]) # Pick from top 15
+                        action = "play"
+                        value = {"encoded": track.track_id, "uri": track.uri}
+                        print(f"[Dashboard] Random Selected: {track.title}")
+
+            if action == "pause":
+                if player: await player.set_pause(not player.is_paused)
+            elif action == "skip":
+                if player: await player.stop(); skip_update = True
+            elif action == "stop":
+                if player: await player.teardown(); skip_update = True
+            elif action == "volume":
+                if player:
+                    vol = int(payload.get('value', 100))
+                    await player.set_volume(max(0, min(vol, 100)))
+            elif action == "shuffle":
+                if player: player.queue.shuffle()
+            elif action == "loop":
+                if player:
+                    from cytechlink.enums import LoopType
+                    current_mode = player.queue._repeat.mode
+                    if current_mode == LoopType.off: player.queue._repeat.set_mode(LoopType.queue)
+                    elif current_mode == LoopType.queue: player.queue._repeat.set_mode(LoopType.track)
+                    else: player.queue._repeat.set_mode(LoopType.off)
+            
+            elif action == "play":
+                query = value
+                print(f"[Dashboard] Play Request: {query} (User: {user_id})")
+                
+                member = guild.get_member(int(user_id)) if user_id and str(user_id).isdigit() else None
+                target_channel = None
+
+                # 1. Resolve Text Channel for feedback
+                if member and member.voice and member.voice.channel:
+                     if member.voice.channel.permissions_for(guild.me).send_messages:
+                         target_channel = member.voice.channel
+                if not target_channel and player and hasattr(player, 'controller') and player.controller:
+                    try: target_channel = player.controller.channel
+                    except: pass
+                if not target_channel:
+                    for c in guild.text_channels:
+                         if c.permissions_for(guild.me).send_messages: target_channel = c; break
+
+                # 2. Auto-join
+                if not player and member:
+                    try:
+                        if member.voice and member.voice.channel:
+                            fake_ctx = FakeContext(self.bot, guild, target_channel, member)
+                            player = await member.voice.channel.connect(cls=cytechlink.Player(self.bot, member.voice.channel, fake_ctx))
+                            await asyncio.sleep(0.5)
+                    except: pass
+
+                if player and member:
+                     player.context = FakeContext(self.bot, guild, target_channel, member)
+                     if not player.dj: player.dj = member
+
+                if query:
+                    results = None
+                    # Robust Payload Handling
+                    import json
+                    payload_data = None
+                    try:
+                        if isinstance(query, dict): payload_data = query
+                        elif isinstance(query, str) and query.strip().startswith('{'):
+                             payload_data = json.loads(query)
+                    except: pass
+
+                    if payload_data:
+                        uri = payload_data.get('uri')
+                        encoded = payload_data.get('encoded')
+                        if encoded:
+                            try:
+                                # Get any available node for building track
+                                node = player.node if player else None
+                                if not node and hasattr(self.bot, 'cytech') and self.bot.cytech.nodes:
+                                    node = list(self.bot.cytech.nodes.values())[0]
+                                
+                                if node:
+                                    results = [await node.build_track(encoded, requester=member or guild.me)]
+                            except: 
+                                if uri: query = uri
+                        elif uri: query = uri
+
+                    if not results:
+                        if isinstance(query, str) and query.startswith("load:"):
+                            enc = query[5:]
+                            node = player.node if player else None
+                            if not node and hasattr(self.bot, 'cytech') and self.bot.cytech.nodes:
+                                node = list(self.bot.cytech.nodes.values())[0]
+                            if node:
+                                results = [await node.build_track(enc, requester=member or guild.me)]
+                        else:
+                            if not ("http" in query or "https" in query): query = f"ytmsearch:{query}"
+                            if player:
+                                results = await player.get_tracks(query, requester=member or guild.me)
+                            else:
+                                # Fallback search using node directly if skip_update/join failed
+                                node = None
+                                if hasattr(self.bot, 'cytech') and self.bot.cytech.nodes:
+                                    node = list(self.bot.cytech.nodes.values())[0]
+                                if node:
+                                    load_res = await node.get_tracks(query, requester=member or guild.me)
+                                    if load_res:
+                                        results = load_res if isinstance(load_res, list) else getattr(load_res, 'tracks', [])
+
+                    if results:
+                        if not player:
+                            return web.json_response({'error': 'Bot is not in a voice channel. Please join a channel first. / บอทไม่ได้อยู่ในห้องเสียง กรุณาเข้าห้องเสียงก่อนสั่งเล่นครับ'}, status=400, headers=self.cors_headers)
+
+                        if isinstance(results, list): await player.add_track(results[0])
+                        else: await player.add_track(results.tracks)
+
+                        if not player.is_playing:
+                            if target_channel:
+                                try:
+                                    embed = discord.Embed(title="Searching...", color=0xFFD700)
+                                    player.controller = await target_channel.send(embed=embed)
+                                except: pass
+                            await player.do_next()
+                            skip_update = True
+                return web.json_response({'status': 'ok'}, headers=self.cors_headers)
+
+            if hasattr(player, "update_controller") and not skip_update:
+                await player.update_controller(force=True)
+
+            return web.json_response({'status': 'ok', 'action': action}, headers=self.cors_headers)
+
+        except Exception as e:
+            traceback.print_exc()
+            return web.json_response({'error': str(e)}, status=500, headers=self.cors_headers)
 
     # ==========================================
     # REALTIME ZERO-DELAY ENGINE
@@ -349,89 +502,94 @@ class DashboardAPI(commands.Cog):
 
     async def get_recommended(self, request):
         guild_id_raw = request.query.get('guild_id')
+        user_id_raw = request.query.get('user_id')
         
         node = None
         player = None
         current_track = None
+        
+        # 1. Try to get node from active player first
+        if guild_id_raw and str(guild_id_raw).isdigit():
+            guild = self.bot.get_guild(int(guild_id_raw))
+            if guild and guild.voice_client:
+                player = guild.voice_client
+                node = getattr(player, 'node', None)
+                if player.is_playing and player.current:
+                    current_track = player.current
 
-        print(f"[Recommended] Request received - Guild ID: {guild_id_raw}")
+        # 2. Fallback to any node
+        if not node:
+            try:
+                if hasattr(self.bot, 'cytech') and self.bot.cytech.nodes:
+                    node = list(self.bot.cytech.nodes.values())[0]
+                else:
+                    node = self.bot.cytech.get_node()
+            except: pass
+
+        if not node:
+            return web.json_response({'error': 'No music node available', 'results': []}, status=503, headers=self.cors_headers)
 
         try:
-            if guild_id_raw and str(guild_id_raw).isdigit():
-                guild = self.bot.get_guild(int(guild_id_raw))
-                if guild:
-                    player = guild.voice_client
-                    if player and player.is_playing and player.current:
-                        current_track = player.current
-                        node = getattr(player, 'node', None)
-
-            # Fallback node selection
-            if not node:
-                try:
-                    if hasattr(self.bot, 'cytech') and self.bot.cytech.nodes:
-                        node = list(self.bot.cytech.nodes.values())[0]
-                    else:
-                        # Try to get from pool if available
-                        node = self.bot.cytech.get_node()
-                except Exception as ne:
-                    print(f"[Recommended] Node Selection Error: {ne}")
-
-            if not node:
-                print("[Recommended] Failed: No music node available")
-                return web.json_response({'error': 'No music node available', 'results': []}, status=503, headers=self.cors_headers)
-
-            query = "ytmsearch:Trending Music 2026"
-            if current_track and hasattr(current_track, 'identifier') and current_track.identifier:
-                query = f"https://www.youtube.com/watch?v={current_track.identifier}&list=RD{current_track.identifier}"
-
-            print(f"[Recommended] Fetching recommendations for query: {query}")
-            results = await node.get_tracks(query, requester=None)
-            rec_data = []
+            from bot import collection_myasync
             
-            if results:
-                # Handle Playlist or List
-                tracks = []
-                if isinstance(results, list):
-                    tracks = results
-                elif hasattr(results, 'tracks'):
-                    tracks = results.tracks
+            # STRATEGY 1: User History
+            seeds = []
+            if user_id_raw:
+                try:
+                    db_data = await collection_myasync.find_one({}) or {"history": {}}
+                    user_history = db_data.get("history", {}).get(str(user_id_raw), {}).get("recently_played", [])
+                    if user_history:
+                        # Use last 2 songs as seeds
+                        seeds = [s.get("identifier") for s in user_history[-2:] if s.get("identifier")]
+                except Exception as e:
+                    print(f"[Recommended] History DB Error: {e}")
+
+            # STRATEGY 2: Current Track
+            if not seeds and current_track and hasattr(current_track, 'identifier'):
+                seeds = [current_track.identifier]
+
+            # FETCH RECOMMENDATIONS
+            results = None
+            if seeds:
+                # Use YouTube Music Mix for the first seed
+                seed = seeds[-1]
+                query = f"https://www.youtube.com/watch?v={seed}&list=RD{seed}"
+                print(f"[Recommended] Fetching RD for seed: {seed}")
+                results = await node.get_tracks(query, requester=None)
+
+            # STRATEGY 3: Language-based Trending (If no history/RD failed)
+            if not results or (not isinstance(results, list) and not getattr(results, 'tracks', [])):
+                lang = "th" # Default
+                if guild_id_raw:
+                    try:
+                        guild_doc = await collection_myasync.find_one({})
+                        lang = guild_doc.get("guilds", {}).get(str(guild_id_raw), {}).get("lang", "th")
+                    except: pass
                 
-                # Robust attribute checking for each track
+                trending_query = "ytmsearch:Trending Music Thailand" if lang == "th" else "ytmsearch:Trending Global Hits"
+                print(f"[Recommended] Fetching language fallback ({lang}): {trending_query}")
+                results = await node.get_tracks(trending_query, requester=None)
+
+            # PROCESS RESULTS
+            rec_data = []
+            if results:
+                tracks = results if isinstance(results, list) else getattr(results, 'tracks', [])
+                
+                # Filter out current track if it's the first in RD list
                 start_idx = 0
                 if current_track and tracks and getattr(tracks[0], 'identifier', None) == current_track.identifier:
                     start_idx = 1
                 
                 for track in tracks[start_idx:start_idx+12]:
-                    # Safer property access
-                    t_id = getattr(track, 'track_id', None)
-                    if not t_id and hasattr(track, 'id'): t_id = track.id # Fallback if library changed
-                    
                     rec_data.append({
                         "title": getattr(track, 'title', 'Unknown Track'),
                         "author": getattr(track, 'author', 'Unknown Author'),
                         "length": getattr(track, 'length', 0),
                         "uri": getattr(track, 'uri', '#'),
                         "thumbnail": getattr(track, 'thumbnail', 'logo-circle.png') or "logo-circle.png",
-                        "encoded": t_id
+                        "encoded": getattr(track, 'track_id', None)
                     })
 
-            # Deep Fallback: If still empty
-            if not rec_data:
-                print("[Recommended] RD list empty, trying fallback search...")
-                results = await node.get_tracks("ytmsearch:Popular Thai Music", requester=None)
-                if results:
-                    tracks = results if isinstance(results, list) else getattr(results, 'tracks', [])
-                    for track in tracks[:12]:
-                        rec_data.append({
-                            "title": getattr(track, 'title', 'Unknown Track'),
-                            "author": getattr(track, 'author', 'Unknown Author'),
-                            "length": getattr(track, 'length', 0),
-                            "uri": getattr(track, 'uri', '#'),
-                            "thumbnail": getattr(track, 'thumbnail', 'logo-circle.png') or "logo-circle.png",
-                            "encoded": getattr(track, 'track_id', None)
-                        })
-
-            print(f"[Recommended] Success! Returning {len(rec_data)} tracks.")
             return web.json_response({'status': 'ok', 'results': rec_data}, headers=self.cors_headers)
 
         except Exception as e:
@@ -439,409 +597,6 @@ class DashboardAPI(commands.Cog):
             traceback.print_exc()
             return web.json_response({'status': 'ok', 'results': [], 'debug_error': str(e)}, headers=self.cors_headers)
 
-    async def post_control(self, request):
-        try:
-            payload = await request.json()
-        except:
-            return web.json_response({'error': 'Invalid JSON'}, status=400, headers=self.cors_headers)
-
-        guild_id_raw = payload.get('guild_id')
-        user_id_raw = payload.get('user_id')
-        action = payload.get('action')
-
-        if not guild_id_raw:
-            return web.json_response({'error': 'Missing guild_id'}, status=400, headers=self.cors_headers)
-        
-        try:
-            guild_id = int(guild_id_raw)
-        except (ValueError, TypeError):
-            return web.json_response({'error': 'Invalid guild_id'}, status=400, headers=self.cors_headers)
-        
-        guild = self.bot.get_guild(guild_id)
-        if not guild: 
-            return web.json_response({'error': f'Guild {guild_id} not found or bot not in guild'}, status=404, headers=self.cors_headers)
-        
-        player = guild.voice_client
-
-        # De-duplication check for Hybrid Mode
-        event_id = payload.get('event_id')
-        if event_id:
-            if event_id in self.bot._processed_events:
-                return web.json_response({'status': 'ignored', 'reason': 'already_processed'}, headers=self.cors_headers)
-            self.bot._processed_events.add(event_id)
-
-        user_id = user_id_raw
-        
-        try:
-            skip_update = False # Flag to prevent double updates
-
-            if action == "pause":
-                if player: await player.set_pause(not player.is_paused)
-            elif action == "skip":
-                if player: 
-                    await player.stop()
-                    skip_update = True # Let event listener handle update
-            elif action == "stop":
-                if player:
-                    await player.teardown()
-                    skip_update = True
-            elif action == "volume":
-                if player:
-                    vol = int(payload.get('value', 100))
-                    await player.set_volume(max(0, min(vol, 100)))
-            elif action == "shuffle":
-                if player: player.queue.shuffle()
-            elif action == "loop":
-                if player:
-                    current_mode = player.queue._repeat.mode
-                    if current_mode == LoopType.off:
-                         player.queue._repeat.set_mode(LoopType.queue)
-                    elif current_mode == LoopType.queue:
-                         player.queue._repeat.set_mode(LoopType.track)
-                    else:
-                         player.queue._repeat.set_mode(LoopType.off)
-            elif action == "play":
-                query = payload.get('value')
-                print(f"[Dashboard] Play Request: {query} (User: {user_id})")
-
-                # AUTO JOIN LOGIC & Target Channel Resolution
-                # Priority: User's Voice Channel > Existing Controller Channel > DB Channel > Fallback
-                
-                member = guild.get_member(int(user_id)) if user_id and str(user_id).isdigit() else None
-                target_channel = None
-
-                # 1. Try Member's Voice Channel (Highest Priority per User Request)
-                if member and member.voice and member.voice.channel:
-                     if member.voice.channel.permissions_for(guild.me).send_messages:
-                         target_channel = member.voice.channel
-
-                # 2. Try existing controller channel (if VC not viable or not found)
-                if not target_channel and player and hasattr(player, 'controller') and player.controller:
-                    try: target_channel = player.controller.channel
-                    except: pass
-                
-                # 3. Try Database for bound channel
-                if not target_channel:
-                    try:
-                        from bot import collection_myasync
-                        db_data = await collection_myasync.find_one({})
-                        if db_data and "guilds" in db_data and str(guild.id) in db_data["guilds"]:
-                            channel_id = db_data["guilds"][str(guild.id)].get("channel_id")
-                            if channel_id: target_channel = guild.get_channel(int(channel_id))
-                    except Exception as e:
-                        print(f"DB Error in Dashboard: {e}")
-                
-                # 4. Fallback: First text channel we can send to
-                if not target_channel:
-                     for c in guild.text_channels:
-                         if c.permissions_for(guild.me).send_messages:
-                             target_channel = c
-                             break
-
-                # Connection Logic
-                if not player and member:
-                    print(f"[Dashboard] Bot not in VC. Attempting auto-join for {member}...")
-                    try:
-                        if member.voice and member.voice.channel:
-                            # Use FakeContext to provide a robust context environment for Player
-                            fake_ctx = FakeContext(self.bot, guild, target_channel, member)
-                            player = await member.voice.channel.connect(cls=cytechlink.Player(self.bot, member.voice.channel, fake_ctx))
-                            print(f"[Dashboard] Auto-joined: {member.voice.channel.name}")
-                            await asyncio.sleep(0.5)
-                        else:
-                            print(f"[Dashboard] Could not find user in a voice channel.")
-                    except Exception as e:
-                        print(f"[Dashboard] Auto-join Error: {e}")
-
-                # Ensure player has context even if already connected (legacy fix)
-                if player and member:
-                     # Always update context to use the resolved target_channel (VC priority)
-                     # This ensures update_controller sends msg to VC
-                     player.context = FakeContext(self.bot, guild, target_channel, member)
-                     if not player.dj: player.dj = member
-
-                if query:
-                    results = None
-                    try:
-                        # Check for JSON payload (Robust Handling)
-                        import json
-                        payload_data = None
-                        if isinstance(query, dict):
-                            payload_data = query
-                        elif isinstance(query, str) and query.strip().startswith('{'):
-                             try: payload_data = json.loads(query)
-                             except: pass
-
-                        if payload_data:
-                            uri = payload_data.get('uri')
-                            encoded = payload_data.get('encoded')
-                            
-                            # STRATEGY: Prioritize ENCODED Track ID for exact metadata match
-                            if encoded:
-                                try:
-                                    node = player.node if player else None
-                                    if not node and self.bot.cytech.nodes:
-                                        # Get any available node
-                                        node = list(self.bot.cytech.nodes.values())[0]
-                                    
-                                    if node:
-                                        track_obj = await node.build_track(encoded, requester=member if member else guild.me)
-                                        results = [track_obj]
-                                except Exception as e:
-                                    print(f"[Dashboard] Encoded Build Failed: {e}")
-                                    # Fallback to URI if encoded failed
-                                    if uri: query = uri
-                            elif uri:
-                                query = uri
-
-                    except Exception as e:
-                        print(f"[Dashboard] Payload Parse Error: {e}")
-
-                    # Fallback / Standard Search Logic if results not set yet
-                    if not results:
-                        # Dashboard Selective Loading Logic (Legacy String Support)
-                        if isinstance(query, str) and query.startswith("load:"):
-                            encoded_str = query[5:]
-                            try:
-                                node = player.node if player else None
-                                if not node and self.bot.cytech.nodes:
-                                    node = list(self.bot.cytech.nodes.values())[0]
-                                
-                                track_obj = await node.build_track(encoded_str, requester=member if member else guild.me)
-                                results = [track_obj]
-                            except Exception as e:
-                                print(f"[Dashboard] Encoded Load Error: {e}")
-                                return web.json_response({'error': f'Failed to load exact track: {e}'}, status=400, headers=self.cors_headers)
-                        else:
-                            # Standard Search Logic
-                            if not ("http" in query or "https" in query):
-                                 query = f"ytmsearch:{query}"
-                            
-                            if not player:
-                                return web.json_response({'error': 'Bot not in voice channel'}, status=400, headers=self.cors_headers)
-                            
-                            try:
-                                results = await player.get_tracks(query, requester=member if member else guild.me) 
-                            except cytechlink.TrackLoadError:
-                                return web.json_response({'error': 'Source not supported / ขออภัย ไม่รองรับการเล่นจากแหล่งที่มานี้'}, status=400, headers=self.cors_headers)
-
-                    if not results:
-                        return web.json_response({'error': 'No tracks found / ไม่พบข้อมูลเพลง'}, status=404, headers=self.cors_headers)
-
-                if results:
-                    # 1. Add Track(s) first
-                    if isinstance(results, list):
-                        await player.add_track(results[0])
-                    else: # Playlist
-                        await player.add_track(results.tracks)
-
-                    # 2. Logic similar to /play command for Controller
-                    # If not playing, we need to Start Playback
-                    if not player.is_playing:
-                        
-                        # Determine where to send the "Searching..." / Controller message
-                        # Priority: 
-                        # 1. If we have a Target Channel (resolved above, pref. VC text channel), use it.
-                        # 2. If User is in VC, try to use that VC.
-                        
-                        send_channel = target_channel
-                        if not send_channel and member and member.voice and member.voice.channel:
-                             if member.voice.channel.permissions_for(guild.me).send_messages:
-                                 send_channel = member.voice.channel
-
-                        # Fallback to DB channel if still none
-                        if not send_channel:
-                             try:
-                                 from bot import collection_myasync
-                                 db_data = await collection_myasync.find_one({})
-                                 if db_data and "guilds" in db_data and str(guild.id) in db_data["guilds"]:
-                                     channel_id = db_data["guilds"][str(guild.id)].get("channel_id")
-                                     if channel_id: send_channel = guild.get_channel(int(channel_id))
-                             except: pass
-
-                        # Final Fallback
-                        if not send_channel:
-                             for c in guild.text_channels:
-                                 if c.permissions_for(guild.me).send_messages:
-                                     send_channel = c
-                                     break
-
-                        # Send "Searching..." and Set Controllerg
-                        try:
-                            if send_channel:
-                                embed = discord.Embed(title="Searching...", color=0xFFD700)
-                                msg = await send_channel.send(embed=embed)
-                                player.controller = msg
-                        except Exception as e:
-                            print(f"[Dashboard] Failed to send controller: {e}")
-
-                        # Start Playback
-                        try:
-                            await player.do_next()
-                            skip_update = True
-                        except Exception as e:
-                             print(f"do_next error from dashboard: {e}")
-                    else:
-                        # If already playing, just update existing controller?
-                        # Or if user wants it in THEIR channel now?
-                        # /play behavior: If playing, it just adds to queue and says "Added to queue".
-                        # It DOES NOT move the controller if already playing usually.
-                        pass # Queue added, controller updates automatically via event or next track.
-
-            elif action == "search":
-                # NEW: Return list of tracks for selection
-                query = payload.get('value')
-                if query:
-                     if not ("http" in query or "https" in query):
-                         query = f"ytmsearch:{query}"
-                     
-                     node = None
-                     if player: 
-                         node = player.node
-                     else:
-                         if self.bot.cytech.nodes:
-                             node = list(self.bot.cytech.nodes.values())[0]
-                     
-                     if not node:
-                          return web.json_response({'error': 'No generic music node available'}, headers=self.cors_headers)
-
-                     try:
-                         results = await node.get_tracks(query, requester=None)
-                     except cytechlink.TrackLoadError:
-                         return web.json_response({'error': 'Source not supported / ไม่รองรับแหล่งที่มานี้'}, status=400, headers=self.cors_headers)
-                     
-                     search_data = []
-                     if results:
-                         tracks = results if isinstance(results, list) else results.tracks
-                         for track in tracks[:20]:
-                             search_data.append({
-                                 "title": track.title,
-                                 "author": track.author,
-                                 "length": track.length,
-                                 "uri": track.uri,
-                                 "identifier": track.identifier,
-                                 "encoded": track.track_id
-                             })
-                     
-                     return web.json_response({'status': 'ok', 'results': search_data}, headers=self.cors_headers)
-            
-            elif action == "proxy_control":
-                cmd = payload.get('cmd_action')
-                if cmd == "guild_settings_save":
-                    return await self.post_guild_settings(request)
-
-            elif action == "skipto":
-                # Skip to specific index in queue
-                try:
-                    index = int(payload.get('value', 0))
-                except:
-                    index = 0
-
-                if player and not player.queue.is_empty:
-                    try:
-                        # DEBUG
-                        print(f"[Dashboard] Skipto Index: {index} (Queue Len: {len(player.queue)})")
-
-                        # Valid index check
-                        if index < 0 or index >= len(player.queue):
-                            return web.json_response({"error": "Invalid index"}, headers=self.cors_headers)
-
-                        # METHOD 1: Direct Slice (Best/Fastest if supported)
-                        # Most Lavalink libs allow queue assignment: player.queue = player.queue[index:]
-                        # checking if queue is a list-like object that supports slicing and assignment
-                        
-                        # METHOD 2: Library Specific 'skipto'
-                        if hasattr(player.queue, "skipto"):
-                             player.queue.skipto(index)
-                        
-                        # METHOD 3: Standard List Manipulation (Fallback)
-                        else:
-                             # Remove items 0 to index-1
-                             # Logic: We want item at 'index' to become new '0'
-                             # So we remove '0' 'index' times.
-                             for _ in range(index):
-                                 try:
-                                     del player.queue[0]
-                                 except:
-                                     player.queue.remove(0) # Fallback if del not supported
-
-                        # Update is skipped because stop() triggers event update usually
-                        await player.stop()
-                        skip_update = True
-                        
-                    except Exception as e:
-                        print(f"[Dashboard] Skipto Error: {e}")
-                        import traceback
-                        traceback.print_exc()
-
-            elif action == "remove":
-                # Remove specific track from queue
-                try:
-                    index = int(payload.get('value', 0))
-                    if player and not player.queue.is_empty:
-                        if 0 <= index < len(player.queue):
-                            del player.queue[index]
-                        else:
-                             pass # Out of bounds
-                except Exception as e:
-                     print(f"[Dashboard] Remove Error: {e}")
-            
-            elif action == "skipto":
-                try:
-                    index = int(payload.get('value', 0))
-                    if player and not player.queue.is_empty:
-                        if 0 <= index < len(player.queue):
-                            # Move target track to front and skip current
-                            target_track = player.queue[index]
-                            del player.queue[index]
-                            player.queue.put_at_front(target_track)
-                            await player.stop()
-                except Exception as e:
-                     print(f"[Dashboard] SkipTo Error: {e}")
-
-            elif action == "favorite":
-                try:
-                    track_data = payload.get('value')
-                    if track_data and user_id:
-                        # Ensure track data is clean (remove internal objects if any)
-                        clean_track = {
-                            "title": track_data.get("title"),
-                            "uri": track_data.get("uri"),
-                            "author": track_data.get("author"),
-                            "length": track_data.get("length", 0),
-                            "encoded": track_data.get("encoded"),
-                            "thumbnail": track_data.get("thumbnail")
-                        }
-                        
-                        await collection_myasync.update_one(
-                             {"user_id": str(user_id)},
-                             {"$addToSet": {"favorites": clean_track}},
-                             upsert=True
-                        )
-                except Exception as e:
-                    print(f"[Dashboard] Favorite Error: {e}")
-
-            elif action == "seek":
-                try:
-                    position = int(payload.get('value', 0))
-                    if player:
-                        await player.seek(position)
-                except Exception as e:
-                    print(f"[Dashboard] Seek Error: {e}")
-
-            # Update Controller Embed in Discord
-            if hasattr(player, "update_controller") and not skip_update:
-                try:
-                    await player.update_controller(force=True)
-                except Exception as e:
-                     print(f"Update Controller Error: {e}")
-
-            return web.json_response({'status': 'ok', 'action': action}, headers=self.cors_headers)
-
-        except Exception as e:
-            print(f"Dashboard Action Error: {e}")
-            traceback.print_exc()
-            return web.json_response({'error': str(e)}, status=500, headers=self.cors_headers)
 
     async def find_voice_channel(self, request):
         user_id = request.query.get('user_id')

@@ -410,6 +410,9 @@ async function fetchRecommendations() {
     const list = document.getElementById('recommended-list');
     if (!list || !window.accessToken) return;
 
+    // Use currentUserId instead of window.userId
+    const userId = typeof currentUserId !== 'undefined' ? currentUserId : '';
+
     // Use a small delay if called during init to ensure selectedGuildId is settled
     if (!selectedGuildId) {
         // Fallback: Still fetch trending if no guild selected, but don't spam
@@ -417,12 +420,14 @@ async function fetchRecommendations() {
     }
 
     try {
-        const res = await smartFetch(`?action=recommended&guild_id=${selectedGuildId || ''}`);
+        const res = await smartFetch(`?action=recommended&guild_id=${selectedGuildId || ''}&user_id=${userId}`);
 
         if (!res.ok) {
             const errBody = await res.text();
             console.warn(`[Recommended] API Error ${res.status}:`, errBody);
-            // Don't throw, just show empty
+            // Don't show error to user, just hide if failed
+            list.innerHTML = `<p class="lang-text" data-en="No recommendations yet. Start playing music!" data-th="ยังไม่มีเพลงแนะนำ เริ่มฟังเพลงเพื่อให้เราแนะนำได้แม่นยำขึ้น!"></p>`;
+            updateLanguage();
             return;
         }
 
@@ -430,10 +435,11 @@ async function fetchRecommendations() {
         if (data.results && data.results.length > 0) {
             renderRecommendations(data.results);
         } else {
-            console.log("[Recommended] No results returned.");
+            list.innerHTML = `<p class="lang-text" data-en="No recommendations yet. Start playing music!" data-th="ยังไม่มีเพลงแนะนำ เริ่มฟังเพลงเพื่อให้เราแนะนำได้แม่นยำขึ้น!"></p>`;
+            updateLanguage();
         }
     } catch (e) {
-        console.error("Recommended Fetch Error:", e);
+        console.error("[Recommended] Fetch failed:", e);
     }
 }
 
@@ -468,11 +474,25 @@ function renderRecommendations(tracks) {
         const style = document.createElement('style');
         style.id = 'rec-styles';
         style.innerHTML = `
+            .recommended-card { 
+                flex: 0 0 180px; 
+                scroll-snap-align: start;
+                user-select: none;
+            }
             .recommended-card:hover { transform: translateY(-5px); }
             .recommended-card:hover .play-overlay { opacity: 1 !important; }
             .recommended-card:hover img { transform: scale(1.1); opacity: 1 !important; }
-            .horizontal-scroll::-webkit-scrollbar { height: 4px; }
-            .horizontal-scroll::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.3); border-radius: 10px; }
+            .horizontal-scroll {
+                scroll-snap-type: x mandatory;
+                scroll-behavior: smooth;
+                -webkit-overflow-scrolling: touch;
+                padding: 10px 5px;
+                margin: 0 -5px;
+            }
+            .horizontal-scroll::-webkit-scrollbar { height: 6px; }
+            .horizontal-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
+            .horizontal-scroll::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.4); border-radius: 10px; }
+            .horizontal-scroll::-webkit-scrollbar-thumb:hover { background: var(--gold-primary); }
         `;
         document.head.appendChild(style);
     }
@@ -632,22 +652,40 @@ async function fetchStatus() {
 
 let isRequesting = false; // Guard for overlapping requests
 
+async function playRandom() {
+    if (!selectedGuildId) {
+        showNotification("No Channel", "ไม่ระบุช่อง", "Please join a voice channel first.", "กรุณาเข้าห้องเสียงก่อนนะครับ", "error");
+        return;
+    }
+
+    // UI Feedback
+    const btn = event?.currentTarget;
+    if (btn) {
+        const icon = btn.querySelector('i');
+        if (icon) icon.className = 'fas fa-dice fa-spin';
+        setTimeout(() => { if (icon) icon.className = 'fas fa-dice'; }, 1000);
+    }
+
+    console.log("[Dashboard] Requesting random song...");
+    await sendControl('random');
+}
+
 async function sendControl(action, value = null) {
     if (!selectedGuildId || isRequesting) return;
 
-    // REALTIME SOCKET SEND (Fastest)
-    if (isRealtime && wsConnection && wsConnection.readyState === WebSocket.OPEN) {
+    // FORWARD CERTAIN ACTIONS TO HTTP (PLAY/SEARCH need backend logic)
+    const alwaysHttp = ['play', 'search', 'skipto', 'proxy_control', 'random'];
+
+    // REALTIME SOCKET SEND (Fastest for UI controls like pause/skip/volume)
+    if (isRealtime && wsConnection && wsConnection.readyState === WebSocket.OPEN && !alwaysHttp.includes(action)) {
         wsConnection.send(JSON.stringify({
             op: 'control',
             guild_id: selectedGuildId,
             action: action,
             value: value
         }));
-        // Optimistic UI handled by wrapper
         return;
     }
-
-    if (isRealtime) return; // If realtime connected but busy, wait.
 
     // Allow volume to bypass or handle separately? 
     // Let's keep it simple: everything gets a small cooldown.
@@ -921,6 +959,9 @@ async function playTrack(encoded, uri) {
 
     const input = document.getElementById('song-input');
     if (input) input.value = '';
+
+    // UI Feedback: Show loading on the card if possible or global notification
+    console.log(`[Dashboard] Playing track: ${encoded || uri}`);
 
     await sendControl('play', JSON.stringify({
         encoded: encoded,

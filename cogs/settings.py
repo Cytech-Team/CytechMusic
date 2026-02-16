@@ -376,19 +376,114 @@ class Settings(commands.Cog):
 
         except Exception as e:
             await ctx.send(f"Failed to fetch settings: {e}", ephemeral=True)
-# ===================================================================
-# CLEAN & FAST DB HELPERS
-# ===================================================================
+
+    # ===================================================================
+    # UTILITY: FIX & CLEANUP
+    # ===================================================================
+    @commands.hybrid_command(name="fixed", description="Fix/Reset the music request channel / แก้ไขหรือรีเซ็ตห้องขอเพลง")
+    @commands.has_permissions(manage_channels=True)
+    @commands.guild_only()
+    async def fixed_channel(self, ctx: commands.Context):
+        """Fix/Reset the music request channel using the user's provided logic"""
+        await ctx.defer()
+        lang = await self.bot.get_lang(ctx.guild.id)
+        
+        try:
+            guild_id = ctx.guild.id
+            data = await collection_myasync.find_one({}) or {}
+            old_channel_id = data.get("guilds", {}).get(str(guild_id), {}).get("channel_id")
+            
+            channel = ctx.guild.get_channel(old_channel_id) if old_channel_id else None
+
+            if channel:
+                # Reuse existing channel: Clear it
+                if hasattr(channel, 'purge'):
+                    await channel.purge(limit=100)
+            else:
+                # Create new channel if not found
+                channel = await ctx.guild.create_text_channel(
+                    name="〔🎶〕〢Cyori",
+                    category=ctx.channel.category,
+                    slowmode_delay=3,
+                    topic=self.bot.i18n.get("join_voice_chat_title", lang)
+                )
+
+            g_data = data.get("guilds", {}).get(str(guild_id), {})
+
+            queue_embed = discord.Embed(title=self.bot.i18n.get("no_queue", lang), color=ui_config.EMBED_COLOR)
+            play_embed = self.bot.none_play_embed(lang, g_data)
+
+            q_msg = await channel.send(embed=queue_embed)
+            p_msg = await channel.send(embed=play_embed)
+
+            await save_data_setup(guild_id, q_msg.id, p_msg.id, channel.id)
+            await ctx.send(self.bot.i18n.get("setup_complete", lang, channel=channel.mention), ephemeral=False)
+            await self._update_controller_if_playing(guild_id)
+
+        except Exception as e:
+            await ctx.send(f"Fixed failed: {e}", ephemeral=True)
+
+    @commands.hybrid_command(name="fix", description="Fix voice connection issues / แก้ไขปัญหาเสียงหาย")
+    @commands.has_permissions(manage_guild=True)
+    async def fix(self, ctx: commands.Context):
+        """Fix voice issues by changing region or reconnecting"""
+        await ctx.defer()
+        lang = await self.bot.get_lang(ctx.guild.id)
+        
+        if not ctx.guild.voice_client:
+            return await ctx.send(self.bot.i18n.get("no_player_found", lang), ephemeral=True)
+
+        try:
+            vc = ctx.guild.voice_client.channel
+            if hasattr(vc, "rtc_region"):
+                new_region = "singapore" if vc.rtc_region is None else None 
+                await vc.edit(rtc_region=new_region)
+                display_region = new_region if new_region else "Automatic"
+                await ctx.send(self.bot.i18n.get("fix_voice", lang, region=display_region))
+            else:
+                 await ctx.send("❌ Cannot change voice region (Not supported).")
+        except Exception as e:
+            await ctx.send(self.bot.i18n.get("fix_voice_error", lang, e=e))
+
+    @commands.hybrid_command(name="voicefix", description="Force Reconnect Voice / บังคับเชื่อมต่อเสียงใหม่")
+    @commands.has_permissions(manage_guild=True)
+    async def voicefix(self, ctx: commands.Context):
+        """Force bot to disconnect and reconnect to voice channel"""
+        await ctx.defer()
+        lang = await self.bot.get_lang(ctx.guild.id)
+        
+        player = ctx.guild.voice_client
+        if not player or not player.channel:
+             return await ctx.send(self.bot.i18n.get("no_player_found", lang), ephemeral=True)
+
+        channel = player.channel
+        try:
+            await player.disconnect(force=True)
+            await channel.connect(cls=cytechlink.Player)
+            await ctx.send("✅ **Voice Connection Reset!** / รีเซ็ตการเชื่อมต่อเสียงเรียบร้อย")
+        except Exception as e:
+            await ctx.send(f"❌ Voice Fix failed: {e}", ephemeral=True)
+
+    @commands.hybrid_command(name="cleanup", description="Clean up bot messages / ลบข้อความของบอท")
+    @commands.has_permissions(manage_messages=True)
+    async def cleanup(self, ctx: commands.Context, limit: int = 50):
+        """Delete recent bot messages to clean up channel"""
+        await ctx.defer(ephemeral=True)
+        lang = await self.bot.get_lang(ctx.guild.id)
+        
+        if limit > 100: limit = 100
+        
+        try:
+            def is_bot(m):
+                return m.author == self.bot.user or m.content.startswith(tuple(self.bot.command_prefix))
+
+            deleted = await ctx.channel.purge(limit=limit, check=is_bot)
+            await ctx.send(self.bot.i18n.get("cleanup_message", lang, count=len(deleted)), ephemeral=True)
+        except Exception as e:
+            await ctx.send(f"❌ Clean up failed: {e}", ephemeral=True)
+
 async def save_data_setup(guild_id: int, queue_embed_id: int, play_embed_id: int, channel_id: int):
-    await collection_myasync.update_one(
-        {},
-        {"$set": {
-            f"guilds.{guild_id}.queue_embed_id": queue_embed_id,
-            f"guilds.{guild_id}.play_embed_id": play_embed_id,
-            f"guilds.{guild_id}.channel_id": channel_id
-        }},
-        upsert=True
-    )
+    await collection_myasync.update_one({}, {"$set": { f"guilds.{guild_id}.queue_embed_id": queue_embed_id, f"guilds.{guild_id}.play_embed_id": play_embed_id, f"guilds.{guild_id}.channel_id": channel_id }}, upsert=True)
 
 async def save_data_247(guild_id: int, state: bool):
     await collection_myasync.update_one({}, {"$set": {f"guilds.{guild_id}.24/7": state}}, upsert=True)
@@ -410,83 +505,6 @@ async def save_data_vote_mode(guild_id: int, mode: bool):
 
 async def save_data_dj_mode(guild_id: int, mode: bool):
     await collection_myasync.update_one({}, {"$set": {f"guilds.{guild_id}.dj_mode": mode}}, upsert=True)
-
-
-    # ===================================================================
-    # UTILITY: FIX & CLEANUP
-    # ===================================================================
-    @commands.hybrid_command(name="fix", description="Fix voice connection issues / แก้ไขปัญหาเสียงหาย")
-    @commands.has_permissions(manage_guild=True)
-    async def fix(self, ctx: commands.Context):
-        """Fix voice issues by changing region or reconnecting"""
-        await ctx.defer()
-        lang = await self.bot.get_lang(ctx.guild.id)
-        
-        if not ctx.guild.voice_client:
-            return await ctx.send(self.bot.i18n.get("no_player_found", lang), ephemeral=True)
-
-        try:
-            # Method 1: Change Region (Effective for "No Sound")
-            # We toggle between typical regions or let Discord handle 'automatic'
-            current_region = ctx.guild.region
-            # discord.py 2.0+ handles regions differently (RTC Region in Voice Channels)
-            vc = ctx.guild.voice_client.channel
-            
-            if hasattr(vc, "rtc_region"):
-                # Toggle
-                new_region = "singapore" if vc.rtc_region is None else None 
-                await vc.edit(rtc_region=new_region)
-                display_region = new_region if new_region else "Automatic"
-                await ctx.send(self.bot.i18n.get("fix_voice", lang, region=display_region))
-            else:
-                 await ctx.send("❌ Cannot change voice region (Not supported).")
-                 
-        except Exception as e:
-            await ctx.send(self.bot.i18n.get("fix_voice_error", lang, e=e))
-
-    @commands.hybrid_command(name="voicefix", description="Force Reconnect Voice / บังคับเชื่อมต่อเสียงใหม่")
-    @commands.has_permissions(manage_guild=True)
-    async def voicefix(self, ctx: commands.Context):
-        """Force bot to disconnect and reconnect to voice channel"""
-        await ctx.defer()
-        lang = await self.bot.get_lang(ctx.guild.id)
-        
-        player = ctx.guild.voice_client
-        if not player or not player.channel:
-             return await ctx.send(self.bot.i18n.get("no_player_found", lang), ephemeral=True)
-
-        channel = player.channel
-        try:
-            # 1. Disconnect
-            await player.disconnect(force=True)
-            # 2. Reconnect
-            await channel.connect(cls=cytechlink.Player)
-            await ctx.send("✅ **Voice Connection Reset!** / รีเซ็ตการเชื่อมต่อเสียงเรียบร้อย")
-            
-            # 3. Restore controller if possible
-            # Note: Queue might be cleared depending on player implementation, 
-            # Wavelink usually clears queue on disconnect unless specifically handled.
-            # CytechLink likely behaves similarly.
-        except Exception as e:
-            await ctx.send(f"❌ Voice Fix failed: {e}", ephemeral=True)
-
-    @commands.hybrid_command(name="cleanup", description="Clean up bot messages / ลบข้อความของบอท")
-    @commands.has_permissions(manage_messages=True)
-    async def cleanup(self, ctx: commands.Context, limit: int = 50):
-        """Delete recent bot messages to clean up channel"""
-        await ctx.defer(ephemeral=True)
-        lang = await self.bot.get_lang(ctx.guild.id)
-        
-        if limit > 100: limit = 100
-        
-        try:
-            def is_bot(m):
-                return m.author == self.bot.user or m.content.startswith(tuple(self.bot.command_prefix))
-
-            deleted = await ctx.channel.purge(limit=limit, check=is_bot)
-            await ctx.send(self.bot.i18n.get("cleanup_message", lang, count=len(deleted)), ephemeral=True)
-        except Exception as e:
-            await ctx.send(f"❌ Clean up failed: {e}", ephemeral=True)
 
 async def setup(bot: Cyori):
     await bot.add_cog(Settings(bot))
