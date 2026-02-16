@@ -875,11 +875,16 @@ class DashboardAPI(commands.Cog):
             return web.json_response({'error': 'No music node available'}, status=503, headers=self.cors_headers)
 
         try:
+            # print(f"DEBUG: Recommendation Request for Guild: {guild_id}")
             # We use a preset query for 'trending' or 'recommended' to simulate the feature
-            # In a real scenario, this could be based on top charts or user history
             results = await node.get_tracks("ytmsearch:Trending Music Mix 2026", requester=None)
             tracks = results if isinstance(results, list) else getattr(results, 'tracks', [])
             
+            if not tracks:
+                # Fallback to a broader search if Trending 2026 is empty (it might be too specific)
+                results = await node.get_tracks("ytmsearch:Top Charts", requester=None)
+                tracks = results if isinstance(results, list) else getattr(results, 'tracks', [])
+
             # Select 12 random-ish premium looking tracks
             import random
             random.shuffle(tracks)
@@ -890,13 +895,15 @@ class DashboardAPI(commands.Cog):
                     "title": track.title,
                     "author": track.author,
                     "length": track.length,
-                    "thumbnail": f"https://img.youtube.com/vi/{track.identifier}/maxresdefault.jpg",
+                    "thumbnail": f"https://img.youtube.com/vi/{track.identifier}/maxresdefault.jpg" if track.source_name == "youtube" else (getattr(track, 'thumbnail', 'logo-circle.png') or 'logo-circle.png'),
                     "uri": track.uri,
                     "encoded": track.track_id
                 })
             
+            # print(f"DEBUG: Found {len(data)} recommendations")
             return web.json_response({'status': 'ok', 'results': data}, headers=self.cors_headers)
         except Exception as e:
+            # print(f"DEBUG: Recommendation Error: {e}")
             return web.json_response({'error': str(e)}, status=500, headers=self.cors_headers)
 
     async def post_playlist(self, request):

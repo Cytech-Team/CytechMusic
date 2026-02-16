@@ -522,22 +522,11 @@ function initRealtime(guildId) {
     // Determine WS URL (Smart Direct Logic)
     let wsUrl = '';
 
-    // 1. LOCAL ENVIRONMENT OPTIMIZATION (Zero Proxy Latency)
-    // If web is running locally, connect DIRECTLY to bot on localhost:8000
+    // 1. LOCAL ENVIRONMENT (Direct Connect)
     if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-        // Default aiohttp port is often 8000 or 8080. Using 8000 as standard.
-        // If bot uses different port, user can update here easily.
         wsUrl = `ws://${location.hostname}:8000/api/gateway`;
-        console.log("[Realtime] Local Environment -> Direct Connect:", wsUrl);
     }
-    // 2. REMOTE / PRODUCTION
-    else if (BOT_API.startsWith('http')) {
-        wsUrl = BOT_API.replace('http', 'ws');
-        // Handle standard proxy path replacement
-        if (wsUrl.endsWith('proxy')) wsUrl = wsUrl.replace('proxy', 'gateway');
-        else if (!wsUrl.includes('gateway')) wsUrl += '/gateway'; // Guess endpoint
-    }
-    // 3. RELATIVE / REVERSE PROXY
+    // 2. REMOTE / PRODUCTION (Using Cloudflare Gateway Proxy)
     else {
         const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
         wsUrl = `${proto}//${location.host}/api/gateway`;
