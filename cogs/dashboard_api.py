@@ -1054,8 +1054,10 @@ class DashboardAPI(commands.Cog):
             if not plan_name:
                 plan_name = "Free"
 
-            # PLAYLISTS FETCH
-            playlists = user_doc.get("playlists", []) if user_doc else []
+            # PLAYLISTS & FAVORITES FETCH (Dedicated per-user document)
+            user_doc = await collection_myasync.find_one({"user_id": str(user_id)}) or {}
+            playlists = user_doc.get("playlists", [])
+            favorites = user_doc.get("favorites", [])
 
             response_data = {
                 "user_id": user_id,

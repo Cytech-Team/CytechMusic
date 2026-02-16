@@ -108,7 +108,20 @@ export async function onRequest(context) {
         }
     }
 
-    // --- CASE C: GENERAL PROXY ---
+    // --- CASE C: DYNAMIC BOT REGISTRATION & POLLING ---
+    if (action === "register_bot") {
+        return new Response(JSON.stringify({ status: "success", info: "Cloudflare Proxy is currently static" }), {
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+    }
+
+    if (action === "poll") {
+        return new Response(JSON.stringify([]), {
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+    }
+
+    // --- CASE D: GENERAL PROXY ---
     const pathMap = {
         "status": "/api/status", "find_voice": "/api/find_voice", "global_stats": "/api/stats",
         "bot_guilds": "/api/bot_guilds", "join_guild": "/api/join_guild", "search": "/api/search",
