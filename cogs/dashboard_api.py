@@ -437,79 +437,96 @@ class DashboardAPI(commands.Cog):
             return web.json_response({'error': str(e)}, status=500, headers=self.cors_headers)
 
     async def get_recommended(self, request):
-        guild_id = request.query.get('guild_id')
+        guild_id_raw = request.query.get('guild_id')
         
         node = None
         player = None
         current_track = None
 
-        if guild_id and guild_id.isdigit():
-            guild = self.bot.get_guild(int(guild_id))
-            if guild:
-                player = guild.voice_client
-                if player and player.is_playing and player.current:
-                    current_track = player.current
-                    node = player.node
-
-        # Fallback to any node if no player or guild
-        if not node:
-            try:
-                if self.bot.cytech.nodes:
-                    node = list(self.bot.cytech.nodes.values())[0]
-            except: pass
-
-        if not node:
-            return web.json_response({'error': 'No music node available'}, status=503, headers=self.cors_headers)
+        print(f"[Recommended] Request received - Guild ID: {guild_id_raw}")
 
         try:
-            query = None
-            # If something is playing, get related Mix/RD list
-            if current_track and hasattr(current_track, 'identifier') and current_track.identifier:
-                # Use YouTube Mix RD list for high quality recommendations
-                query = f"https://www.youtube.com/watch?v={current_track.identifier}&list=RD{current_track.identifier}"
-            else:
-                # Fallback: Trending or something generic
-                query = "ytmsearch:Trending Music 2026"
+            if guild_id_raw and str(guild_id_raw).isdigit():
+                guild = self.bot.get_guild(int(guild_id_raw))
+                if guild:
+                    player = guild.voice_client
+                    if player and player.is_playing and player.current:
+                        current_track = player.current
+                        node = getattr(player, 'node', None)
 
+            # Fallback node selection
+            if not node:
+                try:
+                    if hasattr(self.bot, 'cytech') and self.bot.cytech.nodes:
+                        node = list(self.bot.cytech.nodes.values())[0]
+                    else:
+                        # Try to get from pool if available
+                        node = self.bot.cytech.get_node()
+                except Exception as ne:
+                    print(f"[Recommended] Node Selection Error: {ne}")
+
+            if not node:
+                print("[Recommended] Failed: No music node available")
+                return web.json_response({'error': 'No music node available', 'results': []}, status=503, headers=self.cors_headers)
+
+            query = "ytmsearch:Trending Music 2026"
+            if current_track and hasattr(current_track, 'identifier') and current_track.identifier:
+                query = f"https://www.youtube.com/watch?v={current_track.identifier}&list=RD{current_track.identifier}"
+
+            print(f"[Recommended] Fetching recommendations for query: {query}")
             results = await node.get_tracks(query, requester=None)
             rec_data = []
             
             if results:
-                tracks = results if isinstance(results, list) else getattr(results, 'tracks', [])
-                # If it's a playlist (from RD list), we skip the first one if it's the same as current
+                # Handle Playlist or List
+                tracks = []
+                if isinstance(results, list):
+                    tracks = results
+                elif hasattr(results, 'tracks'):
+                    tracks = results.tracks
+                
+                # Robust attribute checking for each track
                 start_idx = 0
-                if current_track and tracks and tracks[0].identifier == current_track.identifier:
+                if current_track and tracks and getattr(tracks[0], 'identifier', None) == current_track.identifier:
                     start_idx = 1
                 
-                for track in tracks[start_idx:start_idx+12]: # Show 12 recommendations
+                for track in tracks[start_idx:start_idx+12]:
+                    # Safer property access
+                    t_id = getattr(track, 'track_id', None)
+                    if not t_id and hasattr(track, 'id'): t_id = track.id # Fallback if library changed
+                    
                     rec_data.append({
-                        "title": track.title,
-                        "author": track.author,
-                        "length": track.length,
-                        "uri": track.uri,
-                        "thumbnail": track.thumbnail if hasattr(track, 'thumbnail') and track.thumbnail and "null" not in track.thumbnail else "logo-circle.png",
-                        "encoded": track.track_id
+                        "title": getattr(track, 'title', 'Unknown Track'),
+                        "author": getattr(track, 'author', 'Unknown Author'),
+                        "length": getattr(track, 'length', 0),
+                        "uri": getattr(track, 'uri', '#'),
+                        "thumbnail": getattr(track, 'thumbnail', 'logo-circle.png') or "logo-circle.png",
+                        "encoded": t_id
                     })
 
-            # If RD list failed or empty, try a generic search
+            # Deep Fallback: If still empty
             if not rec_data:
-                results = await node.get_tracks("ytmsearch:Popular Thai Songs", requester=None)
+                print("[Recommended] RD list empty, trying fallback search...")
+                results = await node.get_tracks("ytmsearch:Popular Thai Music", requester=None)
                 if results:
                     tracks = results if isinstance(results, list) else getattr(results, 'tracks', [])
                     for track in tracks[:12]:
                         rec_data.append({
-                            "title": track.title,
-                            "author": track.author,
-                            "length": track.length,
-                            "uri": track.uri,
-                            "thumbnail": track.thumbnail if hasattr(track, 'thumbnail') and track.thumbnail and "null" not in track.thumbnail else "logo-circle.png",
-                            "encoded": track.track_id
+                            "title": getattr(track, 'title', 'Unknown Track'),
+                            "author": getattr(track, 'author', 'Unknown Author'),
+                            "length": getattr(track, 'length', 0),
+                            "uri": getattr(track, 'uri', '#'),
+                            "thumbnail": getattr(track, 'thumbnail', 'logo-circle.png') or "logo-circle.png",
+                            "encoded": getattr(track, 'track_id', None)
                         })
 
+            print(f"[Recommended] Success! Returning {len(rec_data)} tracks.")
             return web.json_response({'status': 'ok', 'results': rec_data}, headers=self.cors_headers)
+
         except Exception as e:
-            print(f"[Recommended] Error: {e}")
-            return web.json_response({'status': 'ok', 'results': []}, headers=self.cors_headers)
+            print(f"[Recommended] Global ERROR: {e}")
+            traceback.print_exc()
+            return web.json_response({'status': 'ok', 'results': [], 'debug_error': str(e)}, headers=self.cors_headers)
 
     async def post_control(self, request):
         try:

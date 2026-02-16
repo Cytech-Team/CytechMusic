@@ -408,14 +408,29 @@ async function playPlaylist(index) {
 
 async function fetchRecommendations() {
     const list = document.getElementById('recommended-list');
-    if (!list) return;
+    if (!list || !window.accessToken) return;
+
+    // Use a small delay if called during init to ensure selectedGuildId is settled
+    if (!selectedGuildId) {
+        // Fallback: Still fetch trending if no guild selected, but don't spam
+        console.log("[Recommended] No guild selected, fetching trending...");
+    }
 
     try {
         const res = await smartFetch(`?action=recommended&guild_id=${selectedGuildId || ''}`);
-        const data = await res.json();
 
-        if (data.results) {
+        if (!res.ok) {
+            const errBody = await res.text();
+            console.warn(`[Recommended] API Error ${res.status}:`, errBody);
+            // Don't throw, just show empty
+            return;
+        }
+
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
             renderRecommendations(data.results);
+        } else {
+            console.log("[Recommended] No results returned.");
         }
     } catch (e) {
         console.error("Recommended Fetch Error:", e);
