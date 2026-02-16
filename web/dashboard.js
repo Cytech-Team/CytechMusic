@@ -199,33 +199,61 @@ function onUserLoggedIn(user) {
         currentUserId = user.id;
         startAutoConnect(user.id);
 
-        // Init Favorites
-        setTimeout(renderFavorites, 500); // Small delay to ensure data populated
+        // Init Favorites & Recommendations
+        setTimeout(() => {
+            renderCollection();
+            fetchRecommendations();
+        }, 500);
     }
 }
 
-// ... (Existing functions) ...
+function switchTab(tabId, btn) {
+    const tabs = document.querySelectorAll('.dash-tab-content');
+    tabs.forEach(t => {
+        t.style.opacity = '0';
+        setTimeout(() => {
+            t.style.display = 'none';
+        }, 200);
+    });
+
+    const target = document.getElementById(`tab-${tabId}`);
+    if (target) {
+        setTimeout(() => {
+            target.style.display = 'block';
+            setTimeout(() => target.style.opacity = '1', 50);
+        }, 210);
+    }
+
+    const btns = document.querySelectorAll('.sidebar-btn');
+    btns.forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    if (tabId === 'favorites') renderCollection();
+}
 
 // ==========================================
-// 7. FAVORITES / COLLECTION
+// 7. COLLECTION / PLAYLISTS (Enhanced)
 // ==========================================
+
+function renderCollection() {
+    renderFavorites();
+    renderCustomPlaylists();
+    updatePlaylistLimits();
+}
 
 function renderFavorites() {
     const list = document.getElementById('favorites-list');
     if (!list) return;
 
     let favs = [];
-    // Data populated by script.js into window.userPremium from /api/user_info
     if (window.userPremium && window.userPremium.favorites) {
         favs = window.userPremium.favorites;
     }
 
     if (!favs || favs.length === 0) {
         list.innerHTML = `
-            <div class="queue-empty" style="text-align: center; padding: 40px; color: var(--text-muted);">
-                <i class="fas fa-heart" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.3; color: #ff5555;"></i>
-                <p>No favorites found.</p>
-                <p style="font-size: 0.9em; opacity: 0.7;">Click the [❤️] button on the player to save songs!</p>
+            <div class="queue-empty" style="text-align: center; padding: 20px; color: var(--text-muted); background: rgba(0,0,0,0.1); border-radius: 12px;">
+                <p>No favorites yet.</p>
             </div>`;
         return;
     }
@@ -233,22 +261,198 @@ function renderFavorites() {
     list.innerHTML = favs.map((track) => {
         const safeTitle = (track.title || "Unknown").replace(/'/g, "\\'");
         const safeUri = (track.uri || "").replace(/'/g, "\\'");
-        // Encoded might be missing in older saves, nice to have but uri is backup
         const encoded = track.encoded || "";
 
         return `
-        <div class="queue-item" onclick="playFavorite('${encoded}', '${safeUri}')" style="cursor: pointer;">
-            <div class="result-icon" style="color:#ff5555; width:30px;"><i class="fas fa-heart"></i></div>
+        <div class="queue-item" onclick="playFavorite('${encoded}', '${safeUri}')" style="cursor: pointer; padding: 8px 12px; margin-bottom: 5px;">
+            <div class="result-icon" style="color:#ff5555; width:24px; font-size: 0.8rem;"><i class="fas fa-heart"></i></div>
             <div class="queue-details">
-                <span class="queue-title">${track.title}</span>
-                <span class="queue-artist">${track.author || '-'}</span>
+                <span class="queue-title" style="font-size: 0.9rem;">${track.title}</span>
+                <span class="queue-artist" style="font-size: 0.8rem;">${track.author || '-'}</span>
             </div>
             <div class="queue-action">
-                <i class="fas fa-play-circle" style="color: var(--gold-primary); font-size: 1.2rem;"></i>
+                <i class="fas fa-play-circle" style="color: var(--gold-primary);"></i>
             </div>
         </div>
         `;
     }).join('');
+}
+
+function renderCustomPlaylists() {
+    const container = document.getElementById('custom-playlists-list');
+    if (!container) return;
+
+    const playlists = (window.userPremium && window.userPremium.playlists) ? window.userPremium.playlists : [];
+
+    if (playlists.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 30px; background: rgba(255,255,255,0.02); border-radius: 15px; border: 1px dashed rgba(255,255,255,0.1);">
+                <i class="fas fa-folder-plus" style="font-size: 2rem; opacity: 0.2; margin-bottom: 10px;"></i>
+                <p style="color: var(--text-muted);">No playlists created.</p>
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = playlists.map((pl, idx) => `
+        <div class="playlist-card glass-effect" style="padding: 15px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; position: relative;">
+            <div style="font-size: 1.5rem; margin-bottom: 10px; color: var(--gold-primary);"><i class="fas fa-music"></i></div>
+            <h5 style="margin: 0; font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${pl.name}</h5>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin: 5px 0 10px 0;">${pl.tracks ? pl.tracks.length : 0} Tracks</p>
+            
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-primary" style="flex: 1; padding: 5px; font-size: 0.75rem;" onclick="playPlaylist(${idx})">Play</button>
+                <button class="btn-glass" style="width: 30px; height: 30px; padding: 0; color: #ff4444;" onclick="deletePlaylist(${idx})"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updatePlaylistLimits() {
+    const info = document.getElementById('playlist-limit-info');
+    if (!info || !window.userPremium || !window.userPremium.limits) return;
+
+    const { used, total } = window.userPremium.limits;
+    info.textContent = `Playlists: ${used}/${total}`;
+    if (used >= total) info.style.color = '#ffaa00';
+}
+
+// --- Playlist Management Logic ---
+
+function createNewPlaylistPrompt() {
+    document.getElementById('playlist-modal').style.display = 'flex';
+    document.getElementById('new-playlist-name').focus();
+}
+
+async function confirmCreatePlaylist() {
+    const nameInput = document.getElementById('new-playlist-name');
+    const name = nameInput.value.trim();
+    if (!name) return;
+
+    document.getElementById('playlist-modal').style.display = 'none';
+    nameInput.value = '';
+
+    try {
+        const res = await smartFetch('/api/playlist', {
+            method: 'POST',
+            body: JSON.stringify({
+                user_id: currentUserId,
+                action: 'create',
+                name: name
+            })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+            showNotification("Success", "สำเร็จ", "Playlist created successfully.", "สร้างเพลย์ลิสต์เรียบร้อยแล้ว", "success");
+            // Re-fetch user data to get updated list
+            if (typeof window.fetchPremiumStatus === 'function') await window.fetchPremiumStatus();
+            renderCollection();
+        } else {
+            showNotification("Error", "ข้อผิดพลาด", data.error, data.error);
+        }
+    } catch (e) {
+        console.error("Create Playlist Error:", e);
+    }
+}
+
+async function deletePlaylist(index) {
+    if (!confirm("Are you sure you want to delete this playlist?")) return;
+
+    try {
+        await smartFetch('/api/playlist', {
+            method: 'POST',
+            body: JSON.stringify({
+                user_id: currentUserId,
+                action: 'delete',
+                index: index
+            })
+        });
+        if (typeof window.fetchPremiumStatus === 'function') await window.fetchPremiumStatus();
+        renderCollection();
+    } catch (e) { console.error(e); }
+}
+
+async function playPlaylist(index) {
+    if (!selectedGuildId) {
+        alert("Please join a voice channel first!");
+        return;
+    }
+    const pl = window.userPremium.playlists[index];
+    if (!pl || !pl.tracks || pl.tracks.length === 0) return;
+
+    showNotification("Playlist Playing", "กำลังเล่นเพลย์ลิสต์", `Added ${pl.tracks.length} tracks to queue.`, `เพิ่ม ${pl.tracks.length} เพลงลงคิวแล้ว`, "success");
+
+    // Start playing first track, then add others
+    for (let i = 0; i < pl.tracks.length; i++) {
+        const t = pl.tracks[i];
+        await sendControl('play', JSON.stringify({
+            encoded: t.encoded,
+            uri: t.uri,
+            source: 'playlist'
+        }));
+        // Small delay between batch play to avoid spam
+        await new Promise(r => setTimeout(r, 200));
+    }
+}
+
+// ==========================================
+// 8. RECOMMENDED CLIPS
+// ==========================================
+
+async function fetchRecommendations() {
+    const list = document.getElementById('recommended-list');
+    if (!list) return;
+
+    try {
+        const res = await smartFetch(`?action=recommended&guild_id=${selectedGuildId || ''}`);
+        const data = await res.json();
+
+        if (data.results) {
+            renderRecommendations(data.results);
+        }
+    } catch (e) {
+        console.error("Recommended Fetch Error:", e);
+    }
+}
+
+function renderRecommendations(tracks) {
+    const list = document.getElementById('recommended-list');
+    if (!list) return;
+
+    list.innerHTML = tracks.map(track => {
+        const safeTitle = (track.title || "").replace(/'/g, "\\'");
+        const safeUri = (track.uri || "").replace(/'/g, "\\'");
+
+        return `
+        <div class="recommended-card" onclick="playTrack('${track.encoded}', '${safeUri}')" 
+             style="min-width: 180px; cursor: pointer; transition: 0.3s; position: relative; group">
+            <div style="position: relative; overflow: hidden; border-radius: 12px; aspect-ratio: 16/9; background: #000;">
+                <img src="${track.thumbnail}" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.8; transition: 0.5s;" 
+                     onerror="this.src='logo-circle.png'">
+                <div class="play-overlay" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); opacity: 0; transition: 0.3s;">
+                    <i class="fas fa-play-circle" style="font-size: 2rem; color: #fff;"></i>
+                </div>
+            </div>
+            <div style="margin-top: 10px;">
+                <h4 style="font-size: 0.85rem; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${track.title}</h4>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin: 3px 0 0 0;">${track.author}</p>
+            </div>
+        </div>
+        `;
+    }).join('');
+
+    // Add hover styles via JS injected CSS if not in style.css
+    if (!document.getElementById('rec-styles')) {
+        const style = document.createElement('style');
+        style.id = 'rec-styles';
+        style.innerHTML = `
+            .recommended-card:hover { transform: translateY(-5px); }
+            .recommended-card:hover .play-overlay { opacity: 1 !important; }
+            .recommended-card:hover img { transform: scale(1.1); opacity: 1 !important; }
+            .horizontal-scroll::-webkit-scrollbar { height: 4px; }
+            .horizontal-scroll::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.3); border-radius: 10px; }
+        `;
+        document.head.appendChild(style);
+    }
 }
 
 async function playFavorite(encoded, uri) {
@@ -638,14 +842,20 @@ function renderSearchResultsToModal(tracks) {
 
         const safeUri = uri.replace(/'/g, "\\'");
         return `
-            <div class="search-result-item" onclick="playTrack('${track.encoded}', '${safeUri}')">
-                <div class="result-icon">${icon}</div>
-                <div class="result-info">
-                    <span class="result-title">${track.title}</span>
-                    <span class="result-author">${track.author} • ${formatTime(track.length)}</span>
+            <div class="search-result-item" style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.03); margin-bottom: 8px; transition: 0.2s;">
+                <div class="result-icon" onclick="playTrack('${track.encoded}', '${safeUri}')" style="cursor: pointer;">${icon}</div>
+                <div class="result-info" onclick="playTrack('${track.encoded}', '${safeUri}')" style="flex: 1; cursor: pointer;">
+                    <span class="result-title" style="display: block; font-weight: 500;">${track.title}</span>
+                    <span class="result-author" style="font-size: 0.8rem; color: var(--text-muted);">${track.author} • ${formatTime(track.length)}</span>
                 </div>
-                <div class="result-action">
-                    <i class="fas fa-play-circle"></i>
+                <div class="result-actions" style="display: flex; gap: 10px;">
+                    <button class="btn-glass" onclick="showAddToPlaylistModal('${track.encoded}', '${safeUri}', '${track.title.replace(/'/g, "\\'")}')" 
+                            style="width: 32px; height: 32px; border-radius: 50%; padding: 0; font-size: 0.8rem;" title="Add to Playlist">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <div onclick="playTrack('${track.encoded}', '${safeUri}')" style="cursor: pointer; color: var(--gold-primary); font-size: 1.2rem;">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
                 </div>
             </div>
         `;
@@ -713,13 +923,92 @@ async function playTrack(encoded, uri) {
     const input = document.getElementById('song-input');
     if (input) input.value = '';
 
-    const payload = JSON.stringify({
+    await sendControl('play', JSON.stringify({
         encoded: encoded,
         uri: uri,
         source: 'dashboard'
-    });
+    }));
+}
 
-    await sendControl('play', payload);
+// --- Add to Playlist Feature ---
+let trackToAddToPlaylist = null;
+
+function showAddToPlaylistModal(encoded, uri, title) {
+    trackToAddToPlaylist = { encoded, uri, title };
+    const modal = document.getElementById('add-to-playlist-modal');
+    if (!modal) {
+        // Fallback for first time creating modal
+        createAddToPlaylistModal();
+        return;
+    }
+    renderPlaylistOptions();
+    modal.style.display = 'flex';
+}
+
+function createAddToPlaylistModal() {
+    const html = `
+    <div id="add-to-playlist-modal" class="modal" style="display: flex;">
+        <div class="modal-content glass-effect" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 class="lang-text" data-en="Add to Playlist" data-th="เพิ่มลงเพลย์ลิสต์">Add to Playlist</h3>
+                <button class="close-btn" onclick="document.getElementById('add-to-playlist-modal').style.display='none'">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <p id="attp-track-name" style="font-size: 0.9rem; margin-bottom: 20px; color: var(--gold-primary); font-weight: 600;"></p>
+                <div id="playlist-options-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Playlists here -->
+                </div>
+            </div>
+        </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+    renderPlaylistOptions();
+}
+
+function renderPlaylistOptions() {
+    const container = document.getElementById('playlist-options-list');
+    const trackNameTip = document.getElementById('attp-track-name');
+    if (!container || !trackToAddToPlaylist) return;
+
+    trackNameTip.textContent = trackToAddToPlaylist.title;
+
+    const playlists = (window.userPremium && window.userPremium.playlists) ? window.userPremium.playlists : [];
+    if (playlists.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: #aaa; padding: 20px;">No playlists found. Create one first!</p>`;
+        return;
+    }
+
+    container.innerHTML = playlists.map((pl, idx) => `
+        <button class="btn-glass" onclick="confirmAddTrackToPlaylist(${idx})" 
+                style="width: 100%; text-align: left; padding: 12px 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <span>${pl.name}</span>
+            <i class="fas fa-plus"></i>
+        </button>
+    `).join('');
+}
+
+async function confirmAddTrackToPlaylist(plIdx) {
+    if (!trackToAddToPlaylist) return;
+
+    try {
+        const res = await smartFetch('/api/playlist', {
+            method: 'POST',
+            body: JSON.stringify({
+                user_id: currentUserId,
+                action: 'add_track',
+                playlist_index: plIdx,
+                track: trackToAddToPlaylist
+            })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+            document.getElementById('add-to-playlist-modal').style.display = 'none';
+            showNotification("Added", "เพิ่มแล้ว", "Track added to playlist.", "เพิ่มเพลงลงเพลย์ลิสต์เรียบร้อยแล้ว", "success");
+            if (typeof window.fetchPremiumStatus === 'function') await window.fetchPremiumStatus(); // Sync
+        }
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 
@@ -752,33 +1041,41 @@ function renderQueue(queue) {
         return;
     }
 
-    list.innerHTML = queue.map((track, index) => `
+    list.innerHTML = queue.map((track, index) => {
+        const safeTitle = (track.title || "Unknown").replace(/'/g, "\\'");
+        const safeUri = (track.uri || "").replace(/'/g, "\\'");
+        const encoded = track.encoded || "";
+
+        return `
         <div class="queue-item" id="q-item-${index}" 
-             onclick="handleQueueAction('skipto', ${index})" 
-             title="Play Now / เล่นทันที"
-             style="display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; gap: 10px; padding: 10px; background: rgba(255,255,255,0.05); margin-bottom: 5px; border-radius: 8px; cursor: pointer; transition: background 0.2s;">
+             style="display: grid; grid-template-columns: 30px 1fr 80px; align-items: center; gap: 10px; padding: 10px; background: rgba(255,255,255,0.05); margin-bottom: 5px; border-radius: 12px; transition: 0.2s;">
             
-            <div class="result-icon" style="text-align: center; color: var(--gold-primary); font-weight: bold;">
+            <div class="result-icon" style="text-align: center; color: var(--gold-primary); font-weight: bold; font-size: 0.8rem;">
                 ${index + 1}
             </div>
             
-            <div class="queue-details" style="overflow: hidden; white-space: nowrap;">
-                <div class="queue-title" style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; color: var(--text-main);">
+            <div class="queue-details" onclick="handleQueueAction('skipto', ${index})" style="overflow: hidden; cursor: pointer;">
+                <div class="queue-title" style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-main); font-size: 0.9rem;">
                     ${track.title || 'Unknown'} 
                 </div>
-                <div class="queue-artist" style="font-size: 0.85em; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis;">
+                <div class="queue-artist" style="font-size: 0.75rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis;">
                     ${track.author || '-'}
                 </div>
             </div>
             
-            <div class="queue-action" 
-                 onclick="event.stopPropagation(); handleQueueAction('remove', ${index});" 
-                 title="Remove / ลบเพลง" 
-                 style="text-align: center; color: #ff4d4d; padding: 5px; border-radius: 50%;">
-                <i class="fas fa-trash"></i>
+            <div class="queue-actions-row" style="display: flex; gap: 8px; justify-content: flex-end;">
+                <button class="btn-glass" onclick="showAddToPlaylistModal('${encoded}', '${safeUri}', '${safeTitle}')" 
+                        style="width: 28px; height: 28px; border-radius: 50%; padding: 0; font-size: 0.7rem; color: var(--gold-primary);" title="Add to Playlist">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <div onclick="handleQueueAction('remove', ${index})" 
+                     style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: #ff4d4d; cursor: pointer;">
+                    <i class="fas fa-trash"></i>
+                </div>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 async function addToFavorite() {

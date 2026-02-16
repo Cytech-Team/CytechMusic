@@ -65,7 +65,9 @@ class DashboardAPI(commands.Cog):
             self.bot.web_app.router.add_get('/api/guild_settings', self.get_guild_settings)
             self.bot.web_app.router.add_post('/api/guild_settings', self.post_guild_settings)
             self.bot.web_app.router.add_options('/api/guild_settings', self.handle_options)
-            self.bot.web_app.router.add_post('/api/webhook/github', self.post_github_webhook)
+            self.bot.web_app.router.add_options('/api/playlist', self.handle_options)
+            self.bot.web_app.router.add_post('/api/playlist', self.post_playlist)
+            self.bot.web_app.router.add_get('/api/proxy', self.api_proxy_handler) # Unified Proxy
             self.bot.web_app.router.add_get('/api/gateway', self.websocket_handler) # Zero Delay Gateway
             print("[Dashboard] API Routes Registered + Realtime System")
 
@@ -853,6 +855,108 @@ class DashboardAPI(commands.Cog):
         except Exception as e:
             return web.json_response({'error': str(e)}, headers=self.cors_headers)
 
+    async def get_recommended(self, request):
+        """Returns recommended clips/tracks style YouTube Music"""
+        guild_id = request.query.get('guild_id')
+        
+        # Try to get a music node
+        node = None
+        if guild_id:
+            try: guild = self.bot.get_guild(int(guild_id))
+            except: guild = None
+            if guild and guild.voice_client:
+                node = guild.voice_client.node
+        
+        if not node:
+            try: node = list(self.bot.cytech.nodes.values())[0] if self.bot.cytech.nodes else None
+            except: pass
+            
+        if not node:
+            return web.json_response({'error': 'No music node available'}, status=503, headers=self.cors_headers)
+
+        try:
+            # We use a preset query for 'trending' or 'recommended' to simulate the feature
+            # In a real scenario, this could be based on top charts or user history
+            results = await node.get_tracks("ytmsearch:Trending Music Mix 2026", requester=None)
+            tracks = results if isinstance(results, list) else getattr(results, 'tracks', [])
+            
+            # Select 12 random-ish premium looking tracks
+            import random
+            random.shuffle(tracks)
+            
+            data = []
+            for track in tracks[:12]:
+                data.append({
+                    "title": track.title,
+                    "author": track.author,
+                    "length": track.length,
+                    "thumbnail": f"https://img.youtube.com/vi/{track.identifier}/maxresdefault.jpg",
+                    "uri": track.uri,
+                    "encoded": track.track_id
+                })
+            
+            return web.json_response({'status': 'ok', 'results': data}, headers=self.cors_headers)
+        except Exception as e:
+            return web.json_response({'error': str(e)}, status=500, headers=self.cors_headers)
+
+    async def post_playlist(self, request):
+        """Manage custom playlists (Create/Delete/Add)"""
+        try:
+            payload = await request.json()
+            user_id = str(payload.get('user_id'))
+            action = payload.get('action') # 'create', 'delete', 'add_track'
+            
+            if not user_id or not action:
+                return web.json_response({'error': 'Missing params'}, status=400, headers=self.cors_headers)
+
+            from bot import collection_myasync
+            user_doc = await collection_myasync.find_one({"user_id": user_id}) or {"playlists": []}
+            playlists = user_doc.get("playlists", [])
+            
+            # Check Limits
+            is_premium = await self.bot.is_premium(int(user_id))
+            limit = 10 if is_premium else 7
+            
+            if action == "create":
+                name = payload.get('name', 'New Playlist')
+                if len(playlists) >= limit:
+                    return web.json_response({'error': f'Limit reached ({limit} playlists)'}, status=403, headers=self.cors_headers)
+                
+                new_pl = {"name": name, "tracks": []}
+                await collection_myasync.update_one(
+                    {"user_id": user_id},
+                    {"$push": {"playlists": new_pl}},
+                    upsert=True
+                )
+                return web.json_response({'status': 'ok', 'message': 'Playlist created'}, headers=self.cors_headers)
+
+            elif action == "delete":
+                index = payload.get('index')
+                if index is not None and 0 <= int(index) < len(playlists):
+                    playlists.pop(int(index))
+                    await collection_myasync.update_one(
+                        {"user_id": user_id},
+                        {"$set": {"playlists": playlists}}
+                    )
+                    return web.json_response({'status': 'ok'}, headers=self.cors_headers)
+
+            elif action == "add_track":
+                pl_index = payload.get('playlist_index')
+                track = payload.get('track')
+                if pl_index is not None and track:
+                    # Logic to push track into nested array
+                    field = f"playlists.{pl_index}.tracks"
+                    await collection_myasync.update_one(
+                        {"user_id": user_id},
+                        {"$push": {field: track}}
+                    )
+                    return web.json_response({'status': 'ok'}, headers=self.cors_headers)
+
+            return web.json_response({'error': 'Invalid action'}, status=400, headers=self.cors_headers)
+            
+        except Exception as e:
+            return web.json_response({'error': str(e)}, status=500, headers=self.cors_headers)
+
     async def get_global_stats(self, request):
         import time
         uptime_seconds = int(time.time() - self.bot.start_time)
@@ -950,13 +1054,8 @@ class DashboardAPI(commands.Cog):
             if not plan_name:
                 plan_name = "Free"
 
-            # FAVORITES FETCH (Root Level Document by user_id)
-            favorites = []
-            try: 
-                user_doc = await collection_myasync.find_one({"user_id": str(user_id)})
-                if user_doc and "favorites" in user_doc:
-                    favorites = user_doc["favorites"]
-            except: pass
+            # PLAYLISTS FETCH
+            playlists = user_doc.get("playlists", []) if user_doc else []
 
             response_data = {
                 "user_id": user_id,
@@ -964,7 +1063,12 @@ class DashboardAPI(commands.Cog):
                 "expire": expire_at,
                 "plan": plan_name,
                 "joined_at": user_data.get("joined_at"),
-                "favorites": favorites
+                "favorites": favorites,
+                "playlists": playlists,
+                "limits": {
+                    "total": 10 if is_prem else 7,
+                    "used": len(playlists) + (1 if favorites else 0)
+                }
             }
             
             return web.json_response(response_data, headers=self.cors_headers)
@@ -1108,6 +1212,30 @@ class DashboardAPI(commands.Cog):
         except Exception as e:
             print(f"GitHub Webhook Error: {e}")
             return web.json_response({'status': 'error', 'details': str(e)}, status=400, headers=self.cors_headers)
+
+    async def api_proxy_handler(self, request):
+        """Unified Proxy Handler for legacy ?action= calls"""
+        action = request.query.get('action')
+        if not action:
+            return web.json_response({'error': 'Missing action'}, status=400, headers=self.cors_headers)
+        
+        # Dispatch to specific methods
+        handlers = {
+            'status': self.get_status,
+            'search': self.get_search,
+            'recommended': self.get_recommended,
+            'user_info': self.get_user_info,
+            'stats': self.get_global_stats,
+            'find_voice': self.find_voice_channel,
+            'bot_guilds': self.get_bot_guilds,
+            'guild_settings': self.get_guild_settings
+        }
+        
+        handler = handlers.get(action)
+        if handler:
+            return await handler(request)
+            
+        return web.json_response({'error': f'Unknown action: {action}'}, status=400, headers=self.cors_headers)
 
 async def setup(bot: Cyori):
     await bot.add_cog(DashboardAPI(bot))
