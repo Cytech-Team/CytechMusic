@@ -720,16 +720,6 @@ function handleVolume(value) {
 function updatePlayerUI(data) {
     if (!data) return;
 
-    // Ensure we have current track data for Favorites feature using a simpler object to avoid large payload
-    window.currentTrack = {
-        title: data.title,
-        author: data.author,
-        uri: data.uri || data.web_url, // Fallback
-        thumbnail: data.thumbnail,
-        length: data.duration,
-        is_stream: data.is_stream,
-        encoded: data.encoded // Important for playback
-    };
 
     const img = document.getElementById('np-art');
     const title = document.getElementById('np-title');
@@ -750,11 +740,31 @@ function updatePlayerUI(data) {
         playerState.paused = true;
         playerState.position = 0;
         playerState.duration = 0;
+        window.currentTrack = null;
         if (btnShuffle) btnShuffle.classList.remove('active');
         if (btnLoop) btnLoop.classList.remove('active');
+
+        // Reset favorite button
+        const favIcon = document.querySelector('#btn-favorite i');
+        if (favIcon) {
+            favIcon.className = 'far fa-heart';
+            favIcon.style.color = '';
+        }
+
         renderQueue([]); // Clear queue list
         return;
     }
+
+    // Ensure we have current track data for Favorites feature
+    window.currentTrack = {
+        title: data.title,
+        author: data.author,
+        uri: data.uri || data.web_url,
+        thumbnail: data.thumbnail,
+        length: data.duration,
+        is_stream: data.is_stream,
+        encoded: data.encoded
+    };
 
     // Update Meta
     if (title) title.textContent = data.title || "Unknown Title";
@@ -1050,7 +1060,10 @@ function renderQueue(queue) {
 }
 
 async function addToFavorite() {
-    if (!window.currentTrack) return;
+    if (!window.currentTrack || !playerState.duration) {
+        showNotification("No Music", "ไม่มีเพลง", "No music is playing right now.", "ขณะนี้ไม่มีเพลงที่กำลังเล่นอยู่", "error");
+        return;
+    }
 
     const icon = document.querySelector('#btn-favorite i');
     if (icon) {
