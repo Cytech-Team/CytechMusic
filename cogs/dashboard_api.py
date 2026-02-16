@@ -69,6 +69,7 @@ class DashboardAPI(commands.Cog):
             self.bot.web_app.router.add_post('/api/playlist', self.post_playlist)
             self.bot.web_app.router.add_get('/api/proxy', self.api_proxy_handler) # Unified Proxy
             self.bot.web_app.router.add_get('/api/gateway', self.websocket_handler) # Zero Delay Gateway
+            self.bot.web_app.router.add_get('/api/recommended', self.get_recommended)
             print("[Dashboard] API Routes Registered + Realtime System")
 
     async def handle_options(self, request):
@@ -434,6 +435,81 @@ class DashboardAPI(commands.Cog):
             return web.json_response({'error': 'Source not supported / ไม่รองรับแหล่งที่มานี้'}, status=400, headers=self.cors_headers)
         except Exception as e:
             return web.json_response({'error': str(e)}, status=500, headers=self.cors_headers)
+
+    async def get_recommended(self, request):
+        guild_id = request.query.get('guild_id')
+        
+        node = None
+        player = None
+        current_track = None
+
+        if guild_id and guild_id.isdigit():
+            guild = self.bot.get_guild(int(guild_id))
+            if guild:
+                player = guild.voice_client
+                if player and player.is_playing and player.current:
+                    current_track = player.current
+                    node = player.node
+
+        # Fallback to any node if no player or guild
+        if not node:
+            try:
+                if self.bot.cytech.nodes:
+                    node = list(self.bot.cytech.nodes.values())[0]
+            except: pass
+
+        if not node:
+            return web.json_response({'error': 'No music node available'}, status=503, headers=self.cors_headers)
+
+        try:
+            query = None
+            # If something is playing, get related Mix/RD list
+            if current_track and hasattr(current_track, 'identifier') and current_track.identifier:
+                # Use YouTube Mix RD list for high quality recommendations
+                query = f"https://www.youtube.com/watch?v={current_track.identifier}&list=RD{current_track.identifier}"
+            else:
+                # Fallback: Trending or something generic
+                query = "ytmsearch:Trending Music 2026"
+
+            results = await node.get_tracks(query, requester=None)
+            rec_data = []
+            
+            if results:
+                tracks = results if isinstance(results, list) else getattr(results, 'tracks', [])
+                # If it's a playlist (from RD list), we skip the first one if it's the same as current
+                start_idx = 0
+                if current_track and tracks and tracks[0].identifier == current_track.identifier:
+                    start_idx = 1
+                
+                for track in tracks[start_idx:start_idx+12]: # Show 12 recommendations
+                    rec_data.append({
+                        "title": track.title,
+                        "author": track.author,
+                        "length": track.length,
+                        "uri": track.uri,
+                        "thumbnail": track.thumbnail if hasattr(track, 'thumbnail') and track.thumbnail and "null" not in track.thumbnail else "logo-circle.png",
+                        "encoded": track.track_id
+                    })
+
+            # If RD list failed or empty, try a generic search
+            if not rec_data:
+                results = await node.get_tracks("ytmsearch:Popular Thai Songs", requester=None)
+                if results:
+                    tracks = results if isinstance(results, list) else getattr(results, 'tracks', [])
+                    for track in tracks[:12]:
+                        rec_data.append({
+                            "title": track.title,
+                            "author": track.author,
+                            "length": track.length,
+                            "uri": track.uri,
+                            "thumbnail": track.thumbnail if hasattr(track, 'thumbnail') and track.thumbnail and "null" not in track.thumbnail else "logo-circle.png",
+                            "encoded": track.track_id
+                        })
+
+            return web.json_response({'status': 'ok', 'results': rec_data}, headers=self.cors_headers)
+        except Exception as e:
+            print(f"[Recommended] Error: {e}")
+            return web.json_response({'status': 'ok', 'results': []}, headers=self.cors_headers)
 
     async def post_control(self, request):
         try:

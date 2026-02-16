@@ -514,6 +514,7 @@ async function autoConnectVoice(userId) {
 function selectServer(guildId) {
     selectedGuildId = guildId;
     fetchStatus();
+    fetchRecommendations(); // Refresh recommendations for this guild
 
     // Start Realtime Engine
     initRealtime(guildId);

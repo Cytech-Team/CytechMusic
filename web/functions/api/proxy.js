@@ -125,7 +125,8 @@ export async function onRequest(context) {
     const pathMap = {
         "status": "/api/status", "find_voice": "/api/find_voice", "global_stats": "/api/stats",
         "bot_guilds": "/api/bot_guilds", "join_guild": "/api/join_guild", "search": "/api/search",
-        "user_info": "/api/user_info", "guild_settings": "/api/guild_settings", "control": "/api/control"
+        "user_info": "/api/user_info", "guild_settings": "/api/guild_settings", "control": "/api/control",
+        "recommended": "/api/recommended"
     };
 
     if (!action && method === "GET") {
