@@ -331,12 +331,21 @@ header .container {
     .hero-cta {
         flex-direction: column;
         align-items: center;
-        gap: 15px;
+        gap: 12px;
     }
 
     .hero-cta .btn {
         width: 100%;
-        max-width: 320px;
+        max-width: 100%;
+    }
+
+    .stats-container {
+        gap: 20px !important;
+    }
+
+    .stat-box {
+        min-width: 140px !important;
+        padding: 15px !important;
     }
 }
 
@@ -550,7 +559,7 @@ header .container {
 
 .grid-3 {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 20px;
 }
 
@@ -584,6 +593,13 @@ header .container {
     transform: scale(1.05);
     z-index: 2;
     box-shadow: 0 10px 40px rgba(255, 215, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+    .pricing-card.featured {
+        transform: none !important;
+        margin: 10px 0;
+    }
 }
 
 .pricing-card:hover {
@@ -1605,7 +1621,22 @@ input[type=range]::-moz-range-track {
             justify-content: center;
         }
 
+        .header-actions .login-btn img {
+            margin-right: 0 !important;
+        }
+
+        /* Ensure Language Switcher is visible on mobile */
         .header-actions .lang-switch {
+            display: block;
+        }
+
+        .header-actions .lang-switch .btn-glass {
+            padding: 8px 12px !important;
+            font-size: 0.8rem;
+        }
+
+        /* Hide brand name on extra small screens to save space for buttons */
+        .brand-name {
             display: none;
         }
     }

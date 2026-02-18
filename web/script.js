@@ -89,7 +89,7 @@ async function handleAuth() {
         // 2. Hide Login Buttons Immediately if we have ANY indication
         const loginBtns = document.querySelectorAll('.login-btn');
         loginBtns.forEach(btn => {
-            if (!btn.id.includes('tray')) btn.style.display = 'none'; // Keep tray for update
+            if (!btn.id.includes('tray')) btn.style.display = 'flex'; // Ensure header buttons are visible
         });
 
         // 3. Render Profile if Cached

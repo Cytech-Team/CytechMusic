@@ -580,7 +580,6 @@ class Cyori(commands.Bot):
             
         try:
             statuses = [
-                discord.Activity(type=discord.ActivityType.listening, name="your music"),
                 discord.Activity(type=discord.ActivityType.watching, name="Cyori | /help"),
                 discord.Activity(type=discord.ActivityType.competing, name=f"My name is {self.user.name if self.user else 'Cyori'} and I can play music"),
                 discord.Activity(type=discord.ActivityType.listening, name=f"{len(self.guilds)} servers"),
