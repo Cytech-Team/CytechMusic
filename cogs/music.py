@@ -1023,14 +1023,12 @@ class Music(commands.Cog):
                 removed = player.queue.remove(index) 
                 if removed:
                     track = removed[0]['track']
-                    # Simple feedback using English/Thai or generic success if i18n key missing
-                    # Assuming i18n handles fallback or we use formatted string
                     title = getattr(track, 'title', 'Unknown Track')
-                    await ctx.reply(f"🗑️ Removed **{title}** from the queue.", delete_after=7)
+                    await ctx.reply(self.bot.i18n.get("removed_from_queue", lang, title=title), delete_after=7)
                     await player.update_controller()
                     await self._notify_web_dashboard(ctx.guild.id)
                 else:
-                     await ctx.reply("❌ Invalid song index.", delete_after=7)
+                     await ctx.reply(self.bot.i18n.get("invalid_song_index", lang), delete_after=7)
             except Exception:
                 await ctx.reply("❌ Invalid song index.", delete_after=7)
 
@@ -1174,7 +1172,7 @@ class Music(commands.Cog):
             player.queue.insert(idx_to, track)
             
             track_title = getattr(track, 'title', 'Track')
-            await ctx.send(f"✅ Moved **{track_title}** from `{from_index}` to `{to_index}`.")
+            await ctx.send(self.bot.i18n.get("moved_track", lang, title=track_title, from_idx=from_index, to_idx=to_index))
             await player.update_controller()
         except Exception as e:
              await ctx.send(f"❌ Failed to move track: {e}", ephemeral=True)

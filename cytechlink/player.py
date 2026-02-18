@@ -285,6 +285,8 @@ class MusicControls(discord.ui.View):
                 item.style = discord.ButtonStyle.blurple if self.player.autoplay else discord.ButtonStyle.gray
             elif item.custom_id == "playforever_button":
                 item.style = discord.ButtonStyle.blurple if self.player.mode247 else discord.ButtonStyle.gray
+            elif item.custom_id == "random_button":
+                item.label = self.player.bot.i18n.get("btn_random", lang)
 
     async def update_label(self, message: discord.Message):
         """Unified update: Update button internal labels then trigger Player controller logic."""
@@ -587,8 +589,6 @@ class MusicControls(discord.ui.View):
         
     @discord.ui.button(emoji="❤️", label="Save", custom_id='fav_button', style=discord.ButtonStyle.secondary, row=1)
     async def fav_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer(ephemeral=True)
-        
         if not self.player.current:
             return await interaction.followup.send("❌ Nothing is playing.", ephemeral=True)
             
@@ -635,7 +635,7 @@ class MusicControls(discord.ui.View):
         search_query = "ytmsearch:Trending Music Thailand" if lang == "th" else "ytmsearch:Trending Global Hits"
         
         # UI Feedback
-        await interaction.followup.send("🎲 **Searching for a surprise...**", ephemeral=True)
+        await interaction.followup.send(self.player.bot.i18n.get("msg_random_searching", lang), ephemeral=True)
         
         try:
             load_res = await self.player.node.get_tracks(search_query, requester=interaction.user)
@@ -644,21 +644,48 @@ class MusicControls(discord.ui.View):
             if tracks:
                 track = random.choice(tracks[:15]) # Pick from top 15
                 await self.player.add_track(track)
-                await interaction.followup.send(f"🎲 | **Random Selection:** [{track.title}]({track.uri})", ephemeral=True)
+                await interaction.followup.send(self.player.bot.i18n.get("msg_random_selection", lang, title=track.title, uri=track.uri), ephemeral=True)
                 
                 if not self.player.is_playing:
                     await self.player.do_next()
                 else:
                     await self.player.update_controller(force=True)
             else:
-                await interaction.followup.send("❌ Could not find random tracks.", ephemeral=True)
+                await interaction.followup.send(self.player.bot.i18n.get("msg_random_not_found", lang), ephemeral=True)
         except Exception as e:
-            await interaction.followup.send(f"❌ Random search failed: {e}", ephemeral=True)
+            await interaction.followup.send(self.player.bot.i18n.get("msg_random_failed", lang, e=e), ephemeral=True)
 
 class JukeboxIdleView(discord.ui.View):
-    def __init__(self, player) -> None:
+    def __init__(self, player, bot=None, lang=None) -> None:
         super().__init__(timeout=None)
         self.player = player
+        self.bot = bot
+        self.lang = lang
+        self.update_all_labels()
+
+    def update_all_labels(self):
+        try:
+            bot = self.bot
+            lang = self.lang
+            
+            if self.player:
+                guild_id = str(self.player.guild.id)
+                data = collection_myclient.find_one({}) or {}
+                lang = lang or data.get("guilds", {}).get(guild_id, {}).get("lang", "en")
+                bot = bot or self.player.bot
+            
+            if not lang: lang = "th"
+        except: 
+            lang = "th"
+            bot = bot
+
+        for item in self.children:
+            item: discord.ui.Button = item
+            if item.custom_id == "idle_random_button":
+                if bot:
+                    item.label = bot.i18n.get("btn_random", lang)
+                else:
+                    item.label = "สุ่มเพลง" if lang == "th" else "Random"
 
     @discord.ui.button(emoji="🎲", label="Random", custom_id='idle_random_button', style=discord.ButtonStyle.gray)
     async def idle_random_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -693,7 +720,7 @@ class JukeboxIdleView(discord.ui.View):
         search_query = "ytmsearch:Trending Music Thailand" if lang == "th" else "ytmsearch:Trending Global Hits"
         
         # UI Feedback
-        await interaction.followup.send("🎲 **Searching for a surprise...**", ephemeral=True)
+        await interaction.followup.send(bot.i18n.get("msg_random_searching", lang), ephemeral=True)
         
         try:
             node = player.node
@@ -703,16 +730,16 @@ class JukeboxIdleView(discord.ui.View):
             if tracks:
                 track = random.choice(tracks[:15]) # Pick from top 15
                 await player.add_track(track)
-                await interaction.followup.send(f"🎲 | **Random Selection:** [{track.title}]({track.uri})", ephemeral=True)
+                await interaction.followup.send(bot.i18n.get("msg_random_selection", lang, title=track.title, uri=track.uri), ephemeral=True)
                 
                 if not player.is_playing:
                     await player.do_next()
                 else:
                     await player.update_controller(force=True)
             else:
-                await interaction.followup.send("❌ Could not find random tracks.", ephemeral=True)
+                await interaction.followup.send(bot.i18n.get("msg_random_not_found", lang), ephemeral=True)
         except Exception as e:
-            await interaction.followup.send(f"❌ Random search failed: {e}", ephemeral=True)
+            await interaction.followup.send(bot.i18n.get("msg_random_failed", lang, e=e), ephemeral=True)
 
 async def connect_channel(ctx: Union[commands.Context, Interaction], channel: VoiceChannel = None):
     try:
@@ -1230,7 +1257,7 @@ class Player(VoiceProtocol):
             else:
                 # กรณีไม่มีเพลงเล่นอยู่
                 embed = self.bot.none_play_embed(lang, guild_data)
-                view = JukeboxIdleView(self)
+                view = JukeboxIdleView(self, bot=self.bot, lang=lang)
 
             # ───────────────────────────────
             # 2. อัปเดต play_embed (ถาวร)
@@ -1568,7 +1595,7 @@ class Player(VoiceProtocol):
                         try:
                             _, msg = await safe_fetch_message(self.bot, channel.id, play_id)
                             if msg:
-                                await msg.edit(embed=self.bot.none_play_embed(lang), view=None)
+                                await msg.edit(embed=self.bot.none_play_embed(lang), view=JukeboxIdleView(None, bot=self.bot, lang=lang))
                         except (discord.HTTPException, discord.NotFound):
                             pass
 

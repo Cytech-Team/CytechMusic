@@ -48,6 +48,18 @@ class DashboardAPI(commands.Cog):
         self.all_sockets = weakref.WeakSet()
         self.bot.loop.create_task(self.realtime_broadcaster())
 
+    def _track_to_dict(self, track):
+        """Helper to convert cytechlink Track to dict for DB storage"""
+        return {
+            "title": track.title,
+            "uri": track.uri,
+            "author": track.author,
+            "identifier": track.identifier,
+            "thumbnail": track.thumbnail if hasattr(track, 'thumbnail') else "logo-circle.png",
+            "length": track.length,
+            "encoded": track.track_id
+        }
+
     async def cog_load(self):
         # Register Routes
         if self.bot.web_app:
@@ -144,19 +156,19 @@ class DashboardAPI(commands.Cog):
             data["volume"] = player.volume
             
             try:
-                loop = player.queue._repeat.mode.name
-                data["loop_mode"] = loop.capitalize()
+                loop_mode = player.queue._repeat.mode
+                data["loop_mode"] = loop_mode.name.capitalize()
             except: 
-                pass
+                data["loop_mode"] = "Off"
 
-            # Optimized Queue Slicing (Limit to 20 to reduce payload size)
-            # Full queue fetching is slow for large playlists
+            # Optimized Queue Slicing (Limit to 50 to reduce payload size)
             tracks = list(player.queue.tracks())[:50] 
             for track in tracks:
                 data["queue"].append({
                     "title": track.title,
                     "author": track.author,
-                    "uri": track.uri
+                    "uri": track.uri,
+                    "encoded": track.track_id if hasattr(track, 'track_id') else None
                 })
 
         return web.json_response(data, headers=self.cors_headers)
@@ -261,8 +273,67 @@ class DashboardAPI(commands.Cog):
                     if current_mode == LoopType.off: player.queue._repeat.set_mode(LoopType.queue)
                     elif current_mode == LoopType.queue: player.queue._repeat.set_mode(LoopType.track)
                     else: player.queue._repeat.set_mode(LoopType.off)
+                    
+                    lang = data.get("guilds", {}).get(str(guild.id), {}).get("lang", "en")
+                    mode_name = player.queue._repeat.mode.name.capitalize()
+                    return web.json_response({'status': 'ok', 'action': 'loop', 'message': f'Loop Mode: {mode_name}'}, headers=self.cors_headers)
+
+            elif action == "seek":
+                if player and value is not None:
+                    await player.seek(int(value))
             
-            elif action == "play":
+            elif action == "skipto":
+                if player and value is not None:
+                    player.queue.skipto(int(value) + 1) # Dashboard uses 0-based, bot uses 1-based for skip logic
+                    await player.stop()
+                    skip_update = True
+            
+            elif action == "remove":
+                if player and value is not None:
+                    player.queue.remove(int(value) + 1)
+                    skip_update = False
+
+            elif action == "favorite":
+                # Save to user's favorites
+                if user_id:
+                    from bot import collection_myasync
+                    import time
+                    
+                    # Prioritize track data from payload (e.g. from Queue/Search)
+                    track_data = payload.get('value')
+                    if isinstance(track_data, dict):
+                        song_data = {
+                            "title": track_data.get('title'),
+                            "uri": track_data.get('uri'),
+                            "author": track_data.get('author', 'Unknown'),
+                            "identifier": track_data.get('identifier') or (track_data.get('uri').split('v=')[-1].split('&')[0] if 'youtube' in track_data.get('uri','') else None),
+                            "thumbnail": track_data.get('thumb') or track_data.get('thumbnail') or "logo-circle.png",
+                            "length": track_data.get('len') or track_data.get('length') or 0,
+                            "added_at": int(time.time()),
+                            "encoded": track_data.get('encoded')
+                        }
+                    elif player and player.current:
+                        # Fallback to current track
+                        track = player.current
+                        song_data = {
+                            "title": track.title,
+                            "uri": track.uri,
+                            "author": track.author,
+                            "identifier": track.identifier,
+                            "thumbnail": track.thumbnail,
+                            "length": track.length,
+                            "added_at": int(time.time()),
+                            "encoded": track.track_id
+                        }
+                    else:
+                        return web.json_response({'status': 'error', 'message': 'No track data provided'}, headers=self.cors_headers)
+
+                    await collection_myasync.update_one(
+                        {"user_id": str(user_id)},
+                        {"$addToSet": {"favorites": song_data}},
+                        upsert=True
+                    )
+                    return web.json_response({'status': 'ok', 'message': 'Added to Favorites'}, headers=self.cors_headers)
                 query = value
                 print(f"[Dashboard] Play Request: {query} (User: {user_id})")
                 
@@ -433,7 +504,12 @@ class DashboardAPI(commands.Cog):
                 "pos": p.position, "len": p.current.length,
                 "title": p.current.title, "author": p.current.author,
                 "thumb": p.current.thumbnail if p.current and p.current.thumbnail and "null" not in p.current.thumbnail else "logo-circle.png",
-                "vol": p.volume
+                "vol": p.volume,
+                "loop_mode": p.queue._repeat.mode.name.capitalize(),
+                "queue": [
+                    {"title": t.title, "author": t.author, "uri": t.uri, "encoded": t.track_id} 
+                    for t in list(p.queue.tracks())[:20]
+                ]
             })
         return d
 
@@ -449,6 +525,41 @@ class DashboardAPI(commands.Cog):
             elif act == 'stop': await p.teardown()
             elif act == 'volume': await p.set_volume(max(0, min(int(val), 100)))
             elif act == 'seek': await p.seek(int(val))
+            elif act == 'loop':
+                from cytechlink.enums import LoopType
+                cm = p.queue._repeat.mode
+                if cm == LoopType.off: p.queue._repeat.set_mode(LoopType.queue)
+                elif cm == LoopType.queue: p.queue._repeat.set_mode(LoopType.track)
+                else: p.queue._repeat.set_mode(LoopType.off)
+            elif act == 'skipto':
+                p.queue.skipto(int(val) + 1)
+                await p.stop()
+            elif act == 'remove':
+                p.queue.remove(int(val) + 1)
+            elif act == 'favorite':
+                user_id = data.get('user_id')
+                if user_id:
+                    import time
+                    from bot import collection_myasync
+                    # Prioritize val if it's a dict (custom track data)
+                    if isinstance(val, dict):
+                         song_data = {
+                            "title": val.get('title'),
+                            "uri": val.get('uri'),
+                            "author": val.get('author', 'Unknown'),
+                            "identifier": val.get('identifier'),
+                            "thumbnail": val.get('thumb') or val.get('thumbnail') or "logo-circle.png",
+                            "length": val.get('len') or val.get('length') or 0,
+                            "added_at": int(time.time()),
+                            "encoded": val.get('encoded')
+                        }
+                    elif p and p.current:
+                        track = p.current
+                        song_data = {"title": track.title, "uri": track.uri, "author": track.author, "identifier": track.identifier, "thumbnail": track.thumbnail, "length": track.length, "added_at": int(time.time()), "encoded": track.track_id}
+                    else:
+                        return
+
+                    await collection_myasync.update_one({"user_id": str(user_id)}, {"$addToSet": {"favorites": song_data}}, upsert=True)
             # Force Instant Broadcast
             await asyncio.sleep(0.05)
             await self.broadcast_guild(gid)
@@ -636,42 +747,72 @@ class DashboardAPI(commands.Cog):
 
 
     async def post_playlist(self, request):
-        """Manage custom playlists (Create/Delete/Add)"""
+        """Manage custom playlists (Create/Delete/Add/SaveQueue/Play)"""
         try:
+            import time
+            import datetime
             payload = await request.json()
             user_id = str(payload.get('user_id'))
-            action = payload.get('action') # 'create', 'delete', 'add_track'
+            action = payload.get('action') # 'create', 'delete', 'add_track', 'save_queue', 'play_playlist'
             
             if not user_id or not action:
                 return web.json_response({'error': 'Missing params'}, status=400, headers=self.cors_headers)
 
             from bot import collection_myasync
-            user_doc = await collection_myasync.find_one({"user_id": user_id}) or {"playlists": []}
+            user_doc = await collection_myasync.find_one({"user_id": user_id}) or {"playlists": [], "favorites": []}
             playlists = user_doc.get("playlists", [])
             
-            # Check Limits
+            # Quota: Premium 100, Normal 20
             is_premium = await self.bot.is_premium(int(user_id))
-            limit = 10 if is_premium else 7
+            limit = 100 if is_premium else 20
             
             if action == "create":
                 name = payload.get('name', 'New Playlist')
+                description = payload.get('description', 'คอลเลกชันเพลงของฉัน')
                 if len(playlists) >= limit:
                     return web.json_response({'error': f'Limit reached ({limit} playlists)'}, status=403, headers=self.cors_headers)
                 
-                new_pl = {"name": name, "tracks": []}
+                new_pl = {"name": name, "description": description, "tracks": [], "created_at": int(time.time()), "count": 0}
                 await collection_myasync.update_one(
-                    {"user_id": user_id},
+                    {"user_id": str(user_id)},
                     {"$push": {"playlists": new_pl}},
                     upsert=True
                 )
                 return web.json_response({'status': 'ok', 'message': 'Playlist created'}, headers=self.cors_headers)
+
+            elif action == "save_queue":
+                guild_id = payload.get('guild_id')
+                name = payload.get('name', f'Queue_{datetime.datetime.now().strftime("%Y%m%d_%H%M")}')
+                description = payload.get('description', f'บันทึกจากคิวเมื่อ {datetime.datetime.now().strftime("%d/%m/%Y")}')
+                
+                if len(playlists) >= limit:
+                    return web.json_response({'error': f'Limit reached ({limit} playlists)'}, status=403, headers=self.cors_headers)
+                
+                guild = self.bot.get_guild(int(guild_id))
+                player = guild.voice_client if guild else None
+                
+                if not player or not player.current:
+                    return web.json_response({'error': 'No active player to save queue from'}, status=400, headers=self.cors_headers)
+                
+                # Build tracks list
+                tracks = [self._track_to_dict(player.current)]
+                for item in player.queue:
+                    tracks.append(self._track_to_dict(item['track']))
+                
+                new_pl = {"name": name, "description": description, "tracks": tracks, "created_at": int(time.time()), "count": len(tracks)}
+                await collection_myasync.update_one(
+                    {"user_id": str(user_id)},
+                    {"$push": {"playlists": new_pl}},
+                    upsert=True
+                )
+                return web.json_response({'status': 'ok', 'message': f'Saved {len(tracks)} tracks to {name}'}, headers=self.cors_headers)
 
             elif action == "delete":
                 index = payload.get('index')
                 if index is not None and 0 <= int(index) < len(playlists):
                     playlists.pop(int(index))
                     await collection_myasync.update_one(
-                        {"user_id": user_id},
+                        {"user_id": str(user_id)},
                         {"$set": {"playlists": playlists}}
                     )
                     return web.json_response({'status': 'ok'}, headers=self.cors_headers)
@@ -682,15 +823,51 @@ class DashboardAPI(commands.Cog):
                 if pl_index is not None and track:
                     # Logic to push track into nested array
                     field = f"playlists.{pl_index}.tracks"
+                    count_field = f"playlists.{pl_index}.count"
                     await collection_myasync.update_one(
-                        {"user_id": user_id},
-                        {"$push": {field: track}}
+                        {"user_id": str(user_id)},
+                        {
+                            "$push": {field: track},
+                            "$inc": {count_field: 1}
+                        }
                     )
                     return web.json_response({'status': 'ok'}, headers=self.cors_headers)
+
+            elif action == "play_playlist":
+                guild_id = payload.get('guild_id')
+                pl_index = payload.get('playlist_index')
+                
+                if not guild_id or pl_index is None:
+                    return web.json_response({'error': 'Missing guild_id or playlist_index'}, status=400, headers=self.cors_headers)
+                
+                guild = self.bot.get_guild(int(guild_id))
+                player = guild.voice_client if guild else None
+                
+                if not player:
+                    return web.json_response({'error': 'Bot is not in a voice channel'}, status=400, headers=self.cors_headers)
+
+                playlist = playlists[int(pl_index)]
+                tracks = playlist.get('tracks', [])
+                
+                added_count = 0
+                for t_data in tracks:
+                    try:
+                        # use encoded to decode track
+                        track_obj = await player.node.decode_track(t_data['encoded'])
+                        player.queue.add(track_obj, requester=int(user_id))
+                        added_count += 1
+                    except: continue
+
+                if not player.is_playing and player.queue:
+                    await player.do_next()
+
+                await self._notify_web_dashboard(int(guild_id))
+                return web.json_response({'status': 'ok', 'message': f'Added {added_count} tracks to queue'}, headers=self.cors_headers)
 
             return web.json_response({'error': 'Invalid action'}, status=400, headers=self.cors_headers)
             
         except Exception as e:
+            traceback.print_exc()
             return web.json_response({'error': str(e)}, status=500, headers=self.cors_headers)
 
     async def get_global_stats(self, request):

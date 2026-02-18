@@ -514,7 +514,7 @@ class Cyori(commands.Bot):
                 
                 from cytechlink import JukeboxIdleView
                 player = guild.voice_client if guild else None
-                view = JukeboxIdleView(player)
+                view = JukeboxIdleView(player, bot=self, lang=lang)
                 await play_message.edit(embed=self.none_play_embed(lang, guild_data), view=view)
             except Exception:
                 pass

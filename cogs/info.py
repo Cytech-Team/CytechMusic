@@ -11,21 +11,26 @@ from discord.ext import commands
 from bot import Cyori, collection_myasync
 from utils import config as ui_config
 
-def sec_to_min(time: float):
-    time = round(time) 
-    hours, remainder = divmod(time, 60 * 60) 
-    minutes, seconds = divmod(remainder, 60)
-    days, remainder = divmod(hours, 24)
+def sec_to_min(seconds: float):
+    seconds = int(round(seconds))
+    
+    # Hierarchy calculation
+    minutes, seconds = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    days, hours = divmod(hours, 24)
     months, days = divmod(days, 30)
     years, months = divmod(months, 12)
+    chati, years = divmod(years, 100) # 1 ชาติ = 100 ปี
 
-    if years >= 1:
-        return "%d:%d:%d:%02d:%02d:%02d" % (years, months, days, hours, minutes, seconds)
-    elif months >= 1:
-        return "%d:%d:%02d:%02d:%02d" % (months, days, hours, minutes, seconds)
-    elif days >= 1:
+    if chati > 0:
+        return "%d:%02d:%02d:%02d:%02d:%02d:%02d" % (chati, years, months, days, hours, minutes, seconds)
+    if years > 0:
+        return "%d:%02d:%02d:%02d:%02d:%02d" % (years, months, days, hours, minutes, seconds)
+    if months > 0:
+        return "%d:%02d:%02d:%02d:%02d" % (months, days, hours, minutes, seconds)
+    if days > 0:
         return "%d:%02d:%02d:%02d" % (days, hours, minutes, seconds)
-    elif hours >= 1:
+    elif hours > 0:
         return "%02d:%02d:%02d" % (hours, minutes, seconds)
     else:
         return "%02d:%02d" % (minutes, seconds)

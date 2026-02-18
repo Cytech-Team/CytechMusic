@@ -680,6 +680,12 @@ async function sendControl(action, value = null) {
         });
 
         const data = await response.json();
+
+        // Show success message if returned (e.g. Loop Mode, Added to Favorites)
+        if (data.status === 'ok' && data.message) {
+            showNotification("Success", "สำเร็จ", data.message, data.message, "success");
+        }
+
         if (data.error) {
             console.error(`[Control Error] ${data.error}`);
             if (data.error.includes("ไม่รองรับ") || data.error.includes("not supported")) {
@@ -1005,19 +1011,62 @@ function renderPlaylistOptions() {
 
     trackNameTip.textContent = trackToAddToPlaylist.title;
 
-    const playlists = (window.userPremium && window.userPremium.playlists) ? window.userPremium.playlists : [];
+    // Use userPlaylists from Collection system if available
+    const playlists = (typeof userPlaylists !== 'undefined' && userPlaylists.length > 0) ? userPlaylists : [];
+
+    let html = '';
+
+    // Add "Create New" option at top
+    html += `
+        <button class="btn-primary" onclick="createNewPlaylistFromModal()" 
+                style="width: 100%; text-align: center; padding: 12px; border-radius: 12px; margin-bottom: 10px; font-weight: 600;">
+            <i class="fas fa-plus"></i> Create New Playlist
+        </button>
+    `;
+
     if (playlists.length === 0) {
-        container.innerHTML = `<p style="text-align: center; color: #aaa; padding: 20px;">No playlists found. Create one first!</p>`;
-        return;
+        html += `<p style="text-align: center; color: #aaa; padding: 20px;">No playlists found.</p>`;
+    } else {
+        html += playlists.map((pl, idx) => `
+            <button class="btn-glass" onclick="confirmAddTrackToPlaylist(${idx})" 
+                    style="width: 100%; text-align: left; padding: 12px 15px; border-radius: 12px; display: flex; flex-direction: column; gap: 4px; transition: 0.2s;">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span style="font-weight: 600;">${pl.name}</span>
+                    <i class="fas fa-plus-circle" style="color: var(--gold-primary);"></i>
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${pl.description || 'No description'}
+                </div>
+            </button>
+        `).join('');
     }
 
-    container.innerHTML = playlists.map((pl, idx) => `
-        <button class="btn-glass" onclick="confirmAddTrackToPlaylist(${idx})" 
-                style="width: 100%; text-align: left; padding: 12px 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
-            <span>${pl.name}</span>
-            <i class="fas fa-plus"></i>
-        </button>
-    `).join('');
+    container.innerHTML = html;
+}
+
+async function createNewPlaylistFromModal() {
+    const name = prompt("ชื่อเพลย์ลิสต์ใหม่ (New Playlist Name):");
+    if (!name) return;
+    const desc = prompt("คำอธิบาย (Description):", "คอลเลกชันเพลงใหม่ของฉัน");
+
+    try {
+        const res = await smartFetch('/api/playlist', {
+            method: 'POST',
+            body: JSON.stringify({
+                user_id: currentUserId,
+                action: 'create',
+                name: name,
+                description: desc
+            })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+            await renderCollection(); // Refresh global list
+            renderPlaylistOptions(); // Refresh current modal
+        }
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 async function confirmAddTrackToPlaylist(plIdx) {
@@ -1097,6 +1146,10 @@ function renderQueue(queue) {
             </div>
             
             <div class="queue-actions-row" style="display: flex; gap: 8px; justify-content: flex-end;">
+                <div onclick="sendControl('favorite', {title: '${safeTitle}', uri: '${safeUri}', encoded: '${encoded}'})" 
+                     style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: #ff5555; cursor: pointer;" title="Favorite">
+                    <i class="far fa-heart"></i>
+                </div>
                 <button class="btn-glass" onclick="showAddToPlaylistModal('${encoded}', '${safeUri}', '${safeTitle}')" 
                         style="width: 28px; height: 28px; border-radius: 50%; padding: 0; font-size: 0.7rem; color: var(--gold-primary);" title="Add to Playlist">
                     <i class="fas fa-plus"></i>
@@ -1154,7 +1207,189 @@ style.innerHTML = `
 `;
 document.head.appendChild(style);
 
+
 // ==========================================
-// END OF FILE
+// 7. COLLECTION SYSTEM (Folders, Playlists, Saving)
 // ==========================================
+
+let userPlaylists = [];
+let userFavorites = [];
+
+/**
+ * Render complete Collection UI (Folders)
+ */
+async function renderCollection() {
+    const listFav = document.getElementById('favorites-list');
+    const listCustom = document.getElementById('custom-playlists-list');
+    const limitInfo = document.getElementById('playlist-limit-info');
+
+    if (!currentUserId) return;
+
+    try {
+        const resp = await smartFetch(`?action=user_info&user_id=${currentUserId}`);
+        const data = await resp.json();
+
+        userPlaylists = data.playlists || [];
+        userFavorites = data.favorites || [];
+        const limit = data.playlist_limit || 20;
+
+        if (limitInfo) limitInfo.textContent = `Playlists: ${userPlaylists.length} / ${limit}`;
+
+        // 1. Render Favorites
+        if (listFav) {
+            listFav.innerHTML = userFavorites.length === 0
+                ? `<div class="queue-empty" style="text-align:center; padding:20px; color:var(--text-muted);">No favorites yet</div>`
+                : userFavorites.map((track, idx) => `
+                    <div class="queue-item">
+                        <div class="qi-thumb-wrapper">
+                            <img src="${track.thumbnail || 'logo-circle.png'}" class="qi-thumb">
+                            <div class="qi-overlay" onclick="sendControl('play', JSON.stringify({encoded: '${track.encoded}', uri: '${track.uri}', source: 'favorites'}))"><i class="fas fa-play"></i></div>
+                        </div>
+                        <div class="qi-info">
+                            <div class="qi-title">${track.title}</div>
+                            <div class="qi-author">${track.author}</div>
+                        </div>
+                        <button class="qi-remove" onclick="removeFavorite('${track.uri}')" title="Remove"><i class="fas fa-heart-broken"></i></button>
+                    </div>
+                `).join('');
+        }
+
+        // 2. Render Playlists (Folder View)
+        if (listCustom) {
+            listCustom.innerHTML = '';
+
+            // "Save Queue" Card
+            const saveCard = document.createElement('div');
+            saveCard.className = 'card folder-card';
+            saveCard.style.border = '2px dashed var(--glass-border)';
+            saveCard.style.background = 'rgba(212, 175, 55, 0.05)';
+            saveCard.style.cursor = 'pointer';
+            saveCard.onclick = saveQueuePrompt;
+            saveCard.innerHTML = `
+                <div style="text-align:center; padding: 25px 10px;">
+                    <i class="fas fa-file-export" style="font-size:2.2rem; color:var(--gold-dim); margin-bottom:12px;"></i>
+                    <div style="font-weight:700; font-size:1rem; color:var(--gold-primary);">Save Queue</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:5px;">Save current queue as playlist</div>
+                </div>
+            `;
+            listCustom.appendChild(saveCard);
+
+            userPlaylists.forEach((pl, idx) => {
+                const thumb = (pl.tracks && pl.tracks.length > 0) ? pl.tracks[0].thumbnail : 'logo-circle.png';
+                const el = document.createElement('div');
+                el.className = 'card folder-card';
+                el.innerHTML = `
+                    <div class="folder-thumb-wrapper" onclick="viewPlaylist(${idx})">
+                        <img src="${thumb}" class="folder-thumb">
+                        <div class="folder-badge"><i class="fas fa-compact-disc fa-spin-slow"></i> ${pl.count || 0} tracks</div>
+                        <div class="folder-play-overlay" onclick="event.stopPropagation(); playPlaylist(${idx})"><i class="fas fa-play-circle"></i></div>
+                    </div>
+                    <div class="folder-info">
+                        <div class="folder-name">${pl.name}</div>
+                        <div class="folder-date">Saved on: ${new Date(pl.created_at * 1000).toLocaleDateString()}</div>
+                        <div class="folder-actions">
+                            <button class="btn-folder" onclick="viewPlaylist(${idx})" title="View Tracks"><i class="fas fa-list"></i></button>
+                            <button class="btn-folder" onclick="deletePlaylist(${idx})" title="Delete" style="color:#ff6666;"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </div>
+                `;
+                listCustom.appendChild(el);
+            });
+        }
+    } catch (e) {
+        console.error("Collection Render Error:", e);
+    }
+}
+
+function saveQueuePrompt() {
+    if (!selectedGuildId) return showNotification("Alert", "แจ้งเตือน", "Please select a server first!", "กรุณาเลือกเซิร์ฟเวอร์ก่อน!", "error");
+    const name = prompt("ชื่อเพลย์ลิสต์:", `Queue ${new Date().toLocaleDateString()}`);
+    if (!name) return;
+    const desc = prompt("คำอธิบาย (Description):", `คิวเพลงที่บันทึกจาก ${selectedGuildId}`);
+    saveQueueToPlaylist(name, desc);
+}
+
+async function saveQueueToPlaylist(name, description) {
+    try {
+        const resp = await smartFetch('/api/playlist', {
+            method: 'POST',
+            body: JSON.stringify({
+                user_id: currentUserId,
+                guild_id: selectedGuildId,
+                action: 'save_queue',
+                name: name,
+                description: description
+            })
+        });
+        const data = await resp.json();
+        if (data.status === 'ok') {
+            showNotification("Success", "บันทึกแล้ว", data.message, data.message, "success");
+            renderCollection();
+        } else {
+            showNotification("Error", "ผิดพลาด", data.error, data.error, "error");
+        }
+    } catch (e) { console.error(e); }
+}
+
+function viewPlaylist(idx) {
+    const pl = userPlaylists[idx];
+    if (!pl) return;
+    const modal = document.getElementById('search-modal');
+    if (!modal) return;
+    const title = modal.querySelector('.modal-header h3');
+    const list = document.getElementById('modal-results-list');
+    title.textContent = `Folder: ${pl.name}`;
+    list.innerHTML = (pl.tracks || []).map(t => `
+        <div class="search-result-item">
+            <img src="${t.thumbnail || 'logo-circle.png'}" class="qi-thumb" style="width:50px; height:50px; border-radius:8px;">
+            <div class="qi-info" style="flex:1; margin-left:15px; overflow:hidden;">
+                <div class="qi-title" style="font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${t.title}</div>
+                <div class="qi-artist" style="font-size:0.8rem; color:var(--text-muted);">${t.author}</div>
+            </div>
+            <button class="btn btn-gold-outline" onclick="sendControl('play', JSON.stringify({encoded: '${t.encoded}', uri: '${t.uri}', source: 'playlist'}))"><i class="fas fa-play"></i></button>
+        </div>
+    `).join('') || '<p style="text-align:center; padding:40px; color:var(--text-muted);">Playlist is empty</p>';
+    modal.style.display = 'flex';
+}
+
+async function playPlaylist(idx) {
+    if (!selectedGuildId) return showNotification("Alert", "แจ้งเตือน", "Please select a server first!", "กรุณาเลือกเซิร์ฟเวอร์ก่อน!", "error");
+    try {
+        const resp = await smartFetch('/api/playlist', {
+            method: 'POST',
+            body: JSON.stringify({
+                user_id: currentUserId,
+                guild_id: selectedGuildId,
+                action: 'play_playlist',
+                playlist_index: idx
+            })
+        });
+        const data = await resp.json();
+        if (data.status === 'ok') {
+            showNotification("Loaded", "โหลดแล้ว", data.message, data.message, "success");
+            switchTab('player', document.querySelector('.sidebar-btn'));
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function deletePlaylist(idx) {
+    if (!confirm("Confirm delete?")) return;
+    try {
+        await smartFetch('/api/playlist', {
+            method: 'POST',
+            body: JSON.stringify({ user_id: currentUserId, action: 'delete', index: idx })
+        });
+        renderCollection();
+    } catch (e) { console.error(e); }
+}
+
+// Initialization hooks
+window.addEventListener('load', () => { setTimeout(renderCollection, 1000); });
+// Also refresh when switching to Collection tab
+const oldSwitchTab = window.switchTab;
+window.switchTab = function (n, b) {
+    if (n === 'favorites') renderCollection();
+    if (typeof oldSwitchTab === 'function') oldSwitchTab(n, b);
+};
+
 

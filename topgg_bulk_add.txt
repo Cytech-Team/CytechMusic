@@ -1,0 +1,64 @@
+/speed [value] - Set playback speed / ปรับความเร็วเพลง
+/karaoke <level> <monolevel> <filterband> <filterwidth> - Apply karaoke effect (remove vocals) / เปิดโหมดคาราโอเกะ (ตัดเสียงร้อง)
+/tremolo <frequency> <depth> - Apply tremolo effect / เปิดเอฟเฟกต์ Tremolo (สั่น)
+/vibrato <frequency> <depth> - Apply vibrato effect / เปิดเอฟเฟกต์ Vibrato (ลูกคอ)
+/rotation <hertz> - Apply rotation effect (8D audio) / เปิดเอฟเฟกต์หมุนเสียง (8D)
+/distortion - Apply distortion effect / เปิดเอฟเฟกต์ Distortion (เสียงแตก)
+/lowpass <smoothing> - Apply lowpass filter (muffled sound) / เปิด Lowpass Filter (ตัดเสียงแหลม)
+/channelmix <left_to_left> <right_to_right> <left_to_right> <right_to_left> - Mix audio channels manually / ปรับแต่ง Channel เสียงเอง
+/nightcore - Apply Nightcore effect / เปิดโหมด Nightcore
+/8d - Apply 8D Audio effect / เปิดโหมด 8D Audio
+/vaporwave - Apply Vaporwave effect / เปิดโหมด Vaporwave
+/cleareffect <effect> - Clear sound effects / ล้างเอฟเฟกต์เสียงทั้งหมด
+/help <arguments> - Show help info / แสดงวิธีใช้งานและรายชื่อคำสั่ง
+/ping - Check bot latency / เช็คค่าความหน่วง (Ping) ของบอท
+/uptime - Check bot uptime / เช็คเวลาทำงานของบอท
+/stats - Show system & node stats / แสดงสถานะระบบและ Music Node
+/botinfo - Show bot information / แสดงข้อมูลเกี่ยวกับบอท
+/avatar <member> - Show member's avatar / ดูรูปโปรไฟล์ของสมาชิก
+/serverinfo - Show server information / ดูข้อมูลของเซิร์ฟเวอร์นี้
+/userinfo <member> - Show user information / ดูข้อมูลส่วนตัวของคุณหรือของผู้อื่น
+/invite - Invite the bot to your server / เชิญบอทเข้าเซิร์ฟเวอร์ของคุณ
+/dashboard - Web Dashboard link / ลิงก์แดชบอร์ดควบคุมผ่านเว็บ
+/join <channel> - Joins your voice channel / เข้าร่วมช่องเสียงของคุณ
+/leave - Disconnect the bot from voice channel / ตัดการเชื่อมต่อบอทจากช่องเสียง
+/play [search] - Play a song from any source / เล่นเพลงจากแหล่งต่างๆ
+/nowplaying - Show the currently playing song / แสดงเพลงที่กำลังเล่นอยู่
+/volume <volume> - Set music volume (1-100) / ปรับระดับเสียงเพลง (1-100)
+/pause - Pause or Resume the music / หยุดชั่วคราว หรือ เล่นเพลงต่อ
+/skip <index> - Skip to next song / ข้ามไปเพลงถัดไป
+/skipto [index] - Skip to a specific song in the queue / ข้ามไปเพลงที่ระบุลำดับ
+/clear - Clear all songs in the queue / ล้างคิวเพลงทั้งหมด
+/stop - Stop music and disconnect / หยุดเพลงและออกจากช่องเสียง
+/seek [position] - Seek to a specific time in the song / เลื่อนไปยังช่วงเวลาที่ต้องการ
+/queue - Show current music queue / แสดงคิวเพลงปัจจุบัน
+/fix - Fix voice issues by changing region / แก้ไขปัญหาเสียงด้วยการเปลี่ยน Region
+/remove [index] - Remove a song from the queue / ลบเพลงออกจากคิว
+/shuffle - Shuffle the queue / สุ่มลำดับเพลงในคิว
+/lyrics <query> - Get lyrics for the current or specified song / ดูเนื้อร้องเพลง
+/grab - Save current song to your DM / ส่งข้อมูลเพลงเข้า DM
+/removedupes - Remove duplicate songs from the queue / ลบเพลงซ้ำในคิว
+/move [from_index] [to_index] - Move a song to a different position in the queue / ย้ายตำแหน่งเพลง
+/history - Show recently played songs / แสดงประวัติเพลงที่เล่นไปแล้ว
+/premium buy [plan] - Buy Premium via Stripe / ซื้อพรีเมียม
+/premium redeem [key] - Redeem a Premium Key / เติมพรีเมียมด้วยคีย์
+/premium status <user> - Check your premium status / ตรวจสอบพรีเมียมของคุณ
+/premium genkey <days> <count> - Command genkey
+/premium stats - Command stats
+/premium add [user_id] - Command add
+/premium remove [user_id] - Command remove
+/branding <nickname> <color> <banner> <image> <reset> - Customize Bot Theme / ปรับแต่งธีมบอท
+/reset - Reset settings to default / รีเซ็ตการตั้งค่าเป็นค่าเริ่มต้น
+/setup - Create music request channel / สร้างห้องขอเพลง
+/prefix [prefix] - Change bot prefix / เปลี่ยนคำนำหน้าบอท
+/language [lang] - Change bot language / เปลี่ยนภาษาของบอท
+/247 - Toggle 24/7 mode / เปิด-ปิดโหมด 24/7 (บอทไม่หลุด)
+/autoplay - Toggle Autoplay / เปิด-ปิดเล่นเพลงอัตโนมัติ
+/djrole [role] - Set DJ Role / ตั้งค่า role ที่เป็น DJ
+/djmode - Toggle DJ Mode (Strict Mode) / เปิด-ปิดโหมด DJ
+/vote_mode - Toggle Vote Mode / เปิด-ปิดโหมดโหวต
+/viewsettings - View current server settings / ดูการตั้งค่าปัจจุบัน
+/fixed - Fix/Reset the music request channel / แก้ไขหรือรีเซ็ตห้องขอเพลง
+/voicefix - Fix voice connection issues / แก้ไขปัญหาเสียงหาย
+/rejoin - Force Reconnect Voice / บังคับเชื่อมต่อเสียงใหม่
+/cleanup <limit> - Clean up bot messages / ลบข้อความของบอท

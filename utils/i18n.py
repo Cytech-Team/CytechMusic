@@ -9,7 +9,7 @@ class LanguageManager:
                 "join_voice_chat_channel": "Join Voice Chat — Use {channel} to play music",
                 "join_voice_chat_title": "Join Voice Chat and Type Song name/link in this channel",
                 "no_queue": "No queue now",
-                "footer_quote": "The key to success lies within yourself.",
+                "footer_quote": "© 2026 Cytech Team. All rights reserved.",
                 "hello_title": "👋 Hi {author}",
                 "hello_desc": "Hello {author}. I am the Music Bot. Use `/help` or `{prefix}help` to see commands.",
                 "bot_version_footer": "Cyori {version}",
@@ -165,6 +165,7 @@ class LanguageManager:
                 
                 # Player Controls
                 "vol_level": "Level: {volume}%",
+                "btn_random": "Random",
                 "select_skip_placeholder": "Select a song to skip to ...",
                 "msg_skip_to": "⏭️ | Skip to {title}",
                 "msg_stop": "⏹️ | Stop music",
@@ -177,7 +178,16 @@ class LanguageManager:
                 "msg_autoplay_bool": "Autoplay mode is now **{state}**",
                 "msg_247_bool": "24/7 mode is now **{state}**",
                 "msg_vol_set_c": "🔊 | Set volume to `{volume}%`",
+                "shuffled": "🔀 | Shuffled the queue",
+                "premium_volume_limit": "❌ Premium is required to set volume above 100%.",
+                "removed_from_queue": "🗑️ Removed **{title}** from the queue.",
+                "moved_track": "✅ Moved **{title}** from `{from_idx}` to `{to_idx}`.",
                 "loop_disable": "Disable",
+                # Random feature
+                "msg_random_searching": "🎲 **Searching for a surprise...**",
+                "msg_random_selection": "🎲 | **Random Selection:** [{title}]({uri})",
+                "msg_random_not_found": "❌ Could not find random tracks.",
+                "msg_random_failed": "❌ Random search failed: {e}",
                 # Vote System
                 "vote_already": "⚠️ | You have already voted!",
                 "vote_detected": "🗳️ | Vote detected! ({current}/{required})",
@@ -270,7 +280,7 @@ class LanguageManager:
                 "join_voice_chat_channel": "เข้าห้องเสียง — ใช้ {channel} เพื่อเล่นเพลง",
                 "join_voice_chat_title": "เข้าห้องเสียงและพิมพ์ชื่อเพลง/ลิงก์ ในช่องนี้",
                 "no_queue": "ไม่มีคิวเพลงขณะนี้",
-                "footer_quote": "กุญแจสู่ความสำเร็จอยู่ที่ตัวคุณเอง",
+                "footer_quote": "© 2026 Cytech Team สงวนลิขสิทธิ์",
                 "hello_title": "👋 สวัสดี {author}",
                 "hello_desc": "สวัสดี {author} ฉันคือบอทเพลง ใช้ `/help` หรือ `{prefix}help` เพื่อดูคำสั่ง",
                 "bot_version_footer": "Cyori {version}",
@@ -426,6 +436,7 @@ class LanguageManager:
 
                 # Player Controls
                 "vol_level": "ระดับ: {volume}%",
+                "btn_random": "สุ่มเพลง",
                 "select_skip_placeholder": "เลือกเพลงที่ต้องการข้ามไป...",
                 "msg_skip_to": "⏭️ | ข้ามไปที่ {title}",
                 "msg_stop": "⏹️ | หยุดเพลงแล้ว",
@@ -438,7 +449,16 @@ class LanguageManager:
                 "msg_autoplay_bool": "โหมดเล่นเพลงอัตโนมัติ **{state}** แล้ว",
                 "msg_247_bool": "โหมด 24/7 **{state}** แล้ว",
                 "msg_vol_set_c": "🔊 | ตั้งค่าระดับเสียงเป็น `{volume}%`",
+                "shuffled": "🔀 | สุ่มลำดับเพลงในคิวแล้ว",
+                "premium_volume_limit": "❌ คุณต้องมี Premium เพื่อปรับระดับเสียงเกิน 100%",
+                "removed_from_queue": "🗑️ ลบเพลง **{title}** ออกจากคิวแล้ว",
+                "moved_track": "✅ ย้ายเพลง **{title}** จากลำดับที่ `{from_idx}` ไปยัง `{to_idx}` แล้ว",
                 "loop_disable": "ปิด",
+                # Random feature
+                "msg_random_searching": "🎲 **กำลังค้นหาเพลงสุ่ม...**",
+                "msg_random_selection": "🎲 | **สุ่มเพลง:** [{title}]({uri})",
+                "msg_random_not_found": "❌ ไม่พบเพลงสุ่มที่คุณค้นหา",
+                "msg_random_failed": "❌ การค้นหาเพลงสุ่มล้มเหลว: {e}",
                 # Vote System
                 "vote_already": "⚠️ | คุณได้โหวตไปแล้ว!",
                 "vote_detected": "🗳️ | ตรวจพบการโหวต! ({current}/{required})",

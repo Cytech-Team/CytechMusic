@@ -107,7 +107,7 @@ class Settings(commands.Cog):
             play_embed = self.bot.none_play_embed(lang, g_data)
 
             from cytechlink import JukeboxIdleView
-            view = JukeboxIdleView(ctx.guild.voice_client)
+            view = JukeboxIdleView(ctx.guild.voice_client, bot=self.bot, lang=lang)
 
             q_msg = await channel.send(embed=queue_embed)
             p_msg = await channel.send(embed=play_embed, view=view)
@@ -417,7 +417,7 @@ class Settings(commands.Cog):
             play_embed = self.bot.none_play_embed(lang, g_data)
 
             from cytechlink import JukeboxIdleView
-            view = JukeboxIdleView(ctx.guild.voice_client)
+            view = JukeboxIdleView(ctx.guild.voice_client, bot=self.bot, lang=lang)
 
             q_msg = await channel.send(embed=queue_embed)
             p_msg = await channel.send(embed=play_embed, view=view)
