@@ -211,8 +211,8 @@ header {
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--glass-border);
     z-index: 4000;
-    /* High z-index to stay on top of overlay (3000) */
-    padding: 15px 0;
+    padding: 12px 0;
+    /* Slightly reduced padding */
 }
 
 header .container {
@@ -244,11 +244,29 @@ header .container {
 
 .nav-links {
     display: flex;
-    gap: 30px;
+    gap: 20px;
     list-style: none;
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+@media (max-width: 1250px) {
+    .nav-links {
+        gap: 12px;
+    }
+}
+
+@media (max-width: 1100px) {
+    .nav-links {
+        display: none;
+        /* Let the hamburger take over earlier or remove some links */
+    }
+
+    .mobile-toggle {
+        display: block !important;
+    }
 }
 
 .nav-link {

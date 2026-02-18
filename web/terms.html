@@ -28,6 +28,14 @@
 
             <nav>
                 <ul class="nav-links">
+                    <li><a href="index.html#hero" class="nav-link lang-text" data-en="Home" data-th="หน้าแรก">Home</a>
+                    </li>
+                    <li><a href="index.html#features" class="nav-link lang-text" data-en="Features"
+                            data-th="ฟีเจอร์">Features</a></li>
+                    <li><a href="commands.html" class="nav-link lang-text" data-en="Commands"
+                            data-th="คำสั่ง">Commands</a></li>
+                    <li><a href="dashboard.html" class="nav-link lang-text" data-en="Dashboard"
+                            data-th="แผงควบคุม">Dashboard</a></li>
                     <li><a href="premium.html" class="nav-link lang-text" data-en="Premium"
                             data-th="พรีเมียม">Premium</a></li>
                     <li><a href="terms.html" class="nav-link active lang-text" data-en="Terms"
@@ -36,6 +44,24 @@
                             data-th="ความเป็นส่วนตัว">Privacy</a></li>
                     <li><a href="https://top.gg/bot/1469606905948405833/vote" target="_blank" class="nav-link lang-text"
                             data-en="Vote" data-th="โหวต">Vote</a></li>
+
+                    <!-- Mobile Exclusive Actions -->
+                    <li class="mobile-only-action">
+                        <div class="mobile-menu-divider"></div>
+                        <button onclick="toggleLanguage()" class="btn-glass mobile-nav-btn">
+                            <i class="fas fa-globe"></i>
+                            <span class="lang-text" data-en="Switch to Thai"
+                                data-th="เปลี่ยนเป็นภาษาอังกฤษ">Language</span>
+                        </button>
+                    </li>
+                    <li class="mobile-only-action">
+                        <a href="#" class="btn btn-primary login-btn" id="mobile-login-btn-tray" onclick="login()"
+                            style="width: 100%; margin-top: 10px;">
+                            <i class="fab fa-discord"></i>
+                            <span class="lang-text" data-en="Login to Dashboard"
+                                data-th="เข้าสู่ระบบแดชบอร์ด">Login</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
 
