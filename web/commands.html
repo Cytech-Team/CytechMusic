@@ -301,34 +301,59 @@
     <script>
         let allCommands = [];
 
+        async function tryFetchLocalPayload() {
+            try {
+                console.log("[Commands] Attempting local payload fallback...");
+                const res = await fetch("slash_commands_payload.json");
+                if (!res.ok) throw new Error("Local payload file not found (404)");
+
+                const contentType = res.headers.get("content-type");
+                if (contentType && !contentType.includes("application/json")) {
+                    throw new Error("Local payload returned non-JSON content (likely HTML 404)");
+                }
+
+                return await res.json();
+            } catch (e) {
+                console.error("[Commands] Local payload fallback failed:", e);
+                return null;
+            }
+        }
+
         async function loadCommands() {
             const grid = document.getElementById('payload-grid');
 
-            // Detection Env
             var isLocalEnv = false;
             try { isLocalEnv = IS_LOCAL; } catch (e) {
                 isLocalEnv = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
             }
 
             try {
-                // Determine API Endpoint (Prefer direct /api/commands if local, else use proxy)
-                // Note: ?action=commands is only handled by proxy in dashboard_api.py
-                const url = isLocalEnv ? "http://localhost:8000/api/commands" : "/api/proxy?action=commands";
+                // Determine API Endpoint - Try DIRECT /api/commands first as it's more reliable
+                const url = isLocalEnv ? "http://localhost:8000/api/commands" : "/api/commands";
                 console.log("[Commands] Fetching from:", url);
 
-                const res = await fetch(url).catch(err => {
-                    console.warn("[Commands] API fetch failed, falling back to local payload.", err);
-                    return fetch("slash_commands_payload.json");
+                let res = await fetch(url).catch(err => {
+                    console.warn("[Commands] Direct API failed, trying proxy...", err);
+                    return null;
                 });
+
+                // If direct fails or returns error, try proxy
+                if (!res || !res.ok) {
+                    const proxyUrl = isLocalEnv ? "http://localhost:8000/api/proxy?action=commands" : "/api/proxy?action=commands";
+                    console.log("[Commands] Fetching from proxy:", proxyUrl);
+                    res = await fetch(proxyUrl).catch(e => null);
+                }
+
+                if (!res || !res.ok) {
+                    throw new Error("Both direct and proxy API failed");
+                }
 
                 const data = await res.json();
                 console.log("[Commands] Data received:", data);
 
-                // Handle Error Response (Method Not Allowed etc)
                 if (data.error || data.status === "error") {
-                    console.warn("[Commands] API returned error, falling back to local payload.", data);
-                    const localRes = await fetch("slash_commands_payload.json");
-                    allCommands = await localRes.json();
+                    console.warn("[Commands] API returned logical error, falling back to local payload.", data);
+                    allCommands = await tryFetchLocalPayload();
                 } else if (data.slash_payload && data.slash_payload.length > 0) {
                     allCommands = data.slash_payload;
                 } else if (data.commands && data.commands.length > 0) {
@@ -342,21 +367,24 @@
                     allCommands = data;
                 }
 
+                if (!allCommands || allCommands.length === 0) {
+                    allCommands = await tryFetchLocalPayload();
+                }
+
                 renderCommands(allCommands);
                 if (typeof updateLanguage === 'function') updateLanguage();
 
             } catch (e) {
-                console.error("[Commands] Critical load error:", e);
-                // Last ditch effort
-                try {
-                    const localRes = await fetch("slash_commands_payload.json");
-                    allCommands = await localRes.json();
+                console.error("[Commands] API Process Error:", e);
+                allCommands = await tryFetchLocalPayload();
+                if (allCommands) {
                     renderCommands(allCommands);
-                } catch (err) {
+                } else {
                     grid.innerHTML = `
                         <div class="empty-state">
                             <i class="fas fa-exclamation-triangle fa-3x" style="color: #ff4444; margin-bottom: 20px;"></i>
                             <h3 class="lang-text" data-en="Failed to link with Bot" data-th="ไม่สามารถเชื่อมต่อกับบอทได้">Failed to link with Bot</h3>
+                            <p style="opacity: 0.6; margin-top: 10px;">The background music engine might be offline.</p>
                             <button class="btn btn-glass" onclick="loadCommands()" style="margin-top: 20px;">Retry</button>
                         </div>
                     `;

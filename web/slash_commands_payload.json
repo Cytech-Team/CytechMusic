@@ -1,0 +1,923 @@
+[
+    {
+        "name": "speed",
+        "description": "Set playback speed / ปรับความเร็วเพลง",
+        "type": 1,
+        "options": [
+            {
+                "name": "value",
+                "description": "Speed multiplier (e.g. 1.25) / ตัวคูณความเร็ว (เช่น 1.25)",
+                "type": 10,
+                "required": true,
+                "min_value": 0.1,
+                "max_value": 2.0
+            }
+        ]
+    },
+    {
+        "name": "karaoke",
+        "description": "Apply karaoke effect (remove vocals) / เปิดโหมดคาราโอเกะ (ตัดเสียงร้อง)",
+        "type": 1,
+        "options": [
+            {
+                "name": "level",
+                "description": "Vocals level (default 1.0) / ระดับเสียงร้อง (ปกติ 1.0)",
+                "type": 10,
+                "required": false,
+                "min_value": 0.0,
+                "max_value": 2.0
+            },
+            {
+                "name": "monolevel",
+                "description": "Mono level (default 1.0) / ระดับ Mono (ปกติ 1.0)",
+                "type": 10,
+                "required": false,
+                "min_value": 0.0,
+                "max_value": 2.0
+            },
+            {
+                "name": "filterband",
+                "description": "Filter band (default 220.0) / แบนด์ความถี่ (ปกติ 220.0)",
+                "type": 10,
+                "required": false,
+                "min_value": 100.0,
+                "max_value": 300.0
+            },
+            {
+                "name": "filterwidth",
+                "description": "Filter width (default 100.0) / ความกว้างความถี่ (ปกติ 100.0)",
+                "type": 10,
+                "required": false,
+                "min_value": 50.0,
+                "max_value": 150.0
+            }
+        ]
+    },
+    {
+        "name": "tremolo",
+        "description": "Apply tremolo effect / เปิดเอฟเฟกต์ Tremolo (สั่น)",
+        "type": 1,
+        "options": [
+            {
+                "name": "frequency",
+                "description": "Frequency (default 2.0) / ความถี่ (ปกติ 2.0)",
+                "type": 10,
+                "required": false,
+                "min_value": 0.1,
+                "max_value": 10.0
+            },
+            {
+                "name": "depth",
+                "description": "Depth (default 0.5) / ความลึก (ปกติ 0.5)",
+                "type": 10,
+                "required": false,
+                "min_value": 0.0,
+                "max_value": 1.0
+            }
+        ]
+    },
+    {
+        "name": "vibrato",
+        "description": "Apply vibrato effect / เปิดเอฟเฟกต์ Vibrato (ลูกคอ)",
+        "type": 1,
+        "options": [
+            {
+                "name": "frequency",
+                "description": "Frequency (default 2.0) / ความถี่ (ปกติ 2.0)",
+                "type": 10,
+                "required": false,
+                "min_value": 0.1,
+                "max_value": 14.0
+            },
+            {
+                "name": "depth",
+                "description": "Depth (default 0.5) / ความลึก (ปกติ 0.5)",
+                "type": 10,
+                "required": false,
+                "min_value": 0.0,
+                "max_value": 1.0
+            }
+        ]
+    },
+    {
+        "name": "rotation",
+        "description": "Apply rotation effect (8D audio) / เปิดเอฟเฟกต์หมุนเสียง (8D)",
+        "type": 1,
+        "options": [
+            {
+                "name": "hertz",
+                "description": "Rotation speed (hertz) / ความเร็วการหมุน",
+                "type": 10,
+                "required": false,
+                "min_value": 0.01,
+                "max_value": 2.0
+            }
+        ]
+    },
+    {
+        "name": "distortion",
+        "description": "Apply distortion effect / เปิดเอฟเฟกต์ Distortion (เสียงแตก)",
+        "type": 1
+    },
+    {
+        "name": "lowpass",
+        "description": "Apply lowpass filter (muffled sound) / เปิด Lowpass Filter (ตัดเสียงแหลม)",
+        "type": 1,
+        "options": [
+            {
+                "name": "smoothing",
+                "description": "Smoothing level (default 20.0) / ระดับความนุ่มนวล (ปกติ 20.0)",
+                "type": 10,
+                "required": false,
+                "min_value": 10.0,
+                "max_value": 30.0
+            }
+        ]
+    },
+    {
+        "name": "channelmix",
+        "description": "Mix audio channels manually / ปรับแต่ง Channel เสียงเอง",
+        "type": 1,
+        "options": [
+            {
+                "name": "left_to_left",
+                "description": "Left to Left (default 1.0) / ซ้ายออกซ้าย",
+                "type": 10,
+                "required": false,
+                "min_value": 0.0,
+                "max_value": 1.0
+            },
+            {
+                "name": "right_to_right",
+                "description": "Right to Right (default 1.0) / ขวาออกขวา",
+                "type": 10,
+                "required": false,
+                "min_value": 0.0,
+                "max_value": 1.0
+            },
+            {
+                "name": "left_to_right",
+                "description": "Left to Right (default 0.0) / ซ้ายออกขวา",
+                "type": 10,
+                "required": false,
+                "min_value": 0.0,
+                "max_value": 1.0
+            },
+            {
+                "name": "right_to_left",
+                "description": "Right to Left (default 0.0) / ขวาออกซ้าย",
+                "type": 10,
+                "required": false,
+                "min_value": 0.0,
+                "max_value": 1.0
+            }
+        ]
+    },
+    {
+        "name": "nightcore",
+        "description": "Apply Nightcore effect / เปิดโหมด Nightcore",
+        "type": 1
+    },
+    {
+        "name": "8d",
+        "description": "Apply 8D Audio effect / เปิดโหมด 8D Audio",
+        "type": 1
+    },
+    {
+        "name": "vaporwave",
+        "description": "Apply Vaporwave effect / เปิดโหมด Vaporwave",
+        "type": 1
+    },
+    {
+        "name": "cleareffect",
+        "description": "Clear sound effects / ล้างเอฟเฟกต์เสียงทั้งหมด",
+        "type": 1,
+        "options": [
+            {
+                "name": "effect",
+                "description": "Specific effect name to remove / ชื่อเอฟเฟกต์ที่ต้องการลบ",
+                "type": 3,
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "help",
+        "description": "Show help info / แสดงวิธีใช้งานและรายชื่อคำสั่ง",
+        "type": 1,
+        "options": [
+            {
+                "name": "arguments",
+                "description": "Command, group or cog name / ชื่อคำสั่ง กลุ่ม หรือหมวดหมู่",
+                "type": 3,
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "ping",
+        "description": "Check bot latency / เช็คค่าความหน่วง (Ping) ของบอท",
+        "type": 1
+    },
+    {
+        "name": "uptime",
+        "description": "Check bot uptime / เช็คเวลาทำงานของบอท",
+        "type": 1
+    },
+    {
+        "name": "stats",
+        "description": "Show system & node stats / แสดงสถานะระบบและ Music Node",
+        "type": 1
+    },
+    {
+        "name": "botinfo",
+        "description": "Show bot information / แสดงข้อมูลเกี่ยวกับบอท",
+        "type": 1
+    },
+    {
+        "name": "avatar",
+        "description": "Show member's avatar / ดูรูปโปรไฟล์ของสมาชิก",
+        "type": 1,
+        "options": [
+            {
+                "name": "member",
+                "description": "…",
+                "type": 6,
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "serverinfo",
+        "description": "Show server information / ดูข้อมูลของเซิร์ฟเวอร์นี้",
+        "type": 1
+    },
+    {
+        "name": "userinfo",
+        "description": "Show user information / ดูข้อมูลส่วนตัวของคุณหรือของผู้อื่น",
+        "type": 1,
+        "options": [
+            {
+                "name": "member",
+                "description": "…",
+                "type": 6,
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "invite",
+        "description": "Invite the bot to your server / เชิญบอทเข้าเซิร์ฟเวอร์ของคุณ",
+        "type": 1
+    },
+    {
+        "name": "dashboard",
+        "description": "Web Dashboard link / ลิงก์แดชบอร์ดควบคุมผ่านเว็บ",
+        "type": 1
+    },
+    {
+        "name": "join",
+        "description": "Joins your voice channel / เข้าร่วมช่องเสียงของคุณ",
+        "type": 1,
+        "options": [
+            {
+                "name": "channel",
+                "description": "Voice channel to join / ช่องเสียงที่ต้องการให้บอทเข้า",
+                "type": 7,
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "leave",
+        "description": "Disconnect the bot from voice channel / ตัดการเชื่อมต่อบอทจากช่องเสียง",
+        "type": 1
+    },
+    {
+        "name": "play",
+        "description": "Play a song from any source / เล่นเพลงจากแหล่งต่างๆ",
+        "type": 1,
+        "options": [
+            {
+                "name": "search",
+                "description": "Song name or link to play / ชื่อเพลงหรือลิงก์ youtube",
+                "type": 3,
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "nowplaying",
+        "description": "Show the currently playing song / แสดงเพลงที่กำลังเล่นอยู่",
+        "type": 1
+    },
+    {
+        "name": "volume",
+        "description": "Set music volume (1-100) / ปรับระดับเสียงเพลง (1-100)",
+        "type": 1,
+        "options": [
+            {
+                "name": "volume",
+                "description": "…",
+                "type": 4,
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "pause",
+        "description": "Pause or Resume the music / หยุดชั่วคราว หรือ เล่นเพลงต่อ",
+        "type": 1
+    },
+    {
+        "name": "skip",
+        "description": "Skip to next song / ข้ามไปเพลงถัดไป",
+        "type": 1,
+        "options": [
+            {
+                "name": "index",
+                "description": "Index of song to skip to (optional) / ลำดับเพลงที่ต้องการข้ามไป (ไม่จำเป็น)",
+                "type": 4,
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "skipto",
+        "description": "Skip to a specific song in the queue / ข้ามไปเพลงที่ระบุลำดับ",
+        "type": 1,
+        "options": [
+            {
+                "name": "index",
+                "description": "Index of the song to skip to / ลำดับเพลงที่ต้องการข้ามไป",
+                "type": 4,
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "clear",
+        "description": "Clear all songs in the queue / ล้างคิวเพลงทั้งหมด",
+        "type": 1
+    },
+    {
+        "name": "stop",
+        "description": "Stop music and disconnect / หยุดเพลงและออกจากช่องเสียง",
+        "type": 1
+    },
+    {
+        "name": "seek",
+        "description": "Seek to a specific time in the song / เลื่อนไปยังช่วงเวลาที่ต้องการ",
+        "type": 1,
+        "options": [
+            {
+                "name": "position",
+                "description": "Time position (e.g. 1:20) / ตำแหน่งเวลา (เช่น 1:20)",
+                "type": 3,
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "queue",
+        "description": "Show current music queue / แสดงคิวเพลงปัจจุบัน",
+        "type": 1
+    },
+    {
+        "name": "fix",
+        "description": "Fix voice issues by changing region / แก้ไขปัญหาเสียงด้วยการเปลี่ยน Region",
+        "type": 1
+    },
+    {
+        "name": "remove",
+        "description": "Remove a song from the queue / ลบเพลงออกจากคิว",
+        "type": 1,
+        "options": [
+            {
+                "name": "index",
+                "description": "Index of the song to remove / ลำดับเพลงที่ต้องการลบ",
+                "type": 4,
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "shuffle",
+        "description": "Shuffle the queue / สุ่มลำดับเพลงในคิว",
+        "type": 1
+    },
+    {
+        "name": "lyrics",
+        "description": "Get lyrics for the current or specified song / ดูเนื้อร้องเพลง",
+        "type": 1,
+        "options": [
+            {
+                "name": "query",
+                "description": "Song to search lyrics for (optional) / ชื่อเพลงที่ต้องการค้นหาเนื้อร้อง",
+                "type": 3,
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "grab",
+        "description": "Save current song to your DM / ส่งข้อมูลเพลงเข้า DM",
+        "type": 1
+    },
+    {
+        "name": "removedupes",
+        "description": "Remove duplicate songs from the queue / ลบเพลงซ้ำในคิว",
+        "type": 1
+    },
+    {
+        "name": "move",
+        "description": "Move a song to a different position in the queue / ย้ายตำแหน่งเพลง",
+        "type": 1,
+        "options": [
+            {
+                "name": "from_index",
+                "description": "Index of the song to move / ลำดับเพลงที่ต้องการย้าย",
+                "type": 4,
+                "required": true
+            },
+            {
+                "name": "to_index",
+                "description": "New position / ตำแหน่งใหม่",
+                "type": 4,
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "history",
+        "description": "Show recently played songs / แสดงประวัติเพลงที่เล่นไปแล้ว",
+        "type": 1
+    },
+    {
+        "name": "own",
+        "description": "Owner-only management commands / คำสั่งจัดการสำหรับเจ้าของบอท",
+        "type": 1,
+        "options": [
+            {
+                "name": "shutdown",
+                "description": "Shut down the bot / ปิดการทำงานของบอท",
+                "type": 1
+            },
+            {
+                "name": "reload",
+                "description": "Reload a cog / รีโหลดส่วนเสริม (Cog)",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "cog",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "load",
+                "description": "Load a cog / โหลดส่วนเสริม (Cog)",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "cog",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "unload",
+                "description": "Unload a cog / ยกเลิกโหลดส่วนเสริม (Cog)",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "cog",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "sync",
+                "description": "Sync slash commands / ซิงค์คำสั่ง Slash Command",
+                "type": 1
+            },
+            {
+                "name": "servers",
+                "description": "List top guilds by member count / แสดงรายการเซิร์ฟเวอร์เรียงตามจำนวนสมาชิก",
+                "type": 1
+            },
+            {
+                "name": "leave",
+                "description": "Force bot to leave a guild / บังคับบอทออกจากเซิร์ฟเวอร์",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "guild_id",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "eval",
+                "description": "Execute Python code / รันโค้ด Python",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "code",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "say",
+                "description": "Make the bot send a message to a channel / ให้บอทส่งข้อความไปยังห้องที่กำหนด",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "channel",
+                        "description": "…",
+                        "type": 7,
+                        "required": true
+                    },
+                    {
+                        "name": "message",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "dm",
+                "description": "DM the server owner / ส่งข้อความหาเจ้าของเซิร์ฟเวอร์",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "message",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "announce",
+                "description": "Send a DM to all server owners / ประกาศถึงเจ้าของเซิร์ฟเวอร์ทุกคน",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "message",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "status",
+                "description": "Change bot status / เปลี่ยนสถานะของบอท",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "type",
+                        "description": "Type: playing, listening... / ประเภทสถานะ",
+                        "type": 3,
+                        "required": true,
+                        "choices": [
+                            {
+                                "name": "Playing",
+                                "value": "playing"
+                            },
+                            {
+                                "name": "Listening",
+                                "value": "listening"
+                            },
+                            {
+                                "name": "Watching",
+                                "value": "watching"
+                            },
+                            {
+                                "name": "Competing",
+                                "value": "competing"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "text",
+                        "description": "Status text / ข้อความสถานะ",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "rename",
+                "description": "Change bot username / เปลี่ยนชื่อผู้ใช้ของบอท",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "name",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "avatar",
+                "description": "Change bot avatar / เปลี่ยนรูปโปรไฟล์ของบอท",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "url",
+                        "description": "…",
+                        "type": 3,
+                        "required": false
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "premium",
+        "description": "Premium System Commands / คำสั่งระบบพรีเมียม",
+        "type": 1,
+        "options": [
+            {
+                "name": "buy",
+                "description": "Buy Premium via Stripe / ซื้อพรีเมียม",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "plan",
+                        "description": "Select a premium plan / เลือกแผนพรีเมียม",
+                        "type": 3,
+                        "required": true,
+                        "choices": [
+                            {
+                                "name": "1 Month - 29 THB (Save 0)",
+                                "value": "1_month"
+                            },
+                            {
+                                "name": "3 Months - 79 THB (Save 8)",
+                                "value": "3_months"
+                            },
+                            {
+                                "name": "6 Months - 149 THB (Save 25)",
+                                "value": "6_months"
+                            },
+                            {
+                                "name": "1 Year - 289 THB (Save 59)",
+                                "value": "1_year"
+                            },
+                            {
+                                "name": "Lifetime - 789 THB (Best Value!)",
+                                "value": "lifetime"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "redeem",
+                "description": "Redeem a Premium Key / เติมพรีเมียมด้วยคีย์",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "key",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "status",
+                "description": "Check your premium status / ตรวจสอบพรีเมียมของคุณ",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "user",
+                        "description": "…",
+                        "type": 6,
+                        "required": false
+                    }
+                ]
+            },
+            {
+                "name": "genkey",
+                "description": "…",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "days",
+                        "description": "…",
+                        "type": 4,
+                        "required": false
+                    },
+                    {
+                        "name": "count",
+                        "description": "…",
+                        "type": 4,
+                        "required": false
+                    }
+                ]
+            },
+            {
+                "name": "stats",
+                "description": "…",
+                "type": 1
+            },
+            {
+                "name": "add",
+                "description": "…",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "user_id",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "remove",
+                "description": "…",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "user_id",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "branding",
+        "description": "Customize Bot Theme / ปรับแต่งธีมบอท",
+        "type": 1,
+        "options": [
+            {
+                "name": "nickname",
+                "description": "…",
+                "type": 3,
+                "required": false
+            },
+            {
+                "name": "color",
+                "description": "…",
+                "type": 3,
+                "required": false
+            },
+            {
+                "name": "banner",
+                "description": "…",
+                "type": 11,
+                "required": false
+            },
+            {
+                "name": "image",
+                "description": "…",
+                "type": 11,
+                "required": false
+            },
+            {
+                "name": "reset",
+                "description": "…",
+                "type": 5,
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "reset",
+        "description": "Reset settings to default / รีเซ็ตการตั้งค่าเป็นค่าเริ่มต้น",
+        "type": 1
+    },
+    {
+        "name": "setup",
+        "description": "Create music request channel / สร้างห้องขอเพลง",
+        "type": 1
+    },
+    {
+        "name": "prefix",
+        "description": "Change bot prefix / เปลี่ยนคำนำหน้าบอท",
+        "type": 1,
+        "options": [
+            {
+                "name": "prefix",
+                "description": "New prefix (max 5 chars) / คำนำหน้าใหม่ (สูงสุด 5 ตัวอักษร)",
+                "type": 3,
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "language",
+        "description": "Change bot language / เปลี่ยนภาษาของบอท",
+        "type": 1,
+        "options": [
+            {
+                "name": "lang",
+                "description": "Select language / เลือกภาษา",
+                "type": 3,
+                "required": true,
+                "choices": [
+                    {
+                        "name": "English",
+                        "value": "en"
+                    },
+                    {
+                        "name": "Thai",
+                        "value": "th"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "247",
+        "description": "Toggle 24/7 mode / เปิด-ปิดโหมด 24/7 (บอทไม่หลุด)",
+        "type": 1
+    },
+    {
+        "name": "autoplay",
+        "description": "Toggle Autoplay / เปิด-ปิดเล่นเพลงอัตโนมัติ",
+        "type": 1
+    },
+    {
+        "name": "djrole",
+        "description": "Set DJ Role / ตั้งค่า role ที่เป็น DJ",
+        "type": 1,
+        "options": [
+            {
+                "name": "role",
+                "description": "The role to set as DJ / role ที่จะให้เป็น DJ",
+                "type": 8,
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "djmode",
+        "description": "Toggle DJ Mode (Strict Mode) / เปิด-ปิดโหมด DJ",
+        "type": 1
+    },
+    {
+        "name": "vote_mode",
+        "description": "Toggle Vote Mode / เปิด-ปิดโหมดโหวต",
+        "type": 1
+    },
+    {
+        "name": "viewsettings",
+        "description": "View current server settings / ดูการตั้งค่าปัจจุบัน",
+        "type": 1
+    },
+    {
+        "name": "fixed",
+        "description": "Fix/Reset the music request channel / แก้ไขหรือรีเซ็ตห้องขอเพลง",
+        "type": 1
+    },
+    {
+        "name": "voicefix",
+        "description": "Fix voice connection issues / แก้ไขปัญหาเสียงหาย",
+        "type": 1
+    },
+    {
+        "name": "rejoin",
+        "description": "Force Reconnect Voice / บังคับเชื่อมต่อเสียงใหม่",
+        "type": 1
+    },
+    {
+        "name": "cleanup",
+        "description": "Clean up bot messages / ลบข้อความของบอท",
+        "type": 1,
+        "options": [
+            {
+                "name": "limit",
+                "description": "…",
+                "type": 4,
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "play",
+        "description": "",
+        "type": 3
+    }
+]
