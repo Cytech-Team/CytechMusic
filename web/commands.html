@@ -21,14 +21,16 @@
     <style>
         :root {
             --cat-music: #FFD700;
+            --cat-filters: #6610f2;
             --cat-info: #00F2FE;
             --cat-settings: #70FF00;
+            --cat-premium: #FFD700;
             --cat-owner: #FF3CAC;
-            --cat-general: #FFFFFF;
+            --cat-utility: #A0A0A0;
         }
 
         .page-header {
-            padding: 140px 0 80px;
+            padding: 140px 0 60px;
             text-align: center;
             background: radial-gradient(circle at center, rgba(255, 204, 51, 0.05) 0%, transparent 70%);
         }
@@ -41,7 +43,7 @@
 
         .commands-search-wrapper {
             max-width: 600px;
-            margin: -40px auto 30px;
+            margin: -30px auto 40px;
             position: relative;
             z-index: 10;
         }
@@ -49,7 +51,7 @@
         .commands-search-input {
             width: 100%;
             padding: 18px 25px 18px 55px;
-            background: rgba(15, 15, 15, 0.8);
+            background: rgba(15, 15, 15, 0.82);
             border: 1px solid rgba(255, 215, 0, 0.2);
             border-radius: 20px;
             color: #fff;
@@ -63,7 +65,6 @@
             outline: none;
             border-color: var(--gold-primary);
             box-shadow: 0 0 25px rgba(255, 204, 51, 0.2);
-            background: rgba(20, 20, 20, 0.9);
         }
 
         .commands-search-icon {
@@ -73,17 +74,61 @@
             transform: translateY(-50%);
             color: var(--gold-primary);
             opacity: 0.6;
-            font-size: 1.2rem;
         }
 
-        /* Categorization UI */
-        .category-grid {
-            margin-top: 60px;
+        /* Category Filter Pills */
+        .filter-pills {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 50px;
         }
 
+        .pill {
+            padding: 10px 22px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 50px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pill:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .pill.active {
+            background: rgba(255, 215, 0, 0.15);
+            border-color: var(--gold-primary);
+            color: var(--gold-primary);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
+        }
+
+        /* Category Sections */
         .category-section {
-            margin-bottom: 60px;
-            scroll-margin-top: 100px;
+            margin-bottom: 80px;
+            scroll-margin-top: 120px;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .category-header {
@@ -91,157 +136,98 @@
             align-items: center;
             gap: 15px;
             margin-bottom: 30px;
-            padding-bottom: 15px;
+            padding-bottom: 12px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .category-icon {
-            width: 45px;
-            height: 45px;
-            background: rgba(255, 215, 0, 0.1);
+            width: 44px;
+            height: 44px;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--gold-primary);
             font-size: 1.25rem;
-            border: 1px solid rgba(255, 215, 0, 0.2);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .category-title {
-            font-size: 1.8rem;
-            font-weight: 700;
+            font-size: 1.75rem;
+            font-weight: 800;
             color: #fff;
-            text-transform: capitalize;
+            letter-spacing: -0.5px;
         }
 
-        .category-badge {
+        .cmd-count-badge {
             background: rgba(255, 255, 255, 0.05);
             padding: 4px 12px;
             border-radius: 20px;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .payload-badge {
-            background: var(--gold-metallic);
-            color: #000;
-            font-size: 0.65rem;
-            padding: 3px 10px;
-            border-radius: 6px;
-            font-weight: 800;
-            text-transform: uppercase;
-            box-shadow: 0 2px 10px rgba(255, 215, 0, 0.2);
-        }
-
-        .option-tag {
             font-size: 0.75rem;
-            background: rgba(255, 255, 255, 0.04);
-            padding: 5px 12px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: rgba(255, 255, 255, 0.8);
-            transition: 0.2s;
-        }
-
-        .option-tag:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .option-tag.required {
-            border-color: rgba(255, 68, 68, 0.3);
-            color: #ff8888;
-        }
-
-        .required-star {
-            color: #ff4444;
-            margin-left: 3px;
-            font-weight: bold;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-left: auto;
         }
 
         .cmd-card {
             display: flex;
             flex-direction: column;
-            min-height: 180px;
+            min-height: 190px;
             border: 1px solid rgba(255, 255, 255, 0.03);
-            background: rgba(20, 20, 20, 0.4);
-            backdrop-filter: blur(5px);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(15, 15, 15, 0.4);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s var(--ease-smooth);
         }
 
         .cmd-card:hover {
             transform: translateY(-8px);
-            border-color: rgba(255, 215, 0, 0.25);
-            background: rgba(25, 25, 25, 0.7);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.05);
+            border-color: rgba(255, 215, 0, 0.2);
+            background: rgba(20, 20, 20, 0.6);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
         }
 
         .cmd-name {
             color: var(--gold-primary);
-            font-size: 1.15rem;
-            font-weight: 800;
             font-family: 'Space Grotesk', sans-serif;
+            font-weight: 800;
+            font-size: 1.1rem;
+        }
+
+        .option-tag {
+            font-size: 0.7rem;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 4px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .option-tag.required {
+            border-color: rgba(255, 68, 68, 0.2);
+            color: #ff8888;
         }
 
         .empty-state {
             grid-column: 1/-1;
             text-align: center;
-            padding: 80px 20px;
+            padding: 100px 20px;
             background: rgba(255, 255, 255, 0.02);
             border-radius: 30px;
             border: 1px dashed rgba(255, 255, 255, 0.1);
-        }
-
-        /* Filter Pills */
-        .filter-pills {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 40px;
-        }
-
-        .pill {
-            padding: 8px 18px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 50px;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .pill:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.2);
-            color: #fff;
-        }
-
-        .pill.active {
-            background: rgba(255, 215, 0, 0.15);
-            border-color: var(--gold-primary);
-            color: var(--gold-primary);
-            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.1);
         }
     </style>
 </head>
 
 <body class="dark-theme">
-    <!-- Background Elements -->
     <div class="bg-gradient"></div>
     <div class="mesh-grid"></div>
 
-    <!-- Header -->
     <header id="header">
         <div class="container">
             <a href="index.html" class="brand">
                 <img src="logo-circle.png" alt="Cyori" class="brand-logo">
                 <span class="brand-name">Cyori</span>
             </a>
-
             <nav>
                 <ul class="nav-links">
                     <li><a href="index.html#hero" class="nav-link lang-text" data-en="Home" data-th="หน้าแรก">Home</a>
@@ -256,41 +242,18 @@
                             data-th="พรีเมียม">Premium</a></li>
                     <li><a href="https://top.gg/bot/1469606905948405833/vote" target="_blank" class="nav-link lang-text"
                             data-en="Vote" data-th="โหวต">Vote</a></li>
-
-                    <li class="mobile-only-action">
-                        <div class="mobile-menu-divider"></div>
-                        <button onclick="toggleLanguage()" class="btn-glass mobile-nav-btn">
-                            <i class="fas fa-globe"></i>
-                            <span class="lang-text" data-en="Switch to Thai"
-                                data-th="เปลี่ยนเป็นภาษาอังกฤษ">Language</span>
-                        </button>
-                    </li>
-                    <li class="mobile-only-action">
-                        <a href="#" class="btn btn-primary login-btn" onclick="login()"
-                            style="width: 100%; margin-top: 10px;">
-                            <i class="fab fa-discord"></i>
-                            <span class="lang-text" data-en="Login" data-th="เข้าสู่ระบบ">Login</span>
-                        </a>
-                    </li>
                 </ul>
             </nav>
-
             <div class="header-actions">
                 <div class="lang-switch">
-                    <button id="lang-btn" onclick="toggleLanguage()" class="btn-glass"
-                        style="padding: 8px 16px; border-radius: 20px;">
-                        <i class="fas fa-globe"></i> <span id="curr-lang">EN</span>
-                    </button>
+                    <button onclick="toggleLanguage()" class="btn-glass"><i class="fas fa-globe"></i> <span
+                            id="curr-lang">EN</span></button>
                 </div>
-
                 <a href="#" class="btn btn-primary login-btn" onclick="login()">
-                    <i class="fab fa-discord"></i>
-                    <span class="lang-text" data-en="Login" data-th="เข้าสู่ระบบ">Login</span>
+                    <i class="fab fa-discord"></i> <span class="lang-text" data-en="Login"
+                        data-th="เข้าสู่ระบบ">Login</span>
                 </a>
-
-                <div class="hamburger mobile-toggle" onclick="toggleMenu()">
-                    <i class="fas fa-bars"></i>
-                </div>
+                <div class="hamburger mobile-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></div>
             </div>
         </div>
     </header>
@@ -299,14 +262,9 @@
         <div class="container">
             <span class="hero-badge lang-text" data-en="Realtime Engine" data-th="ซิงค์ข้อมูลจริง">Realtime
                 Engine</span>
-            <h1 class="hero-title lang-text" data-en="Command List" data-th="คำสั่งบอท"
-                style="font-size: 3.5rem; margin-bottom: 20px; font-family: 'Space Grotesk', sans-serif;">Command List
-            </h1>
-            <p class="hero-desc lang-text"
-                data-en="Explore all high-fidelity music and utility commands synced directly from the bot's core."
-                data-th="สำรวจคำสั่งเพลงและยูทิลิตี้ทั้งหมด ซิงค์โดยตรงจากระบบหลักของบอท"
-                style="max-width: 700px; margin: 0 auto; color: var(--text-muted);">
-                Explore all high-fidelity music and utility commands synced directly from the bot's core.
+            <h1 class="hero-title" style="font-size: 3.5rem; margin-bottom: 15px;">Command List</h1>
+            <p class="hero-desc" style="max-width: 600px; margin: 0 auto; opacity: 0.6;">
+                Explore high-fidelity commands synced directly from the core.
             </p>
         </div>
     </div>
@@ -314,160 +272,127 @@
     <div class="commands-container">
         <div class="commands-search-wrapper">
             <i class="fas fa-search commands-search-icon"></i>
-            <input type="text" id="command-search" class="commands-search-input"
-                placeholder="Search commands (e.g. play, skip, filter)..." oninput="handleSearch()">
+            <input type="text" id="command-search" class="commands-search-input" placeholder="Search commands..."
+                oninput="handleSearch()">
         </div>
 
-        <div id="filter-pills-container" class="filter-pills">
-            <!-- Pills added via JS -->
+        <div id="filter-pills" class="filter-pills">
+            <div class="pill active" onclick="setCategory('all', this)">All</div>
+            <!-- Dynamic Category Pills -->
         </div>
 
-        <div id="category-grid" class="category-grid">
-            <div style="text-align: center; padding: 120px;">
-                <i class="fas fa-circle-notch fa-spin fa-3x"
-                    style="color: var(--gold-primary); margin-bottom: 20px;"></i>
-                <p class="lang-text" data-en="Synchronizing with Bot..." data-th="กำลังเชื่อมต่อกับระบบบอท...">
-                    Synchronizing with Bot...</p>
+        <div id="category-sections">
+            <div style="text-align: center; padding: 100px;">
+                <i class="fas fa-circle-notch fa-spin fa-3x" style="color: var(--gold-primary);"></i>
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
     <footer>
         <div class="container">
             <div class="footer-content">
                 <div class="footer-brand">
-                    <div class="brand">
-                        <img src="logo-circle.png" alt="Cyori" class="brand-logo">
-                        <span class="brand-name">Cyori</span>
-                    </div>
-                    <p class="lang-text"
-                        data-en="The ultimate music experience for your Discord server. Remade for performance and style."
-                        data-th="ประสบการณ์การฟังเพลงที่ดีที่สุดสำหรับ Discord ของคุณ ออกแบบใหม่เพื่อประสิทธิภาพและสไตล์ที่เหนือกว่า">
-                        The ultimate music experience.
-                    </p>
+                    <div class="brand"><img src="logo-circle.png" class="brand-logo"><span
+                            class="brand-name">Cyori</span></div>
+                    <p class="lang-text" data-en="The ultimate music experience."
+                        data-th="ประสบการณ์การฟังเพลงที่ดีที่สุด">The ultimate music experience.</p>
                 </div>
-
+                <!-- Standard Footer Cols -->
                 <div class="footer-col">
                     <h4 class="lang-text" data-en="Product" data-th="ผลิตภัณฑ์">Product</h4>
                     <ul>
-                        <li><a href="index.html#features" class="lang-text" data-en="Features"
-                                data-th="ฟีเจอร์">Features</a></li>
-                        <li><a href="premium.html" class="lang-text" data-en="Premium" data-th="พรีเมียม">Premium</a>
-                        </li>
-                        <li><a href="dashboard.html" class="lang-text" data-en="Dashboard"
-                                data-th="แดชบอร์ด">Dashboard</a></li>
-                        <li><a href="https://top.gg/bot/1469606905948405833/vote" target="_blank" class="lang-text"
-                                data-en="Vote on Top.gg" data-th="โหวตบน Top.gg">Vote on Top.gg</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-col">
-                    <h4 class="lang-text" data-en="Resources" data-th="ทรัพยากร">Resources</h4>
-                    <ul>
-                        <li><a href="documentation.html" class="lang-text" data-en="Documentation"
-                                data-th="คู่มือการใช้">Documentation</a></li>
-                        <li><a href="#" class="lang-text" data-en="API Status" data-th="สถานะระบบ">API Status</a></li>
-                        <li><a href="https://discord.gg/jcJ2P6Bh2p" class="lang-text" data-en="Community"
-                                data-th="ชุมชน">Community</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-col">
-                    <h4 class="lang-text" data-en="Legal" data-th="กฎหมาย">Legal</h4>
-                    <ul>
-                        <li><a href="privacy.html" class="lang-text" data-en="Privacy Policy"
-                                data-th="นโยบายความเป็นส่วนตัว">Privacy Policy</a></li>
-                        <li><a href="terms.html" class="lang-text" data-en="Terms of Service"
-                                data-th="ข้อตกลงการใช้บริการ">Terms of Service</a></li>
+                        <li><a href="index.html#features">Features</a></li>
+                        <li><a href="premium.html">Premium</a></li>
+                        <li><a href="dashboard.html">Dashboard</a></li>
                     </ul>
                 </div>
             </div>
-
-            <div class="copyright lang-text" data-en="© 2026 Cytech Team. All rights reserved."
-                data-th="© 2026 Cytech Team สงวนลิขสิทธิ์">
-                © 2026 Cytech Team. All rights reserved.
-            </div>
+            <div class="copyright">© 2026 Cytech Team. All rights reserved.</div>
         </div>
     </footer>
 
-    <div class="menu-overlay" id="overlay" onclick="toggleMenu()"></div>
-
     <script src="script.js"></script>
     <script>
-        let allCommands = []; // Complete list of commands
+        let allCommands = [];
         let activeCategory = 'all';
 
-        const categoryMeta = {
-            'Music': { icon: 'fa-music', color: '#FFD700' },
-            'Settings': { icon: 'fa-cog', color: '#70FF00' },
-            'Info': { icon: 'fa-info-circle', color: '#00F2FE' },
-            'General': { icon: 'fa-th-large', color: '#FFFFFF' },
-            'Filter': { icon: 'fa-vial', color: '#6610f2' },
-            'Premium': { icon: 'fa-crown', color: '#FFD700' },
-            'Owner': { icon: 'fa-shield-alt', color: '#FF3CAC' },
-            'Other': { icon: 'fa-cube', color: '#A0A0A0' }
+        // Robust Manual Categorization Logic
+        const CATEGORY_MAP = {
+            'MUSIC': ['play', 'join', 'leave', 'nowplaying', 'volume', 'pause', 'skip', 'skipto', 'clear', 'stop', 'seek', 'queue', 'fix', 'remove', 'shuffle', 'lyrics', 'grab', 'removedupes', 'move', 'history'],
+            'FILTERS': ['speed', 'karaoke', 'tremolo', 'vibrato', 'rotation', '8d', 'distortion', 'lowpass', 'channelmix', 'nightcore', 'vaporwave', 'cleareffect'],
+            'INFO': ['help', 'ping', 'uptime', 'stats', 'botinfo', 'avatar', 'serverinfo', 'userinfo', 'invite', 'dashboard'],
+            'SETTINGS': ['branding', 'reset', 'setup', 'prefix', 'language', '247', 'autoplay', 'djrole', 'djmode', 'vote_mode', 'viewsettings', 'fixed'],
+            'UTILITY': ['voicefix', 'rejoin', 'cleanup'],
+            'PREMIUM': ['premium'],
+            'OWNER': ['own']
         };
 
-        async function tryFetchLocalPayload() {
-            try {
-                const res = await fetch("slash_commands_payload.json");
-                if (!res.ok) return null;
-                const data = await res.json();
-                return data.map(c => ({ ...c, category: c.category || 'Other' }));
-            } catch (e) { return null; }
+        const CATEGORY_META = {
+            'MUSIC': { icon: 'fa-music', color: '#FFD700' },
+            'FILTERS': { icon: 'fa-wave-square', color: '#6610f2' },
+            'INFO': { icon: 'fa-info-circle', color: '#00F2FE' },
+            'SETTINGS': { icon: 'fa-sliders-h', color: '#70FF00' },
+            'UTILITY': { icon: 'fa-tools', color: '#A0A0A0' },
+            'PREMIUM': { icon: 'fa-crown', color: '#FFD700' },
+            'OWNER': { icon: 'fa-shield-alt', color: '#FF3CAC' }
+        };
+
+        function getCategoryForCommand(name) {
+            for (const [cat, cmds] of Object.entries(CATEGORY_MAP)) {
+                if (cmds.includes(name.toLowerCase())) return cat;
+            }
+            return 'OTHER';
         }
 
         async function loadCommands() {
-            const grid = document.getElementById('category-grid');
-            var isLocalEnv = false;
-            try { isLocalEnv = IS_LOCAL; } catch (e) { isLocalEnv = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'; }
+            const container = document.getElementById('category-sections');
+            var isLocal = false;
+            try { isLocal = IS_LOCAL; } catch (e) { isLocal = window.location.hostname === 'localhost'; }
 
             try {
-                // Try Direct API
-                const url = isLocalEnv ? "http://localhost:8000/api/commands" : "/api/commands";
-                console.log("[Commands] Fetching:", url);
+                // Determine best URL
+                const url = isLocal ? "http://localhost:8000/api/commands" : "/api/proxy?action=commands";
 
-                let res = await fetch(url).catch(e => null);
-                if (!res || !res.ok) {
-                    const proxyUrl = isLocalEnv ? "http://localhost:8000/api/proxy?action=commands" : "/api/proxy?action=commands";
-                    res = await fetch(proxyUrl).catch(e => null);
-                }
+                const res = await fetch(url).catch(e => null);
+                let data = null;
 
-                if (res && res.headers.get("content-type")?.includes("application/json")) {
-                    const data = await res.json();
-                    if (data.commands && Array.isArray(data.commands)) {
-                        allCommands = data.commands;
-                    } else if (data.slash_payload && Array.isArray(data.slash_payload)) {
-                        allCommands = data.slash_payload.map(c => ({ ...c, category: c.category || 'Music' }));
+                if (res && res.ok) {
+                    const contentType = res.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        data = await res.json();
                     }
                 }
 
-                if (!allCommands || allCommands.length === 0) {
-                    allCommands = await tryFetchLocalPayload() || [];
+                // If API fails or returns HTML/Error, use local payload
+                if (!data || data.error) {
+                    console.warn("[Commands] API failure, using local payload");
+                    const localRes = await fetch("slash_commands_payload.json");
+                    data = await localRes.json();
                 }
 
-                initFilterPills();
-                renderCategorized();
+                // Unified Parsing
+                let rawList = Array.isArray(data) ? data : (data.commands || data.slash_payload || []);
+                allCommands = rawList.map(c => ({
+                    ...c,
+                    category: c.category && c.category !== 'General' ? c.category.toUpperCase() : getCategoryForCommand(c.name)
+                }));
+
+                updatePills();
+                renderAll();
                 if (typeof updateLanguage === 'function') updateLanguage();
 
             } catch (e) {
-                console.error("[Commands] Load error:", e);
-                allCommands = await tryFetchLocalPayload() || [];
-                initFilterPills();
-                renderCategorized();
+                console.error("[Commands] Critical failure:", e);
+                container.innerHTML = `<div class="empty-state"><h3>Failed to load commands</h3></div>`;
             }
         }
 
-        function initFilterPills() {
-            const container = document.getElementById('filter-pills-container');
-            const categories = ['all', ...new Set(allCommands.map(c => c.category || 'Other'))];
+        function updatePills() {
+            const pillBox = document.getElementById('filter-pills');
+            const cats = [...new Set(allCommands.map(c => c.category))].sort();
 
-            container.innerHTML = categories.map(cat => `
-                <div class="pill ${cat === 'all' ? 'active' : ''}" onclick="setCategory('${cat}', this)">
-                    ${cat.toUpperCase()}
-                </div>
-            `).join('');
+            pillBox.innerHTML = `<div class="pill active" onclick="setCategory('all', this)">ALL</div>` +
+                cats.map(cat => `<div class="pill" onclick="setCategory('${cat}', this)">${cat}</div>`).join('');
         }
 
         function setCategory(cat, el) {
@@ -480,81 +405,60 @@
         function handleSearch() {
             const q = document.getElementById('command-search').value.toLowerCase();
             let filtered = allCommands;
-
-            if (activeCategory !== 'all') {
-                filtered = filtered.filter(c => c.category === activeCategory);
-            }
-
-            if (q) {
-                filtered = filtered.filter(c =>
-                    c.name.toLowerCase().includes(q) ||
-                    (c.description && c.description.toLowerCase().includes(q))
-                );
-            }
-
-            renderCategorized(filtered);
+            if (activeCategory !== 'all') filtered = filtered.filter(c => c.category === activeCategory);
+            if (q) filtered = filtered.filter(c => c.name.toLowerCase().includes(q) || (c.description && c.description.toLowerCase().includes(q)));
+            renderAll(filtered);
         }
 
-        function renderCategorized(cmds = allCommands) {
-            const grid = document.getElementById('category-grid');
-            if (!cmds || cmds.length === 0) {
-                grid.innerHTML = `<div class="empty-state"><h3>No matching commands</h3></div>`;
+        function renderAll(list = allCommands) {
+            const container = document.getElementById('category-sections');
+            if (list.length === 0) {
+                container.innerHTML = `<div class="empty-state"><h3>No results found</h3></div>`;
                 return;
             }
 
-            // Group by Category
+            // Group by category
             const groups = {};
-            cmds.forEach(c => {
-                const cat = c.category || 'Other';
-                if (!groups[cat]) groups[cat] = [];
-                groups[cat].push(c);
+            list.forEach(c => {
+                if (!groups[c.category]) groups[c.category] = [];
+                groups[c.category].push(c);
             });
 
+            // Sort categories for logic: Music first
             const sortedCats = Object.keys(groups).sort((a, b) => {
-                if (a === 'Music') return -1;
-                if (b === 'Music') return 1;
+                if (a === 'MUSIC') return -1; if (b === 'MUSIC') return 1;
                 return a.localeCompare(b);
             });
 
-            grid.innerHTML = sortedCats.map(cat => {
-                const meta = categoryMeta[cat] || categoryMeta['Other'];
-                const items = groups[cat];
-
+            container.innerHTML = sortedCats.map(cat => {
+                const meta = CATEGORY_META[cat] || { icon: 'fa-cube', color: '#fff' };
+                const cmds = groups[cat];
                 return `
-                    <div class="category-section" id="cat-${cat}">
-                        <div class="category-header">
-                            <div class="category-icon" style="background: ${meta.color}15; color: ${meta.color}; border-color: ${meta.color}30;">
-                                <i class="fas ${meta.icon}"></i>
-                            </div>
-                            <h2 class="category-title">${cat}</h2>
-                            <span class="category-badge">${items.length} Commands</span>
+                <div class="category-section">
+                    <div class="category-header">
+                        <div class="category-icon" style="color: ${meta.color}; border-color: ${meta.color}30; background: ${meta.color}08;">
+                            <i class="fas ${meta.icon}"></i>
                         </div>
-                        <div class="grid-3">
-                            ${items.map(cmd => `
-                                <div class="card cmd-card">
-                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                                        <span class="cmd-name">/${cmd.name}</span>
-                                        <span class="payload-badge">Slash</span>
-                                    </div>
-                                    <p class="cmd-desc" style="font-size: 0.95rem; margin-bottom: 20px; line-height: 1.6; color: rgba(255,255,255,0.65); flex-grow: 1;">
-                                        ${cmd.description || "No description provided."}
-                                    </p>
-                                    ${cmd.options && cmd.options.length > 0 ? `
-                                        <div style="margin-top:auto; padding-top:15px; border-top:1px solid rgba(255,255,255,0.05);">
-                                            <div style="display:flex; flex-wrap:wrap; gap:6px;">
-                                                ${cmd.options.map(opt => `
-                                                    <span class="option-tag ${opt.required ? 'required' : ''}" title="${opt.description || ''}">
-                                                        ${opt.name}${opt.required ? '<span class="required-star">*</span>' : ''}
-                                                    </span>
-                                                `).join('')}
-                                            </div>
-                                        </div>
-                                    ` : ''}
-                                </div>
-                            `).join('')}
-                        </div>
+                        <h2 class="category-title">${cat}</h2>
+                        <span class="cmd-count-badge">${cmds.length} Commands</span>
                     </div>
-                `;
+                    <div class="grid-3">
+                        ${cmds.map(c => `
+                            <div class="card cmd-card">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                                    <span class="cmd-name">/${c.name}</span>
+                                    <span class="payload-badge" style="font-size:0.6rem; padding: 2px 8px;">Slash</span>
+                                </div>
+                                <p style="font-size:0.9rem; opacity:0.65; flex-grow:1; line-height:1.5;">${c.description || '...'}</p>
+                                ${c.options && c.options.length > 0 ? `
+                                    <div style="margin-top:20px; display:flex; flex-wrap:wrap; gap:6px; border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;">
+                                        ${c.options.map(o => `<span class="option-tag ${o.required ? 'required' : ''}">${o.name}${o.required ? '*' : ''}</span>`).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
             }).join('');
         }
 
