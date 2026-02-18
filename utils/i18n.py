@@ -158,6 +158,10 @@ class LanguageManager:
                 "cmd_serverinfo_desc": "Show comprehensive server information",
                 "cmd_userinfo_desc": "Show detailed user information",
                 "cmd_invite_desc": "Get the bot's invite link",
+                "cmd_dashboard_desc": "Get the link to our futuristic web dashboard",
+                "dashboard_title": "Web Dashboard",
+                "dashboard_desc": "Manage your music, settings, and more directly from your browser!",
+                "button_dashboard": "Open Dashboard",
                 
                 # Player Controls
                 "vol_level": "Level: {volume}%",
@@ -415,6 +419,10 @@ class LanguageManager:
                 "cmd_serverinfo_desc": "ดูข้อมูลของเซิร์ฟเวอร์นี้",
                 "cmd_userinfo_desc": "ดูข้อมูลส่วนตัวของสมาชิก",
                 "cmd_invite_desc": "รับลิงก์เชิญบอทเข้าเซิร์ฟเวอร์",
+                "cmd_dashboard_desc": "รับลิงก์สำหรับเข้าสู่แดชบอร์ดควบคุมผ่านเว็บ",
+                "dashboard_title": "แดชบอร์ดควบคุม",
+                "dashboard_desc": "จัดการเพลง, ตั้งค่า และอื่นๆ ได้โดยตรงผ่านบราวเซอร์ของคุณ!",
+                "button_dashboard": "เปิดแดชบอร์ด",
 
                 # Player Controls
                 "vol_level": "ระดับ: {volume}%",

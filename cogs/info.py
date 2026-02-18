@@ -668,6 +668,34 @@ class Info(commands.Cog):
         
         await ctx.reply(embed=embed, view=view)
 
+    @commands.hybrid_command()
+    async def dashboard(self, ctx: commands.Context):
+        """Web Dashboard link / ลิงก์แดชบอร์ดควบคุมผ่านเว็บ"""
+        lang = await self.bot.get_lang(ctx.guild.id)
+        
+        from utils.luxury import LuxuryEmbed, luxury_line
+        embed = LuxuryEmbed(
+            title=f"🌐 {self.bot.i18n.get('dashboard_title', lang)}",
+            description=f"{luxury_line()}\n"
+                        f"{self.bot.i18n.get('dashboard_desc', lang)}\n\n"
+                        f"👉 **[Link to Dashboard]({ui_config.DASHBOARD_URL})**\n"
+                        f"{luxury_line()}",
+            color=ui_config.EMBED_COLOR
+        )
+        embed.set_thumbnail(url=self.bot.user.avatar.url)
+        embed.set_image(url=ui_config.BANNER_URL)
+        embed.add_luxury_footer(self.bot, lang, ctx.author)
+        
+        view = discord.ui.View()
+        view.add_item(discord.ui.Button(
+            label=self.bot.i18n.get("button_dashboard", lang), 
+            url=ui_config.DASHBOARD_URL, 
+            style=discord.ButtonStyle.link,
+            emoji="🌐"
+        ))
+        
+        await ctx.reply(embed=embed, view=view)
+
 
 async def setup(bot: Cyori) -> None:
     await bot.add_cog(Info(bot))

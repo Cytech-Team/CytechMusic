@@ -3,10 +3,50 @@ import discord
 import secrets
 import time
 import datetime
+import stripe
+import aiohttp
+import asyncio
+import traceback
+from aiohttp import web
 from discord.ext import commands, tasks
 from discord import app_commands
 from bot import Cyori, collection_myasync
 from utils import config as ui_config
+
+# Stripe Configuration
+# Price is in THB cents (e.g. 5000 = 50.00 THB)
+PREMIUM_PLANS = {
+    "1_month": {
+        "name": "Premium (1 Month)",
+        "days": 30,
+        "price": 2900,  # 29 THB
+        "description": "Premium access for 1 month. Saving 0 THB."
+    },
+    "3_months": {
+        "name": "Premium (3 Months)",
+        "days": 90,
+        "price": 7900, # 79 THB
+        "description": "Premium access for 3 months. Saving 8 THB."
+    },
+    "6_months": {
+        "name": "Premium (6 Months)",
+        "days": 180,
+        "price": 14900, # 149 THB
+        "description": "Premium access for 6 months. Saving 25 THB."
+    },
+    "1_year": {
+        "name": "Premium (1 Year)",
+        "days": 365, 
+        "price": 28900, # 289 THB
+        "description": "Premium access for 1 year. Saving 59 THB."
+    },
+    "lifetime": {
+        "name": "Premium (Lifetime)",
+        "days": 36500, # ~100 years
+        "price": 78900, # 789 THB
+        "description": "Lifetime access to all Premium features. Best value!"
+    }
+}
 
 class RenewalView(discord.ui.View):
     def __init__(self, bot, user_id):
@@ -16,9 +56,9 @@ class RenewalView(discord.ui.View):
 
     @discord.ui.button(label="Renew Premium / ต่ออายุ", style=discord.ButtonStyle.green, emoji="💎")
     async def renew_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-        payment_cog = self.bot.get_cog("Payment")
-        if not payment_cog:
-            return await interaction.response.send_message("❌ Payment system unavailable.", ephemeral=True)
+        premium_cog = self.bot.get_cog("Premium")
+        if not premium_cog:
+            return await interaction.response.send_message("❌ Premium system unavailable.", ephemeral=True)
         
         await interaction.response.defer(ephemeral=True)
         
@@ -28,7 +68,7 @@ class RenewalView(discord.ui.View):
         plan_id = user_data.get("premium_plan_id", "1_month") # Default to 1 month if unknown
         
         try:
-            url = await payment_cog.create_checkout_link(interaction.user, plan_id)
+            url = await premium_cog.create_checkout_link(interaction.user, plan_id)
             
             # Create a simple view with the link
             view = discord.ui.View()
@@ -42,80 +82,191 @@ class RenewalView(discord.ui.View):
 class Premium(commands.Cog):
     def __init__(self, bot: Cyori):
         self.bot = bot
+        self.webhook_secret = ui_config.STRIPE_WEBHOOK_SECRET
+        
+        if ui_config.STRIPE_API_KEY:
+            stripe.api_key = ui_config.STRIPE_API_KEY.strip()
+        
+        # Register Webhook Route
+        if self.bot.web_app:
+            has_route = False
+            for route in self.bot.web_app.router.routes():
+                if route.method == "POST" and (hasattr(route.resource, 'canonical') and route.resource.canonical == "/stripe/webhook"):
+                     has_route = True
+                     break
+            
+            if not has_route:
+                self.bot.web_app.router.add_post('/stripe/webhook', self.stripe_webhook)
+
         self.check_premium_expiry.start()
+
+    async def cog_load(self):
+        # Trigger Auto-Setup if needed
+        if not self.webhook_secret and ui_config.STRIPE_API_KEY:
+             self.bot.loop.create_task(self.auto_setup_webhook())
 
     def cog_unload(self):
         self.check_premium_expiry.cancel()
 
+    # =========================================================================
+    # WEBHOOK & PAYMENT LOGIC
+    # =========================================================================
+
+    async def auto_setup_webhook(self):
+        try:
+            if ui_config.STRIPE_PROXY_URL:
+                target_url = ui_config.STRIPE_PROXY_URL
+            else:
+                target_url = f"{ui_config.DOMAIN_URL}/stripe/webhook"
+            
+            if "http://" in target_url and "localhost" not in target_url and "127.0.0.1" not in target_url:
+                 return
+
+            endpoints = stripe.WebhookEndpoint.list(limit=16)
+            for ep in endpoints.data:
+                if ep.url == target_url:
+                    stripe.WebhookEndpoint.delete(ep.id)
+            
+            new_ep = stripe.WebhookEndpoint.create(
+                url=target_url,
+                enabled_events=['checkout.session.completed'],
+            )
+            self.webhook_secret = new_ep.secret
+            print(f"✅ Stripe Webhook synced: {new_ep.id}")
+        except Exception as e:
+            print(f"❌ Stripe Auto-Sync Failed: {e}")
+
+    async def stripe_webhook(self, request: web.Request):
+        payload = await request.text()
+        if self.webhook_secret and 'Stripe-Signature' in request.headers:
+            sig_header = request.headers.get('Stripe-Signature')
+            try:
+                event = stripe.Webhook.construct_event(payload, sig_header, self.webhook_secret)
+            except: return web.Response(status=400)
+        else:
+            try: event = await request.json()
+            except: return web.Response(status=400)
+
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            await self.handle_checkout_success(session)
+
+        return web.Response(status=200)
+
+    async def handle_checkout_success(self, session):
+        metadata = session.get('metadata', {})
+        user_id = metadata.get('user_id')
+        days = int(metadata.get('days', 0))
+        plan_name = metadata.get('plan_name', 'Premium')
+
+        if not user_id: return
+
+        try:
+            user_id = str(user_id)
+            data = await collection_myasync.find_one({}) or {}
+            users = data.get("users", {})
+            user_data = users.get(user_id, {})
+            current_expire = user_data.get("premium_expire", 0)
+            
+            if days >= 36500:
+                await collection_myasync.update_one({}, {"$set": {
+                    f"users.{user_id}.premium": True,
+                    f"users.{user_id}.premium_plan": plan_name,
+                    f"users.{user_id}.premium_plan_id": metadata.get('plan_id', 'lifetime')
+                }}, upsert=True)
+            else:
+                now = time.time()
+                start_time = max(current_expire, now)
+                new_expire = start_time + (days * 24 * 3600)
+                await collection_myasync.update_one({}, {"$set": {
+                    f"users.{user_id}.premium_expire": new_expire,
+                    f"users.{user_id}.premium_plan": plan_name,
+                    f"users.{user_id}.premium_plan_id": metadata.get('plan_id', '1_month')
+                }}, upsert=True)
+            
+            try:
+                user = await self.bot.fetch_user(int(user_id))
+                lang = "en" 
+                embed = discord.Embed(
+                    title=self.bot.i18n.get("payment_success_title", lang),
+                    description=self.bot.i18n.get("payment_success_desc", lang, plan_name=plan_name),
+                    color=ui_config.SUCCESS_COLOR
+                )
+                await user.send(embed=embed)
+            except: pass
+        except Exception as e:
+            print(f"❌ Payment handling error: {e}")
+
+    async def create_checkout_link(self, user, plan_id):
+        selected_plan = PREMIUM_PLANS.get(plan_id)
+        if not selected_plan: raise ValueError("Invalid plan")
+        
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card', 'promptpay'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'thb',
+                    'product_data': {
+                        'name': selected_plan['name'],
+                        'description': selected_plan['description'],
+                    },
+                    'unit_amount': selected_plan['price'],
+                },
+                'quantity': 1,
+            }],
+            metadata={
+                'user_id': str(user.id),
+                'plan_id': plan_id,
+                'days': str(selected_plan['days']),
+                'plan_name': selected_plan['name']
+            },
+            mode='payment',
+            success_url='https://cyori.pages.dev/success.html',
+            cancel_url='https://cyori.pages.dev/premium.html',
+        )
+        return checkout_session.url
+
+    # =========================================================================
+    # EXPIRY LOGIC
+    # =========================================================================
+
     @tasks.loop(minutes=5)
     async def check_premium_expiry(self):
-        """Background task to check for expired user premiums."""
         try:
             data = await collection_myasync.find_one({}) or {}
             users_data = data.get("users", {})
             now = time.time()
-            
             updates = {}
             for uid_str, u_data in users_data.items():
                 expire = u_data.get("premium_expire")
-                # Check if expired AND not already notified (we can check if 'premium_expire' exists but is past)
-                # To avoid spamming, we should unset 'premium_expire' after notifying, OR have a 'notified' flag.
-                # The user requirement implies we catch them when they match "Expired".
-                
                 if expire and isinstance(expire, (int, float)) and now > expire:
-                    # Double check if we already handled this (e.g. if premium=False but expire is still there?)
-                    # Strategy: If expired, we send DM, then remove 'premium_expire' field so we don't spam.
-                    
                     try:
                         user = await self.bot.fetch_user(int(uid_str))
                         if user:
-                            # Create View for renewal
                             view = RenewalView(self.bot, uid_str)
-                            
-                            lang = "en" # Default for DM
+                            lang = "en"
                             embed = discord.Embed(
                                 title="⚠️ Premium Expired / พรีเมียมหมดอายุ",
                                 description=self.bot.i18n.get("premium_expired_msg", lang),
                                 color=ui_config.ERROR_COLOR
                             )
                             await user.send(embed=embed, view=view)
-                            print(f"Sent expiry notification to {uid_str}")
-                    except Exception as e:
-                        print(f"Failed to DM expired user {uid_str}: {e}")
+                    except: pass
 
-                    # --- Automatic Role Removal on Expiry ---
                     try:
                         from bot import SOURCE_GUILD_ID, SYNC_ROLE_ID
-                        # Try to remove role in all mutual guilds
                         for guild in self.bot.guilds:
                             if guild.id == SOURCE_GUILD_ID: continue
-                            
                             role = guild.get_role(SYNC_ROLE_ID)
                             if not role: continue
-                            
-                            # Use internal cache if possible
-                            member = guild.get_member(int(uid_str))
-                            if not member:
-                                try: member = await guild.fetch_member(int(uid_str))
-                                except: member = None
-                                
+                            member = guild.get_member(int(uid_str)) or await guild.fetch_member(int(uid_str))
                             if member and role in member.roles:
-                                try:
-                                    await member.remove_roles(role, reason="Cyori Auto-Sync: Premium Expired")
-                                    print(f"[*] Removed sync role from {uid_str} in {guild.name} (Expired)")
-                                except: pass
-                    except Exception as e:
-                        print(f"Error removing roles for expired user {uid_str}: {e}")
-
-                    # Cleanup to prevent loop spam
-                    updates[f"users.{uid_str}.premium_expire"] = "" # Unset
-                    updates[f"users.{uid_str}.premium"] = "" # Unset (just in case)
-
-            if updates:
-                await collection_myasync.update_one({}, {"$unset": updates})
-
-        except Exception as e:
-            print(f"Error in premium expiry check: {e}")
+                                await member.remove_roles(role, reason="Premium Expired")
+                    except: pass
+                    updates[f"users.{uid_str}.premium_expire"] = ""
+                    updates[f"users.{uid_str}.premium"] = ""
+            if updates: await collection_myasync.update_one({}, {"$unset": updates})
+        except: pass
 
     @check_premium_expiry.before_loop
     async def before_check(self):
@@ -127,469 +278,185 @@ class Premium(commands.Cog):
             if p.guild.id == guild_id:
                 player = p
                 break
-        
         if player and player.is_playing and hasattr(player, "update_controller"):
-            try:
-                await player.update_controller()
-            except:
-                pass
-        
-        # Also update non-playing embed
+            try: await player.update_controller()
+            except: pass
         try:
             data = await collection_myasync.find_one({}) or {}
             if "guilds" in data and str(guild_id) in data["guilds"]:
                 g_data = data["guilds"][str(guild_id)]
                 await self.bot.update_guild_embed(g_data, guild_id=guild_id)
-        except:
-             pass
+        except: pass
 
     # =========================================================================
-    # KEY GENERATION (OWNER)
+    # PREMIUM HYBRID GROUP
     # =========================================================================
-    @commands.hybrid_group(name="premium", description="Premium Management Commands (Owner Only)")
-    @commands.is_owner()
+
+    @commands.hybrid_group(name="premium", description="Premium System Commands / คำสั่งระบบพรีเมียม")
     async def premium_group(self, ctx: commands.Context):
-        """Premium Management Commands (Owner Only)"""
+        """Main group for premium commands."""
         if ctx.invoked_subcommand is None:
             await ctx.send_help(ctx.command)
 
-    @premium_group.command(name="genkey")
-    async def genkey(self, ctx: commands.Context, days: int = 30, count: int = 1):
-        """Generate premium keys / สร้างคีย์พรีเมียม (Admin Only)"""
-        lang = await self.bot.get_lang(ctx.guild.id) if ctx.guild else "en"
+    @premium_group.command(name="buy", description="Buy Premium via Stripe / ซื้อพรีเมียม")
+    @app_commands.describe(plan="Select a premium plan / เลือกแผนพรีเมียม")
+    @app_commands.choices(plan=[
+        app_commands.Choice(name="1 Month - 29 THB (Save 0)", value="1_month"),
+        app_commands.Choice(name="3 Months - 79 THB (Save 8)", value="3_months"),
+        app_commands.Choice(name="6 Months - 149 THB (Save 25)", value="6_months"),
+        app_commands.Choice(name="1 Year - 289 THB (Save 59)", value="1_year"),
+        app_commands.Choice(name="Lifetime - 789 THB (Best Value!)", value="lifetime")
+    ])
+    async def buy(self, ctx: commands.Context, plan: str):
+        if not ui_config.STRIPE_API_KEY:
+             return await ctx.send("❌ Payment system is not configured.", ephemeral=True)
 
-        if days < 1:
-            return await ctx.send("❌ Days must be at least 1.")
-        
-        new_keys = {}
-        generated_list = []
-        
-        for _ in range(count):
-            # Generate random key: XXXX-XXXX-XXXX
-            key = f"{secrets.token_hex(2)}-{secrets.token_hex(2)}-{secrets.token_hex(2)}".upper()
-            new_keys[f"premium_keys.{key}"] = days
-            generated_list.append(key)
-        
-        # Save to DB
-        await collection_myasync.update_one({}, {"$set": new_keys}, upsert=True)
-        
-        # Determine strict output for DM vs Channel
-        msg = self.bot.i18n.get("premium_gen_key", lang, count=count, days=days)
-        msg += "\n".join([f"`{k}`" for k in generated_list])
-        
+        selected_plan = PREMIUM_PLANS.get(plan)
+        if not selected_plan:
+            return await ctx.send("❌ Invalid plan selected.", ephemeral=True)
+
+        await ctx.defer(ephemeral=True)
+
         try:
-            await ctx.author.send(msg)
-            await ctx.send(f"✅ Generated {count} keys! Sent to DM.")
-        except:
-            await ctx.send(msg)
-
-    @premium_group.command(name="listkeys")
-    async def listkeys(self, ctx: commands.Context):
-        """List active unused keys / ดูคีย์ที่ยังไม่ได้ใช้"""
-        lang = await self.bot.get_lang(ctx.guild.id) if ctx.guild else "en"
-
-        data = await collection_myasync.find_one({}) or {}
-        keys = data.get("premium_keys", {})
-        
-        if not keys:
-            return await ctx.send(self.bot.i18n.get("premium_no_keys", lang))
-        
-        lines = []
-        for k, d in keys.items():
-            lines.append(f"`{k}` : {d} Days")
-        
-        # Pagination or simple split if too long
-        msg = self.bot.i18n.get("premium_list_keys", lang) + "\n".join(lines)
-        if len(msg) > 2000:
-            msg = msg[:1990] + "..."
-        await ctx.send(msg)
-
-    @premium_group.command(name="stats")
-    async def premium_stats(self, ctx: commands.Context):
-        """View Premium System Statistics / ดูสถิติของระบบพรีเมียม"""
-        data = await collection_myasync.find_one({}) or {}
-        
-        users_data = data.get("users", {})
-        keys_data = data.get("premium_keys", {})
-        
-        now = time.time()
-        total_premium = 0
-        lifetime = 0
-        expiring_soon = 0 # Within 7 days
-        
-        for u_id, u_info in users_data.items():
-            is_lifetime = u_info.get("premium", False)
-            expire = u_info.get("premium_expire", 0)
+            url = await self.create_checkout_link(ctx.author, plan)
+            lang = await self.bot.get_lang(ctx.guild.id) if ctx.guild else "en"
             
-            if is_lifetime:
-                lifetime += 1
-                total_premium += 1
-            elif expire > now:
-                total_premium += 1
-                if expire - now < 7 * 86400:
-                    expiring_soon += 1
-        
-        embed = discord.Embed(title="📊 Premium Statistics", color=ui_config.EMBED_COLOR)
-        embed.add_field(name="Total Premium Users", value=f"👤 {total_premium}", inline=True)
-        embed.add_field(name="Lifetime Users", value=f"💎 {lifetime}", inline=True)
-        embed.add_field(name="Unused Keys", value=f"🔑 {len(keys_data)}", inline=True)
-        embed.add_field(name="Expiring Soon (7d)", value=f"⏳ {expiring_soon}", inline=True)
-        
-        await ctx.send(embed=embed)
-
-    @premium_group.command(name="check")
-    async def premium_check_user(self, ctx: commands.Context, user: discord.User = None):
-        """Check premium status of a user / ตรวจสอบสถานะของสมาชิก"""
-        if user is None:
-            user = ctx.author
-
-        data = await collection_myasync.find_one({}) or {}
-        u_info = data.get("users", {}).get(str(user.id), {})
-        
-        is_lifetime = u_info.get("premium", False)
-        expire = u_info.get("premium_expire", 0)
-        now = time.time()
-        
-        if is_lifetime:
-            status = "Lifetime ✅"
-            expire_str = "Never"
-        elif expire > now:
-            status = "Active ✅"
-            expire_str = datetime.datetime.fromtimestamp(expire).strftime('%d/%m/%Y %H:%M')
-        else:
-            status = "Inactive ❌"
-            expire_str = "N/A"
+            embed = discord.Embed(
+                title=self.bot.i18n.get("payment_title", lang),
+                description=self.bot.i18n.get("payment_desc", lang, plan_name=selected_plan['name']),
+                color=ui_config.EMBED_COLOR
+            )
+            embed.add_field(name=self.bot.i18n.get("payment_price", lang), value=f"{selected_plan['price'] / 100:.2f} THB", inline=True)
             
-        embed = discord.Embed(title=f"User Premium Lookup", color=ui_config.EMBED_COLOR)
-        embed.set_thumbnail(url=user.display_avatar.url)
-        embed.add_field(name="User", value=f"{user.mention} (`{user.id}`)", inline=False)
-        embed.add_field(name="Status", value=status, inline=True)
-        embed.add_field(name="Expires", value=expire_str, inline=True)
-        
-        await ctx.send(embed=embed)
-
-    @premium_group.command(name="extend")
-    async def premium_extend(self, ctx: commands.Context, user: discord.User, days: int):
-        """Extend user's premium by days / เพิ่มวันพรีเมียมให้สมาชิก"""
-        if days == 0: return await ctx.send("Days cannot be 0.")
-        
-        data = await collection_myasync.find_one({}) or {}
-        u_info = data.get("users", {}).get(str(user.id), {})
-        current_expire = u_info.get("premium_expire", 0)
-        
-        now = time.time()
-        start_from = max(current_expire, now)
-        new_expire = start_from + (days * 86400)
-        
-        await collection_myasync.update_one(
-            {}, 
-            {"$set": {f"users.{user.id}.premium_expire": new_expire}}, 
-            upsert=True
-        )
-        
-        expire_str = datetime.datetime.fromtimestamp(new_expire).strftime('%d/%m/%Y %H:%M')
-        await ctx.send(f"✅ Extended **{user}** premium by {days} days. New expiry: `{expire_str}`")
-
-    @premium_group.command(name="active")
-    async def premium_list_active(self, ctx: commands.Context):
-        """List all active premium users / รายชื่อสมาชิกที่มีพรีเมียม"""
-        data = await collection_myasync.find_one({}) or {}
-        users = data.get("users", {})
-        now = time.time()
-        
-        active = []
-        for u_id, u_info in users.items():
-            if u_info.get("premium", False) or u_info.get("premium_expire", 0) > now:
-                active.append(f"<@{u_id}> (`{u_id}`)")
-        
-        if not active:
-            return await ctx.send("No active premium users found.")
+            view = discord.ui.View()
+            view.add_item(discord.ui.Button(label=self.bot.i18n.get("payment_button", lang), url=url, style=discord.ButtonStyle.url))
             
-        msg = f"**Total Active Premium Users: {len(active)}**\n" + "\n".join(active[:25])
-        if len(active) > 25:
-            msg += f"\n...and {len(active) - 25} more."
-            
-        await ctx.send(msg)
+            await ctx.send(embed=embed, view=view, ephemeral=True)
+        except Exception as e:
+            await ctx.send(f"❌ Error creating checkout: {e}", ephemeral=True)
 
-    # =========================================================================
-    # USER REDEMPTION
-    # =========================================================================
-    @commands.hybrid_command(name="redeem")
-    @commands.has_permissions(manage_guild=True)
+    @premium_group.command(name="redeem", description="Redeem a Premium Key / เติมพรีเมียมด้วยคีย์")
     async def redeem(self, ctx: commands.Context, key: str):
-        """Redeem a Premium Key / เติมพรีเมียมด้วยคีย์"""
         await ctx.defer()
         lang = await self.bot.get_lang(ctx.guild.id) if ctx.guild else "en"
         key = key.strip().upper()
-        
-        # 1. Check Key
         data = await collection_myasync.find_one({}) or {}
         keys = data.get("premium_keys", {})
-        
         if key not in keys:
             return await ctx.send(self.bot.i18n.get("premium_redeem_invalid", lang), ephemeral=True)
         
         days = keys[key]
-        seconds_to_add = days * 24 * 3600
-        
-        # 2. Calculate New Expiry
         user_id = str(ctx.author.id)
-        users = data.get("users", {})
-        user_data = users.get(user_id, {})
-        current_expire = user_data.get("premium_expire", 0)
-        
+        current_expire = data.get("users", {}).get(user_id, {}).get("premium_expire", 0)
         now = time.time()
-        if current_expire > now:
-            new_expire = current_expire + seconds_to_add
-        else:
-            new_expire = now + seconds_to_add
+        new_expire = max(current_expire, now) + (days * 24 * 3600)
+        
+        await collection_myasync.update_one({}, {
+            "$set": {f"users.{user_id}.premium_expire": new_expire, f"users.{user_id}.premium_plan": f"{days} Days"},
+            "$unset": {f"premium_keys.{key}": ""}
+        })
+        
+        expire_str = datetime.datetime.fromtimestamp(new_expire).strftime("%d/%m/%Y %H:%M")
+        await ctx.send(self.bot.i18n.get("premium_redeem_success", lang, days=days, expire=expire_str))
+        if ctx.guild: await self._update_controller_if_playing(ctx.guild.id)
+
+    @premium_group.command(name="status", description="Check your premium status / ตรวจสอบพรีเมียมของคุณ")
+    async def premium_status(self, ctx: commands.Context, user: discord.User = None):
+        user = user or ctx.author
+        data = await collection_myasync.find_one({}) or {}
+        u_info = data.get("users", {}).get(str(user.id), {})
+        is_lifetime = u_info.get("premium", False)
+        expire = u_info.get("premium_expire", 0)
+        now = time.time()
+        
+        status = "Inactive ❌"
+        expire_str = "N/A"
+        if is_lifetime:
+            status = "Lifetime ✅"; expire_str = "Never"
+        elif expire > now:
+            status = "Active ✅"; expire_str = datetime.datetime.fromtimestamp(expire).strftime('%d/%m/%Y %H:%M')
             
-        # 3. Update DB: Set new expire for USER
-        await collection_myasync.update_one(
-            {}, 
-            {
-                "$set": {
-                    f"users.{user_id}.premium_expire": new_expire,
-                    f"users.{user_id}.premium_plan": f"{days} Days"
-                },
-                "$unset": {f"premium_keys.{key}": ""}
-            }
-        )
-        
-        # 4. Success Message
-        expire_dt = datetime.datetime.fromtimestamp(new_expire)
-        expire_str = expire_dt.strftime("%d/%m/%Y %H:%M:%S")
-        
-        await ctx.send(self.bot.i18n.get("premium_redeem_success", lang, days=days, expire=expire_str), ephemeral=False)
-        
-        # --- Trigger Role Sync immediately ---
-        try:
-            from bot import SOURCE_GUILD_ID, SYNC_ROLE_ID
-            source_guild = self.bot.get_guild(SOURCE_GUILD_ID)
-            if source_guild:
-                # Check if redeemer is in source guild
-                is_in_source = source_guild.get_member(ctx.author.id) or await source_guild.fetch_member(ctx.author.id)
-                if is_in_source:
-                    for guild in self.bot.guilds:
-                        if guild.id == SOURCE_GUILD_ID: continue
-                        role = guild.get_role(SYNC_ROLE_ID)
-                        if role:
-                            member = guild.get_member(ctx.author.id)
-                            if member and role not in member.roles:
-                                try: await member.add_roles(role, reason="Cyori Sync: Premium Redeemed")
-                                except: pass
-        except: pass
+        embed = discord.Embed(title="Premium Status", color=ui_config.EMBED_COLOR)
+        embed.set_thumbnail(url=user.display_avatar.url)
+        embed.add_field(name="User", value=user.mention)
+        embed.add_field(name="Status", value=status)
+        embed.add_field(name="Expires", value=expire_str)
+        await ctx.send(embed=embed)
 
-        # Trigger update if in voice
-        if ctx.guild:
-             await self._update_controller_if_playing(ctx.guild.id)
+    # --- Owner Subcommands ---
 
-
-    # =========================================================================
-    # PREMIUM MANAGEMENT
-    # =========================================================================
-    @premium_group.command(name="add")
-    async def premium_add(self, ctx: commands.Context, user_id: str):
-        """Enable Lifetime Premium for a User"""
+    @premium_group.command(name="genkey")
+    @commands.is_owner()
+    async def genkey(self, ctx: commands.Context, days: int = 30, count: int = 1):
         lang = await self.bot.get_lang(ctx.guild.id) if ctx.guild else "en"
+        new_keys = {}
+        generated = []
+        for _ in range(count):
+            key = f"{secrets.token_hex(2)}-{secrets.token_hex(2)}-{secrets.token_hex(2)}".upper()
+            new_keys[f"premium_keys.{key}"] = days; generated.append(key)
+        await collection_myasync.update_one({}, {"$set": new_keys}, upsert=True)
+        msg = f"Generated {count} keys ({days} days):\n" + "\n".join([f"`{k}`" for k in generated])
+        try: await ctx.author.send(msg); await ctx.send("✅ Sent keys to DM.")
+        except: await ctx.send(msg)
+
+    @premium_group.command(name="stats")
+    @commands.is_owner()
+    async def premium_stats_cmd(self, ctx: commands.Context):
+        data = await collection_myasync.find_one({}) or {}
+        users = data.get("users", {}); now = time.time(); total = 0; life = 0
+        for u in users.values():
+            if u.get("premium"): life += 1; total += 1
+            elif u.get("premium_expire", 0) > now: total += 1
+        embed = discord.Embed(title="Premium Stats", color=ui_config.EMBED_COLOR)
+        embed.add_field(name="Total Users", value=total)
+        embed.add_field(name="Lifetime", value=life)
+        await ctx.send(embed=embed)
+
+    @premium_group.command(name="add")
+    @commands.is_owner()
+    async def premium_add_cmd(self, ctx: commands.Context, user_id: str):
         try:
             uid = int(user_id)
-            await collection_myasync.update_one(
-                {}, 
-                {"$set": {
-                    f"users.{uid}.premium": True,
-                    f"users.{uid}.premium_plan": "Lifetime"
-                }}, 
-                upsert=True
-            )
-            await ctx.send(self.bot.i18n.get("premium_add_success", lang, uid=uid))
-        except ValueError:
-            await ctx.send(self.bot.i18n.get("premium_invalid_id", lang))
-        except Exception as e:
-            await ctx.send(self.bot.i18n.get("premium_error", lang, e=e))
-
+            await collection_myasync.update_one({}, {"$set": {f"users.{uid}.premium": True, f"users.{uid}.premium_plan": "Lifetime"}}, upsert=True)
+            await ctx.send(f"✅ Added Lifetime Premium to `{uid}`")
+        except: await ctx.send("Invalid ID")
 
     @premium_group.command(name="remove")
-    async def premium_remove(self, ctx: commands.Context, user_id: str):
-        """Disable Premium for a User"""
-        lang = await self.bot.get_lang(ctx.guild.id) if ctx.guild else "en"
+    @commands.is_owner()
+    async def premium_remove_cmd(self, ctx: commands.Context, user_id: str):
         try:
             uid = int(user_id)
-            # Remove premium flags, BUT KEEP SETTINGS (Images/etc)
-            await collection_myasync.update_one(
-                {}, 
-                {"$unset": {
-                    f"users.{uid}.premium": "",
-                    f"users.{uid}.premium_expire": ""
-                }}, 
-                upsert=True
-            )
-            await ctx.send(self.bot.i18n.get("premium_remove_success", lang, uid=uid))
-        except ValueError:
-            await ctx.send(self.bot.i18n.get("premium_invalid_id", lang))
-        except Exception as e:
-            await ctx.send(self.bot.i18n.get("premium_error", lang, e=e))
+            await collection_myasync.update_one({}, {"$unset": {f"users.{uid}.premium": "", f"users.{uid}.premium_expire": ""}})
+            await ctx.send(f"❌ Removed Premium from `{uid}`")
+        except: await ctx.send("Invalid ID")
 
-
-
-    # =========================================================================
-    # CUSTOMIZATION
-    # =========================================================================
-    # =========================================================================
-    # BRANDING (Consolidated)
-    # =========================================================================
-    @commands.hybrid_command(name="branding", description="Customize Bot Appearance & Music Embed / ปรับแต่งหน้าตาบอทและธีมเพลง")
-    @app_commands.describe(
-        nickname="Change Bot Nickname / เปลี่ยนชื่อเล่นบอท",
-        avatar="Change Bot Server Avatar / เปลี่ยนรูปโปรไฟล์บอทในเซิร์ฟนี้",
-        bot_banner="Change Bot Server Banner / เปลี่ยนรูปแบนเนอร์บอทในเซิร์ฟนี้",
-        image="Set Music Embed Thumbnail (Logo) / รูปโลโก้มุมขวาบนของเพลง",
-        banner="Set Music Embed Banner (Large Image) / รูปแบนเนอร์ใหญ่ตอนเล่นเพลง",
-        color="Set Embed Color (Hex e.g. #FF0000) / สีของ Embed (รหัสสี)",
-        reset="Reset all customization to default / รีเซ็ตค่าทั้งหมด"
-    )
-    async def branding(self, 
-        ctx: commands.Context, 
-        nickname: str = None, 
-        avatar: discord.Attachment = None,
-        bot_banner: discord.Attachment = None,
-        image: discord.Attachment = None, 
-        banner: discord.Attachment = None, 
-        color: str = None,
-        reset: bool = False
-    ):
-        """Customize Bot Appearance & Music Themes (Premium Only)"""
+    # Branding remains standalone or move it too? Let's keep it hybrid command as requested.
+    @commands.hybrid_command(name="branding", description="Customize Bot Theme / ปรับแต่งธีมบอท")
+    async def branding(self, ctx: commands.Context, nickname: str = None, color: str = None, banner: discord.Attachment = None, image: discord.Attachment = None, reset: bool = False):
         lang = await self.bot.get_lang(ctx.guild.id) if ctx.guild else "en"
-
-        if ctx.author.id != ctx.guild.owner_id:
+        if ctx.author.id != ctx.guild.owner_id and not await self.bot.is_owner(ctx.author):
              return await ctx.send(self.bot.i18n.get("premium_only_owner", lang), ephemeral=True)
-        
-        if not await self.bot.is_premium(ctx.author.id, guild_id=ctx.guild.id if ctx.guild else None):
+        if not await self.bot.is_premium(ctx.author.id, guild_id=ctx.guild.id):
              return await ctx.send(self.bot.i18n.get("premium_only_feature", lang), ephemeral=True)
         
-        # Defer since it might involve image processing or DB ops
         await ctx.defer()
-        
-        changes = []
         guild_id = ctx.guild.id
-        
-        # 1. Reset
         if reset:
-            # Reset DB
-            await collection_myasync.update_one(
-                {}, 
-                {"$unset": {
-                    f"guilds.{guild_id}.premium_image": "", 
-                    f"guilds.{guild_id}.premium_banner": "",
-                    f"guilds.{guild_id}.color": ""
-                }}
-            )
-            # Reset Nickname
-            try:
-                if ctx.guild.me.nick:
-                    await ctx.guild.me.edit(nick=None)
-                    changes.append(self.bot.i18n.get("premium_reset_nickname", lang))
-            except discord.Forbidden:
-                changes.append(self.bot.i18n.get("premium_reset_nickname_err", lang))
-            
-            # Reset Bot Avatar & Banner
-            try:
-                await self.bot.http.request(
-                    discord.http.Route('PATCH', '/guilds/{guild_id}/members/@me', guild_id=guild_id),
-                    json={'avatar': None, 'banner': None}
-                )
-                changes.append(self.bot.i18n.get("premium_reset_avatar", lang)) # Re-use message or add new one
-            except Exception:
-                pass # Fail silently or log if needed
+            await collection_myasync.update_one({}, {"$unset": {f"guilds.{guild_id}.premium_image": "", f"guilds.{guild_id}.premium_banner": "", f"guilds.{guild_id}.color": ""}})
+            return await ctx.send("✅ Reset customization.")
 
-            changes.append(self.bot.i18n.get("premium_reset_themes", lang))
-            return await ctx.send("\n".join(changes))
-
-        # 2. Nickname
+        sets = {}
+        if color and color.startswith("#"): sets[f"guilds.{guild_id}.color"] = int(color.lstrip("#"), 16)
+        if banner: sets[f"guilds.{guild_id}.premium_banner"] = banner.url
+        if image: sets[f"guilds.{guild_id}.premium_image"] = image.url
+        
         if nickname:
-            try:
-                await ctx.guild.me.edit(nick=nickname)
-                changes.append(self.bot.i18n.get("premium_set_nickname", lang, name=nickname))
-            except discord.Forbidden:
-                changes.append(self.bot.i18n.get("premium_reset_nickname_err", lang))
-            except Exception as e:
-                changes.append(f"❌ Failed to change Nickname: {e}")
-
-        # 3. Bot Avatar
-        if avatar:
-            if not avatar.content_type.startswith('image/'):
-                changes.append(self.bot.i18n.get("premium_invalid_image", lang))
-            else:
-                try:
-                    import base64
-                    image_bytes = await avatar.read()
-                    b64 = base64.b64encode(image_bytes).decode('ascii')
-                    data_uri = f'data:{avatar.content_type};base64,{b64}'
-                    
-                    await self.bot.http.request(
-                        discord.http.Route('PATCH', '/guilds/{guild_id}/members/@me', guild_id=guild_id),
-                        json={'avatar': data_uri}
-                    )
-                    changes.append(self.bot.i18n.get("premium_set_avatar", lang))
-                except Exception as e:
-                    changes.append(f"⚠️ Failed to set Bot Avatar: {e}")
-
-        # 4. Bot Banner
-        if bot_banner:
-            if not bot_banner.content_type.startswith('image/'):
-                changes.append(self.bot.i18n.get("premium_invalid_image", lang))
-            else:
-                try:
-                    import base64
-                    image_bytes = await bot_banner.read()
-                    b64 = base64.b64encode(image_bytes).decode('ascii')
-                    data_uri = f'data:{bot_banner.content_type};base64,{b64}'
-                    
-                    await self.bot.http.request(
-                        discord.http.Route('PATCH', '/guilds/{guild_id}/members/@me', guild_id=guild_id),
-                        json={'banner': data_uri}
-                    )
-                    changes.append(self.bot.i18n.get("premium_set_bot_banner", lang)) 
-                except Exception as e:
-                    # Often fails if server is not boosted enough, but bot profile banners might work regardless depending on bot/user flags
-                    changes.append(f"⚠️ Failed to set Bot Banner: {e}")
-
-        # 5. Music Image (Thumbnail)
-        if image:
-            if image.content_type.startswith("image/"):
-                await collection_myasync.update_one({}, {"$set": {f"guilds.{guild_id}.premium_image": image.url}}, upsert=True)
-                changes.append(self.bot.i18n.get("premium_set_music_logo", lang))
-            else:
-                changes.append(self.bot.i18n.get("premium_invalid_image", lang))
-
-        # 5. Music Banner
-        if banner:
-            if banner.content_type.startswith("image/"):
-                await collection_myasync.update_one({}, {"$set": {f"guilds.{guild_id}.premium_banner": banner.url}}, upsert=True)
-                changes.append(self.bot.i18n.get("premium_set_music_banner", lang))
-            else:
-                changes.append(self.bot.i18n.get("premium_invalid_image", lang))
-
-        # 6. Color
-        if color:
-            import re
-            match = re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', color)
-            if match:
-                # Store as int
-                color_int = int(color.lstrip('#'), 16)
-                await collection_myasync.update_one({}, {"$set": {f"guilds.{guild_id}.color": color_int}}, upsert=True)
-                changes.append(self.bot.i18n.get("premium_set_color", lang, color=color))
-            else:
-                changes.append(self.bot.i18n.get("premium_invalid_hex", lang))
-
-        if not changes:
-            await ctx.send(self.bot.i18n.get("premium_no_changes", lang), ephemeral=True)
-        else:
-            await ctx.send("\n".join(changes))
-            # Trigger update if playing
-            await self._update_controller_if_playing(guild_id)
-
-    # Removed redundant resettheme command as branding includes reset functionality with strict checks.
+            try: await ctx.guild.me.edit(nick=nickname)
+            except: pass
+            
+        if sets: await collection_myasync.update_one({}, {"$set": sets}, upsert=True)
+        await ctx.send("✅ Branding updated.")
+        await self._update_controller_if_playing(guild_id)
 
 async def setup(bot: Cyori):
     await bot.add_cog(Premium(bot))
