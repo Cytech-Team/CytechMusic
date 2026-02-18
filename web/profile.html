@@ -189,6 +189,25 @@
             animation: float 3s ease-in-out infinite;
         }
 
+        .avatar-crown {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            background: var(--accent-gold);
+            color: #000;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            border: 4px solid #141414;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 215, 0, 0.3);
+            z-index: 10;
+            animation: float 3s ease-in-out infinite;
+        }
+
         /* --- INFO GRID (ส่วนที่เพิ่มกลับมา) --- */
         .info-grid {
             display: grid;
@@ -430,6 +449,9 @@
                 <div class="avatar-container">
                     <img id="p-avatar" src="logo-circle.png" alt="Avatar" class="avatar-large">
                     <div id="p-ring" class="premium-ring"></div>
+                    <div id="p-avatar-crown" class="avatar-crown" style="display: none;">
+                        <i class="fas fa-crown"></i>
+                    </div>
                 </div>
 
                 <div class="profile-identity">
@@ -626,6 +648,8 @@
                     if (ring) ring.style.display = isPrem ? 'block' : 'none';
                     if (badge) badge.style.display = isPrem ? 'flex' : 'none';
                     if (crownIcon) crownIcon.style.display = isPrem ? 'inline-block' : 'none';
+                    const avCrown = document.getElementById('p-avatar-crown');
+                    if (avCrown) avCrown.style.display = isPrem ? 'flex' : 'none';
 
                     if (isPrem) {
                         if (bannerEl) bannerEl.classList.add('banner-glow-gold');

@@ -45,14 +45,16 @@
             max-width: 600px;
             margin: -30px auto 40px;
             position: relative;
-            z-index: 10;
+            z-index: 100;
+            /* Increased ensure visible */
         }
 
         .commands-search-input {
             width: 100%;
             padding: 18px 25px 18px 55px;
-            background: rgba(15, 15, 15, 0.82);
-            border: 1px solid rgba(255, 215, 0, 0.2);
+            background: rgba(15, 15, 15, 0.85);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            /* Slightly more visible */
             border-radius: 20px;
             color: #fff;
             font-size: 1rem;
@@ -65,15 +67,20 @@
             outline: none;
             border-color: var(--gold-primary);
             box-shadow: 0 0 25px rgba(255, 204, 51, 0.2);
+            background: rgba(20, 20, 20, 0.95);
         }
 
         .commands-search-icon {
             position: absolute;
-            left: 22px;
+            left: 24px;
             top: 50%;
             transform: translateY(-50%);
             color: var(--gold-primary);
-            opacity: 0.6;
+            opacity: 1;
+            /* Full opacity to be sure */
+            font-size: 1.1rem;
+            pointer-events: none;
+            z-index: 101;
         }
 
         /* Category Filter Pills */
@@ -262,8 +269,11 @@
         <div class="container">
             <span class="hero-badge lang-text" data-en="Realtime Engine" data-th="ซิงค์ข้อมูลจริง">Realtime
                 Engine</span>
-            <h1 class="hero-title" style="font-size: 3.5rem; margin-bottom: 15px;">Command List</h1>
-            <p class="hero-desc" style="max-width: 600px; margin: 0 auto; opacity: 0.6;">
+            <h1 class="hero-title lang-text" data-en="Command List" data-th="รายการคำสั่ง"
+                style="font-size: 3.5rem; margin-bottom: 15px;">Command List</h1>
+            <p class="hero-desc lang-text" data-en="Explore high-fidelity commands synced directly from the core."
+                data-th="สำรวจคำสั่งคุณภาพสูงที่ซิงค์โดยตรงจากระบบหลัก"
+                style="max-width: 600px; margin: 0 auto; opacity: 0.6;">
                 Explore high-fidelity commands synced directly from the core.
             </p>
         </div>
@@ -271,9 +281,9 @@
 
     <div class="commands-container">
         <div class="commands-search-wrapper">
-            <i class="fas fa-search commands-search-icon"></i>
-            <input type="text" id="command-search" class="commands-search-input" placeholder="Search commands..."
-                oninput="handleSearch()">
+            <i class="fa-solid fa-magnifying-glass commands-search-icon"></i>
+            <input type="text" id="command-search" class="commands-search-input"
+                placeholder="Search commands, sub-commands, or parameters..." oninput="handleSearch()">
         </div>
 
         <div id="filter-pills" class="filter-pills">
@@ -297,7 +307,6 @@
                     <p class="lang-text" data-en="The ultimate music experience."
                         data-th="ประสบการณ์การฟังเพลงที่ดีที่สุด">The ultimate music experience.</p>
                 </div>
-                <!-- Standard Footer Cols -->
                 <div class="footer-col">
                     <h4 class="lang-text" data-en="Product" data-th="ผลิตภัณฑ์">Product</h4>
                     <ul>
@@ -316,9 +325,9 @@
         let allCommands = [];
         let activeCategory = 'all';
 
-        // Robust Manual Categorization Logic
+        // Enhanced Category Mapping
         const CATEGORY_MAP = {
-            'MUSIC': ['play', 'join', 'leave', 'nowplaying', 'volume', 'pause', 'skip', 'skipto', 'clear', 'stop', 'seek', 'queue', 'fix', 'remove', 'shuffle', 'lyrics', 'grab', 'removedupes', 'move', 'history'],
+            'MUSIC': ['play', 'join', 'leave', 'nowplaying', 'volume', 'pause', 'resume', 'skip', 'skipto', 'clear', 'stop', 'seek', 'queue', 'fix', 'remove', 'shuffle', 'lyrics', 'grab', 'removedupes', 'move', 'history'],
             'FILTERS': ['speed', 'karaoke', 'tremolo', 'vibrato', 'rotation', '8d', 'distortion', 'lowpass', 'channelmix', 'nightcore', 'vaporwave', 'cleareffect'],
             'INFO': ['help', 'ping', 'uptime', 'stats', 'botinfo', 'avatar', 'serverinfo', 'userinfo', 'invite', 'dashboard'],
             'SETTINGS': ['branding', 'reset', 'setup', 'prefix', 'language', '247', 'autoplay', 'djrole', 'djmode', 'vote_mode', 'viewsettings', 'fixed'],
@@ -338,21 +347,20 @@
         };
 
         function getCategoryForCommand(name) {
+            const n = name.toLowerCase();
             for (const [cat, cmds] of Object.entries(CATEGORY_MAP)) {
-                if (cmds.includes(name.toLowerCase())) return cat;
+                if (cmds.includes(n)) return cat;
             }
             return 'OTHER';
         }
 
         async function loadCommands() {
             const container = document.getElementById('category-sections');
-            var isLocal = false;
+            let isLocal = false;
             try { isLocal = IS_LOCAL; } catch (e) { isLocal = window.location.hostname === 'localhost'; }
 
             try {
-                // Determine best URL
                 const url = isLocal ? "http://localhost:8000/api/commands" : "/api/proxy?action=commands";
-
                 const res = await fetch(url).catch(e => null);
                 let data = null;
 
@@ -363,14 +371,11 @@
                     }
                 }
 
-                // If API fails or returns HTML/Error, use local payload
                 if (!data || data.error) {
-                    console.warn("[Commands] API failure, using local payload");
                     const localRes = await fetch("slash_commands_payload.json");
                     data = await localRes.json();
                 }
 
-                // Unified Parsing
                 let rawList = Array.isArray(data) ? data : (data.commands || data.slash_payload || []);
                 allCommands = rawList.map(c => ({
                     ...c,
@@ -382,14 +387,16 @@
                 if (typeof updateLanguage === 'function') updateLanguage();
 
             } catch (e) {
-                console.error("[Commands] Critical failure:", e);
+                console.error("[Commands] Load Error:", e);
                 container.innerHTML = `<div class="empty-state"><h3>Failed to load commands</h3></div>`;
             }
         }
 
         function updatePills() {
             const pillBox = document.getElementById('filter-pills');
-            const cats = [...new Set(allCommands.map(c => c.category))].sort();
+            const cats = [...new Set(allCommands.map(c => c.category))].sort((a, b) => {
+                if (a === 'MUSIC') return -1; if (b === 'MUSIC') return 1; return a.localeCompare(b);
+            });
 
             pillBox.innerHTML = `<div class="pill active" onclick="setCategory('all', this)">ALL</div>` +
                 cats.map(cat => `<div class="pill" onclick="setCategory('${cat}', this)">${cat}</div>`).join('');
@@ -403,11 +410,39 @@
         }
 
         function handleSearch() {
-            const q = document.getElementById('command-search').value.toLowerCase();
+            const q = document.getElementById('command-search').value.toLowerCase().trim();
             let filtered = allCommands;
-            if (activeCategory !== 'all') filtered = filtered.filter(c => c.category === activeCategory);
-            if (q) filtered = filtered.filter(c => c.name.toLowerCase().includes(q) || (c.description && c.description.toLowerCase().includes(q)));
+
+            if (activeCategory !== 'all') {
+                filtered = filtered.filter(c => c.category === activeCategory);
+            }
+
+            if (q) {
+                filtered = filtered.filter(c => {
+                    // 1. Check parent name/description
+                    if (c.name.toLowerCase().includes(q) || (c.description && c.description.toLowerCase().includes(q))) return true;
+
+                    // 2. Recursive check for sub-commands (options type 1 or 2)
+                    if (c.options && Array.isArray(c.options)) {
+                        return checkOptionsRecursive(c.options, q);
+                    }
+                    return false;
+                });
+            }
             renderAll(filtered);
+        }
+
+        function checkOptionsRecursive(options, query) {
+            return options.some(opt => {
+                // Check name/description of this option
+                if (opt.name.toLowerCase().includes(query) || (opt.description && opt.description.toLowerCase().includes(query))) return true;
+
+                // If it's a sub-command/group, it might have nested options
+                if (opt.options && Array.isArray(opt.options)) {
+                    return checkOptionsRecursive(opt.options, query);
+                }
+                return false;
+            });
         }
 
         function renderAll(list = allCommands) {
@@ -417,14 +452,12 @@
                 return;
             }
 
-            // Group by category
             const groups = {};
             list.forEach(c => {
                 if (!groups[c.category]) groups[c.category] = [];
                 groups[c.category].push(c);
             });
 
-            // Sort categories for logic: Music first
             const sortedCats = Object.keys(groups).sort((a, b) => {
                 if (a === 'MUSIC') return -1; if (b === 'MUSIC') return 1;
                 return a.localeCompare(b);
@@ -436,7 +469,7 @@
                 return `
                 <div class="category-section">
                     <div class="category-header">
-                        <div class="category-icon" style="color: ${meta.color}; border-color: ${meta.color}30; background: ${meta.color}08;">
+                        <div class="category-icon" style="color: ${meta.color}; border-color: ${meta.color}50; background: ${meta.color}15;">
                             <i class="fas ${meta.icon}"></i>
                         </div>
                         <h2 class="category-title">${cat}</h2>
@@ -445,20 +478,31 @@
                     <div class="grid-3">
                         ${cmds.map(c => `
                             <div class="card cmd-card">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                                     <span class="cmd-name">/${c.name}</span>
                                     <span class="payload-badge" style="font-size:0.6rem; padding: 2px 8px;">Slash</span>
                                 </div>
-                                <p style="font-size:0.9rem; opacity:0.65; flex-grow:1; line-height:1.5;">${c.description || '...'}</p>
+                                <p style="font-size:0.9rem; opacity:0.65; flex-grow:1; line-height:1.5; margin-bottom:15px;">${c.description || '...'}</p>
                                 ${c.options && c.options.length > 0 ? `
-                                    <div style="margin-top:20px; display:flex; flex-wrap:wrap; gap:6px; border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;">
-                                        ${c.options.map(o => `<span class="option-tag ${o.required ? 'required' : ''}">${o.name}${o.required ? '*' : ''}</span>`).join('')}
+                                    <div style="margin-top:auto; display:flex; flex-wrap:wrap; gap:6px; border-top:1px solid rgba(255,255,255,0.05); padding-top:12px;">
+                                        ${renderOptionsRecursive(c.options)}
                                     </div>
                                 ` : ''}
                             </div>
                         `).join('')}
                     </div>
                 </div>`;
+            }).join('');
+        }
+
+        function renderOptionsRecursive(options) {
+            return options.map(o => {
+                // Only show top-level options for the card (to avoid clutter)
+                // Sub-commands (type 1) are shown separately if they are nested deeply
+                const isSub = o.type === 1 || o.type === 2;
+                return `<span class="option-tag ${o.required ? 'required' : ''} ${isSub ? 'sub-cmd' : ''}" title="${o.description || ''}">
+                    ${o.name}${o.required ? '*' : ''}
+                </span>`;
             }).join('');
         }
 
