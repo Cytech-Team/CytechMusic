@@ -391,6 +391,10 @@ header .container {
 }
 
 .stat-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     text-align: center;
     background: rgba(255, 255, 255, 0.03);
     padding: 24px 40px;
@@ -1834,20 +1838,20 @@ input[type=range]::-moz-range-track {
 
     /* Top.gg Box Adjustment */
     .topgg-box {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-        min-width: unset !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid var(--glass-border) !important;
+        padding: 20px !important;
+        min-width: 200px !important;
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
         margin: 10px 0;
     }
 
     .topgg-box img {
-        width: 100%;
-        max-width: 220px;
+        width: auto !important;
+        max-width: 180px !important;
         height: auto;
         display: block;
         transition: transform 0.3s ease;
