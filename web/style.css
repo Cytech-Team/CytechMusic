@@ -1608,6 +1608,83 @@ input[type=range]::-moz-range-track {
         margin: 0 auto;
     }
 
+    /* --- DASHBOARD MOBILE FIXES --- */
+    .player-main {
+        padding: 20px !important;
+        border-radius: 20px;
+    }
+
+    .search-section-top {
+        margin-bottom: 20px !important;
+    }
+
+    .search-box-wrapper {
+        gap: 10px !important;
+        padding: 6px 12px !important;
+    }
+
+    .search-box-wrapper input {
+        font-size: 0.9rem;
+    }
+
+    .recommended-section {
+        padding: 15px !important;
+        margin-bottom: 30px !important;
+    }
+
+    .recommended-section h3 {
+        font-size: 1.1rem !important;
+    }
+
+    .track-info h2 {
+        font-size: 1.4rem !important;
+    }
+
+    .track-info p {
+        font-size: 0.95rem !important;
+    }
+
+    .progress-container {
+        margin: 20px 0 !important;
+    }
+
+    .controls {
+        gap: 15px !important;
+    }
+
+    .control-btn {
+        width: 45px !important;
+        height: 45px !important;
+        font-size: 1rem !important;
+    }
+
+    .control-btn.play-btn {
+        width: 65px !important;
+        height: 65px !important;
+        font-size: 1.5rem !important;
+    }
+
+    .controls-secondary {
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+        margin-top: 25px !important;
+    }
+
+    .volume-control {
+        width: 100%;
+        justify-content: center;
+        margin-top: 5px;
+    }
+
+    .sidebar {
+        padding: 15px !important;
+    }
+
+    .sidebar-btn {
+        padding: 12px 15px !important;
+        font-size: 0.9rem !important;
+    }
+
     /* Adjust Header */
     .header-actions {
         gap: 10px;
