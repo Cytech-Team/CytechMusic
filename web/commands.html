@@ -304,14 +304,15 @@
         async function loadCommands() {
             const grid = document.getElementById('payload-grid');
 
-            // Use the IS_LOCAL defined in script.js if it exists, else detect here without 'const' to avoid conflict
+            // Detection Env
             var isLocalEnv = false;
             try { isLocalEnv = IS_LOCAL; } catch (e) {
                 isLocalEnv = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
             }
 
             try {
-                // Try to get data from API
+                // Determine API Endpoint (Prefer direct /api/commands if local, else use proxy)
+                // Note: ?action=commands is only handled by proxy in dashboard_api.py
                 const url = isLocalEnv ? "http://localhost:8000/api/commands" : "/api/proxy?action=commands";
                 console.log("[Commands] Fetching from:", url);
 
@@ -323,19 +324,21 @@
                 const data = await res.json();
                 console.log("[Commands] Data received:", data);
 
-                // Try various data structures (API returns slash_payload or commands)
-                if (data.slash_payload && data.slash_payload.length > 0) {
+                // Handle Error Response (Method Not Allowed etc)
+                if (data.error || data.status === "error") {
+                    console.warn("[Commands] API returned error, falling back to local payload.", data);
+                    const localRes = await fetch("slash_commands_payload.json");
+                    allCommands = await localRes.json();
+                } else if (data.slash_payload && data.slash_payload.length > 0) {
                     allCommands = data.slash_payload;
                 } else if (data.commands && data.commands.length > 0) {
-                    // map legacy format to unified format if needed
                     allCommands = data.commands.map(c => ({
                         name: c.name,
                         description: c.description || "No description",
-                        options: c.args ? [{ name: c.args, required: false }] : [], // dummy for legacy
+                        options: c.args ? [{ name: c.args, required: false }] : [],
                         is_legacy: true
                     }));
                 } else if (Array.isArray(data)) {
-                    // Direct array from local json
                     allCommands = data;
                 }
 
@@ -344,14 +347,20 @@
 
             } catch (e) {
                 console.error("[Commands] Critical load error:", e);
-                grid.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-exclamation-triangle fa-3x" style="color: #ff4444; margin-bottom: 20px;"></i>
-                        <h3 class="lang-text" data-en="Failed to link with Bot" data-th="ไม่สามารถเชื่อมต่อกับบอทได้">Failed to link with Bot</h3>
-                        <p style="opacity: 0.6; margin-top: 10px;">The background music engine might be offline. Please try again later.</p>
-                        <button class="btn btn-glass" onclick="loadCommands()" style="margin-top: 20px;">Retry</button>
-                    </div>
-                `;
+                // Last ditch effort
+                try {
+                    const localRes = await fetch("slash_commands_payload.json");
+                    allCommands = await localRes.json();
+                    renderCommands(allCommands);
+                } catch (err) {
+                    grid.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-triangle fa-3x" style="color: #ff4444; margin-bottom: 20px;"></i>
+                            <h3 class="lang-text" data-en="Failed to link with Bot" data-th="ไม่สามารถเชื่อมต่อกับบอทได้">Failed to link with Bot</h3>
+                            <button class="btn btn-glass" onclick="loadCommands()" style="margin-top: 20px;">Retry</button>
+                        </div>
+                    `;
+                }
             }
         }
 
