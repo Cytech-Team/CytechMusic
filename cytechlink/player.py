@@ -649,7 +649,7 @@ class MusicControls(discord.ui.View):
                 if not self.player.is_playing:
                     await self.player.do_next()
                 else:
-                    await self.player.update_controller()
+                    await self.player.update_controller(force=True)
             else:
                 await interaction.followup.send("❌ Could not find random tracks.", ephemeral=True)
         except Exception as e:
@@ -1461,8 +1461,8 @@ class Player(VoiceProtocol):
                 await self.play(track, start=getattr(track, "position", 0))
                 self.dj = track.requester if getattr(track, "requester", None) else self.dj
                 try:
-                    if getattr(self, "controller", None):
-                        await self.update_controller(track)
+                    # Always update controller (handles persistent jukebox as well)
+                    await self.update_controller(track, force=True)
                 except Exception as e:
                     print("Unhandled error in update embed:", e)
                     traceback.print_exc()
