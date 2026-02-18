@@ -33,8 +33,8 @@ class LuxuryEmbed(discord.Embed):
 
 def premium_badge(lang="en"):
     if lang == "th":
-        return " 💎 **[PREMIUM]**"
-    return " 💎 **[PREMIUM]**"
+        return " 💎 [พรีเมียม]"
+    return " 💎 [PREMIUM]"
 
 def luxury_line():
     return "───────────────────────────"
