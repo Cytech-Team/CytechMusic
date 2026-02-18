@@ -668,9 +668,8 @@ class Info(commands.Cog):
         
         await ctx.reply(embed=embed, view=view)
 
-    @commands.hybrid_command()
+    @commands.hybrid_command(name="dashboard", description="Web Dashboard link / ลิงก์แดชบอร์ดควบคุมผ่านเว็บ")
     async def dashboard(self, ctx: commands.Context):
-        """Web Dashboard link / ลิงก์แดชบอร์ดควบคุมผ่านเว็บ"""
         lang = await self.bot.get_lang(ctx.guild.id)
         
         from utils.luxury import LuxuryEmbed, luxury_line
@@ -695,6 +694,42 @@ class Info(commands.Cog):
         ))
         
         await ctx.reply(embed=embed, view=view)
+
+    @commands.command(name="export_commands", hidden=True)
+    @commands.is_owner()
+    async def export_commands(self, ctx: commands.Context):
+        """Export all bot commands in Top.gg format (Owner Only)"""
+        cog = self.bot.get_cog("DashboardAPI")
+        if not cog:
+            return await ctx.send("DashboardAPI cog not found.")
+        
+        # We need a fake request object or just call the logic
+        class FakeRequest:
+            def __init__(self): self.query = {"show_all": "true"}
+        
+        # Actually it's easier to just re-implement the logic or move it to a helper
+        # Let's just use the cog's method but we need to handle the response
+        try:
+            # Re-using the parse logic
+            all_cmds = []
+            for c_name, c_obj in self.bot.cogs.items():
+                for cmd in c_obj.get_commands():
+                    all_cmds.extend(cog._parse_command_recursive(cmd, category=c_name))
+            
+            topgg_text = ""
+            for cmd in all_cmds:
+                if cmd.get("is_group"): continue
+                topgg_text += f"{cmd['usage']} - {cmd['description']}\n"
+            
+            # Send as file if too long
+            if len(topgg_text) > 1900:
+                import io
+                file = discord.File(io.BytesIO(topgg_text.encode()), filename="topgg_commands.txt")
+                await ctx.send("✅ Exported commands to file:", file=file)
+            else:
+                await ctx.send(f"✅ **Top.gg Command Export:**\n```\n{topgg_text}\n```")
+        except Exception as e:
+            await ctx.send(f"❌ Error: {e}")
 
 
 async def setup(bot: Cyori) -> None:

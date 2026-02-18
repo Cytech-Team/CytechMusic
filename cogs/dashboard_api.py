@@ -70,6 +70,7 @@ class DashboardAPI(commands.Cog):
             self.bot.web_app.router.add_get('/api/proxy', self.api_proxy_handler) # Unified Proxy
             self.bot.web_app.router.add_get('/api/gateway', self.websocket_handler) # Zero Delay Gateway
             self.bot.web_app.router.add_get('/api/recommended', self.get_recommended)
+            self.bot.web_app.router.add_get('/api/commands', self.get_commands) # NEW: Realtime Commands
             print("[Dashboard] API Routes Registered + Realtime System")
 
     async def handle_options(self, request):
@@ -973,6 +974,83 @@ class DashboardAPI(commands.Cog):
             return await handler(request)
             
         return web.json_response({'error': f'Unknown action: {action}'}, status=400, headers=self.cors_headers)
+
+
+    async def get_commands(self, request):
+        """Returns a list of all bot commands for the website."""
+        commands_list = []
+        
+        # 1. Get commands from Cogs
+        for cog_name, cog in self.bot.cogs.items():
+            # Skip internal or owner-only cogs if preferred, but user wants all
+            if cog_name in ["Owner", "DashboardAPI"]:
+                if request.query.get("show_all") != "true":
+                    continue
+            
+            for cmd in cog.get_commands():
+                commands_list.extend(self._parse_command_recursive(cmd, category=cog_name))
+        
+        # 2. Get global commands (not in a cog)
+        for cmd in self.bot.commands:
+            if not cmd.cog:
+                commands_list.extend(self._parse_command_recursive(cmd, category="General"))
+                
+        # 3. Add Top.gg Formatted string for easy copy-paste
+        # Top.gg format: /command [args] - description
+        topgg_format = ""
+        for cmd in commands_list:
+            if cmd.get("is_group"): continue # Only show leaf commands
+            topgg_format += f"{cmd['usage']} - {cmd['description']}\n"
+
+        # 4. Load static slash payload if exists
+        slash_payload = []
+        try:
+            import json
+            import pathlib
+            payload_path = pathlib.Path(__file__).parent.parent / "slash_commands_payload.json"
+            if payload_path.exists():
+                with open(payload_path, "r", encoding="utf-8") as f:
+                    slash_payload = json.load(f)
+        except Exception as e:
+            print(f"[API] Failed to load slash_payload: {e}")
+
+        return web.json_response({
+            "status": "success",
+            "count": len(commands_list),
+            "commands": commands_list,
+            "topgg_format": topgg_format,
+            "slash_payload": slash_payload
+        }, headers=self.cors_headers)
+
+    def _parse_command_recursive(self, cmd, parent_name="", category="General"):
+        results = []
+        full_name = f"{parent_name} {cmd.name}".strip()
+        
+        # Description
+        desc = cmd.help or cmd.description or "No description provided."
+        
+        # Usage (Remove 'self' and 'ctx' if they appear in signature)
+        sig = cmd.signature.replace("ctx", "").replace("self", "").strip()
+        usage = f"/{full_name} {sig}".strip()
+        
+        # Check if hybrid
+        is_hybrid = isinstance(cmd, commands.HybridCommand) or isinstance(cmd, commands.HybridGroup)
+        
+        results.append({
+            "name": full_name,
+            "description": desc,
+            "usage": usage,
+            "category": category,
+            "is_hybrid": is_hybrid,
+            "is_group": isinstance(cmd, commands.Group),
+            "aliases": getattr(cmd, 'aliases', [])
+        })
+        
+        if isinstance(cmd, commands.Group):
+            for sub in cmd.commands:
+                results.extend(self._parse_command_recursive(sub, parent_name=full_name, category=category))
+                
+        return results
 
 async def setup(bot: Cyori):
     await bot.add_cog(DashboardAPI(bot))

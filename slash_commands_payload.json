@@ -197,8 +197,7 @@
                 "name": "effect",
                 "description": "Specific effect name to remove / ชื่อเอฟเฟกต์ที่ต้องการลบ",
                 "type": 3,
-                "required": false,
-                "autocomplete": true
+                "required": false
             }
         ]
     },
@@ -272,6 +271,11 @@
         "type": 1
     },
     {
+        "name": "dashboard",
+        "description": "Web Dashboard link / ลิงก์แดชบอร์ดควบคุมผ่านเว็บ",
+        "type": 1
+    },
+    {
         "name": "join",
         "description": "Joins your voice channel / เข้าร่วมช่องเสียงของคุณ",
         "type": 1,
@@ -280,10 +284,7 @@
                 "name": "channel",
                 "description": "Voice channel to join / ช่องเสียงที่ต้องการให้บอทเข้า",
                 "type": 7,
-                "required": false,
-                "channel_types": [
-                    2
-                ]
+                "required": false
             }
         ]
     },
@@ -301,8 +302,7 @@
                 "name": "search",
                 "description": "Song name or link to play / ชื่อเพลงหรือลิงก์ youtube",
                 "type": 3,
-                "required": true,
-                "autocomplete": true
+                "required": true
             }
         ]
     },
@@ -454,207 +454,270 @@
         "type": 1
     },
     {
-        "name": "shutdown",
-        "description": "Shut down the bot / ปิดการทำงานของบอท",
-        "type": 1
-    },
-    {
-        "name": "reload",
-        "description": "Reload a cog / รีโหลดส่วนเสริม (Cog)",
+        "name": "own",
+        "description": "Owner-only management commands / คำสั่งจัดการสำหรับเจ้าของบอท",
         "type": 1,
         "options": [
             {
-                "name": "cog",
-                "description": "…",
-                "type": 3,
-                "required": true
-            }
-        ]
-    },
-    {
-        "name": "load",
-        "description": "Load a cog / โหลดส่วนเสริม (Cog)",
-        "type": 1,
-        "options": [
-            {
-                "name": "cog",
-                "description": "…",
-                "type": 3,
-                "required": true
-            }
-        ]
-    },
-    {
-        "name": "unload",
-        "description": "Unload a cog / ยกเลิกโหลดส่วนเสริม (Cog)",
-        "type": 1,
-        "options": [
-            {
-                "name": "cog",
-                "description": "…",
-                "type": 3,
-                "required": true
-            }
-        ]
-    },
-    {
-        "name": "sync",
-        "description": "Sync slash commands / ซิงค์คำสั่ง Slash Command",
-        "type": 1
-    },
-    {
-        "name": "servers",
-        "description": "List top guilds by member count / แสดงรายการเซิร์ฟเวอร์เรียงตามจำนวนสมาชิก",
-        "type": 1
-    },
-    {
-        "name": "leave_guild",
-        "description": "Force bot to leave a guild / บังคับบอทออกจากเซิร์ฟเวอร์",
-        "type": 1,
-        "options": [
-            {
-                "name": "guild_id",
-                "description": "…",
-                "type": 3,
-                "required": true
-            }
-        ]
-    },
-    {
-        "name": "eval",
-        "description": "Execute Python code / รันโค้ด Python",
-        "type": 1,
-        "options": [
-            {
-                "name": "code",
-                "description": "…",
-                "type": 3,
-                "required": true
-            }
-        ]
-    },
-    {
-        "name": "say",
-        "description": "Make the bot send a message to a channel / ให้บอทส่งข้อความไปยังห้องที่กำหนด",
-        "type": 1,
-        "options": [
-            {
-                "name": "channel",
-                "description": "…",
-                "type": 7,
-                "required": true,
-                "channel_types": [
-                    0,
-                    5
-                ]
+                "name": "shutdown",
+                "description": "Shut down the bot / ปิดการทำงานของบอท",
+                "type": 1
             },
             {
-                "name": "message",
-                "description": "…",
-                "type": 3,
-                "required": true
-            }
-        ]
-    },
-    {
-        "name": "dmowner",
-        "description": "DM the server owner / ส่งข้อความหาเจ้าของเซิร์ฟเวอร์",
-        "type": 1,
-        "options": [
-            {
-                "name": "message",
-                "description": "…",
-                "type": 3,
-                "required": true
-            }
-        ]
-    },
-    {
-        "name": "announce",
-        "description": "Send a DM to all server owners / ประกาศถึงเจ้าของเซิร์ฟเวอร์ทุกคน",
-        "type": 1,
-        "options": [
-            {
-                "name": "message",
-                "description": "…",
-                "type": 3,
-                "required": true
-            }
-        ]
-    },
-    {
-        "name": "setstatus",
-        "description": "Change bot status / เปลี่ยนสถานะของบอท",
-        "type": 1,
-        "options": [
-            {
-                "name": "type",
-                "description": "Type: playing, listening... / ประเภทสถานะ",
-                "type": 3,
-                "required": true,
-                "choices": [
+                "name": "reload",
+                "description": "Reload a cog / รีโหลดส่วนเสริม (Cog)",
+                "type": 1,
+                "options": [
                     {
-                        "name": "Playing",
-                        "value": "playing"
-                    },
-                    {
-                        "name": "Listening",
-                        "value": "listening"
-                    },
-                    {
-                        "name": "Watching",
-                        "value": "watching"
-                    },
-                    {
-                        "name": "Competing",
-                        "value": "competing"
+                        "name": "cog",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
                     }
                 ]
             },
             {
-                "name": "text",
-                "description": "Status text / ข้อความสถานะ",
-                "type": 3,
-                "required": true
-            }
-        ]
-    },
-    {
-        "name": "rename",
-        "description": "Change bot username / เปลี่ยนชื่อผู้ใช้ของบอท",
-        "type": 1,
-        "options": [
+                "name": "load",
+                "description": "Load a cog / โหลดส่วนเสริม (Cog)",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "cog",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
             {
-                "name": "name",
-                "description": "…",
-                "type": 3,
-                "required": true
-            }
-        ]
-    },
-    {
-        "name": "setavatar",
-        "description": "Change bot avatar / เปลี่ยนรูปโปรไฟล์ของบอท",
-        "type": 1,
-        "options": [
+                "name": "unload",
+                "description": "Unload a cog / ยกเลิกโหลดส่วนเสริม (Cog)",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "cog",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
             {
-                "name": "url",
-                "description": "…",
-                "type": 3,
-                "required": false
+                "name": "sync",
+                "description": "Sync slash commands / ซิงค์คำสั่ง Slash Command",
+                "type": 1
+            },
+            {
+                "name": "servers",
+                "description": "List top guilds by member count / แสดงรายการเซิร์ฟเวอร์เรียงตามจำนวนสมาชิก",
+                "type": 1
+            },
+            {
+                "name": "leave",
+                "description": "Force bot to leave a guild / บังคับบอทออกจากเซิร์ฟเวอร์",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "guild_id",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "eval",
+                "description": "Execute Python code / รันโค้ด Python",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "code",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "say",
+                "description": "Make the bot send a message to a channel / ให้บอทส่งข้อความไปยังห้องที่กำหนด",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "channel",
+                        "description": "…",
+                        "type": 7,
+                        "required": true
+                    },
+                    {
+                        "name": "message",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "dm",
+                "description": "DM the server owner / ส่งข้อความหาเจ้าของเซิร์ฟเวอร์",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "message",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "announce",
+                "description": "Send a DM to all server owners / ประกาศถึงเจ้าของเซิร์ฟเวอร์ทุกคน",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "message",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "status",
+                "description": "Change bot status / เปลี่ยนสถานะของบอท",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "type",
+                        "description": "Type: playing, listening... / ประเภทสถานะ",
+                        "type": 3,
+                        "required": true,
+                        "choices": [
+                            {
+                                "name": "Playing",
+                                "value": "playing"
+                            },
+                            {
+                                "name": "Listening",
+                                "value": "listening"
+                            },
+                            {
+                                "name": "Watching",
+                                "value": "watching"
+                            },
+                            {
+                                "name": "Competing",
+                                "value": "competing"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "text",
+                        "description": "Status text / ข้อความสถานะ",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "rename",
+                "description": "Change bot username / เปลี่ยนชื่อผู้ใช้ของบอท",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "name",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "avatar",
+                "description": "Change bot avatar / เปลี่ยนรูปโปรไฟล์ของบอท",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "url",
+                        "description": "…",
+                        "type": 3,
+                        "required": false
+                    }
+                ]
             }
         ]
     },
     {
         "name": "premium",
-        "description": "Premium Management Commands (Owner Only)",
+        "description": "Premium System Commands / คำสั่งระบบพรีเมียม",
         "type": 1,
         "options": [
             {
-                "name": "genkey",
-                "description": "Generate premium keys / สร้างคีย์พรีเมียม (Admin Only)",
+                "name": "buy",
+                "description": "Buy Premium via Stripe / ซื้อพรีเมียม",
                 "type": 1,
-                "required": false,
+                "options": [
+                    {
+                        "name": "plan",
+                        "description": "Select a premium plan / เลือกแผนพรีเมียม",
+                        "type": 3,
+                        "required": true,
+                        "choices": [
+                            {
+                                "name": "1 Month - 29 THB (Save 0)",
+                                "value": "1_month"
+                            },
+                            {
+                                "name": "3 Months - 79 THB (Save 8)",
+                                "value": "3_months"
+                            },
+                            {
+                                "name": "6 Months - 149 THB (Save 25)",
+                                "value": "6_months"
+                            },
+                            {
+                                "name": "1 Year - 289 THB (Save 59)",
+                                "value": "1_year"
+                            },
+                            {
+                                "name": "Lifetime - 789 THB (Best Value!)",
+                                "value": "lifetime"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "redeem",
+                "description": "Redeem a Premium Key / เติมพรีเมียมด้วยคีย์",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "key",
+                        "description": "…",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "status",
+                "description": "Check your premium status / ตรวจสอบพรีเมียมของคุณ",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "user",
+                        "description": "…",
+                        "type": 6,
+                        "required": false
+                    }
+                ]
+            },
+            {
+                "name": "genkey",
+                "description": "…",
+                "type": 1,
                 "options": [
                     {
                         "name": "days",
@@ -671,62 +734,14 @@
                 ]
             },
             {
-                "name": "listkeys",
-                "description": "List active unused keys / ดูคีย์ที่ยังไม่ได้ใช้",
-                "type": 1,
-                "required": false
-            },
-            {
                 "name": "stats",
-                "description": "View Premium System Statistics / ดูสถิติของระบบพรีเมียม",
-                "type": 1,
-                "required": false
-            },
-            {
-                "name": "check",
-                "description": "Check premium status of a user / ตรวจสอบสถานะของสมาชิก",
-                "type": 1,
-                "required": false,
-                "options": [
-                    {
-                        "name": "user",
-                        "description": "…",
-                        "type": 6,
-                        "required": false
-                    }
-                ]
-            },
-            {
-                "name": "extend",
-                "description": "Extend user's premium by days / เพิ่มวันพรีเมียมให้สมาชิก",
-                "type": 1,
-                "required": false,
-                "options": [
-                    {
-                        "name": "user",
-                        "description": "…",
-                        "type": 6,
-                        "required": true
-                    },
-                    {
-                        "name": "days",
-                        "description": "…",
-                        "type": 4,
-                        "required": true
-                    }
-                ]
-            },
-            {
-                "name": "active",
-                "description": "List all active premium users / รายชื่อสมาชิกที่มีพรีเมียม",
-                "type": 1,
-                "required": false
+                "description": "…",
+                "type": 1
             },
             {
                 "name": "add",
-                "description": "Enable Lifetime Premium for a User",
+                "description": "…",
                 "type": 1,
-                "required": false,
                 "options": [
                     {
                         "name": "user_id",
@@ -738,9 +753,8 @@
             },
             {
                 "name": "remove",
-                "description": "Disable Premium for a User",
+                "description": "…",
                 "type": 1,
-                "required": false,
                 "options": [
                     {
                         "name": "user_id",
@@ -753,70 +767,157 @@
         ]
     },
     {
-        "name": "redeem",
-        "description": "Redeem a Premium Key / เติมพรีเมียมด้วยคีย์",
-        "type": 1,
-        "options": [
-            {
-                "name": "key",
-                "description": "…",
-                "type": 3,
-                "required": true
-            }
-        ]
-    },
-    {
         "name": "branding",
-        "description": "Customize Bot Appearance & Music Embed / ปรับแต่งหน้าตาบอทและธีมเพลง",
+        "description": "Customize Bot Theme / ปรับแต่งธีมบอท",
         "type": 1,
         "options": [
             {
                 "name": "nickname",
-                "description": "Change Bot Nickname / เปลี่ยนชื่อเล่นบอท",
+                "description": "…",
                 "type": 3,
                 "required": false
             },
             {
-                "name": "avatar",
-                "description": "Change Bot Server Avatar / เปลี่ยนรูปโปรไฟล์บอทในเซิร์ฟนี้",
-                "type": 11,
+                "name": "color",
+                "description": "…",
+                "type": 3,
                 "required": false
             },
             {
-                "name": "bot_banner",
-                "description": "Change Bot Server Banner / เปลี่ยนรูปแบนเนอร์บอทในเซิร์ฟนี้",
+                "name": "banner",
+                "description": "…",
                 "type": 11,
                 "required": false
             },
             {
                 "name": "image",
-                "description": "Set Music Embed Thumbnail (Logo) / รูปโลโก้มุมขวาบนของเพลง",
+                "description": "…",
                 "type": 11,
-                "required": false
-            },
-            {
-                "name": "banner",
-                "description": "Set Music Embed Banner (Large Image) / รูปแบนเนอร์ใหญ่ตอนเล่นเพลง",
-                "type": 11,
-                "required": false
-            },
-            {
-                "name": "color",
-                "description": "Set Embed Color (Hex e.g. #FF0000) / สีของ Embed (รหัสสี)",
-                "type": 3,
                 "required": false
             },
             {
                 "name": "reset",
-                "description": "Reset all customization to default / รีเซ็ตค่าทั้งหมด",
+                "description": "…",
                 "type": 5,
                 "required": false
             }
         ]
     },
     {
-        "name": "play",
-        "description": null,
+        "name": "reset",
+        "description": "Reset settings to default / รีเซ็ตการตั้งค่าเป็นค่าเริ่มต้น",
         "type": 1
+    },
+    {
+        "name": "setup",
+        "description": "Create music request channel / สร้างห้องขอเพลง",
+        "type": 1
+    },
+    {
+        "name": "prefix",
+        "description": "Change bot prefix / เปลี่ยนคำนำหน้าบอท",
+        "type": 1,
+        "options": [
+            {
+                "name": "prefix",
+                "description": "New prefix (max 5 chars) / คำนำหน้าใหม่ (สูงสุด 5 ตัวอักษร)",
+                "type": 3,
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "language",
+        "description": "Change bot language / เปลี่ยนภาษาของบอท",
+        "type": 1,
+        "options": [
+            {
+                "name": "lang",
+                "description": "Select language / เลือกภาษา",
+                "type": 3,
+                "required": true,
+                "choices": [
+                    {
+                        "name": "English",
+                        "value": "en"
+                    },
+                    {
+                        "name": "Thai",
+                        "value": "th"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "247",
+        "description": "Toggle 24/7 mode / เปิด-ปิดโหมด 24/7 (บอทไม่หลุด)",
+        "type": 1
+    },
+    {
+        "name": "autoplay",
+        "description": "Toggle Autoplay / เปิด-ปิดเล่นเพลงอัตโนมัติ",
+        "type": 1
+    },
+    {
+        "name": "djrole",
+        "description": "Set DJ Role / ตั้งค่า role ที่เป็น DJ",
+        "type": 1,
+        "options": [
+            {
+                "name": "role",
+                "description": "The role to set as DJ / role ที่จะให้เป็น DJ",
+                "type": 8,
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "djmode",
+        "description": "Toggle DJ Mode (Strict Mode) / เปิด-ปิดโหมด DJ",
+        "type": 1
+    },
+    {
+        "name": "vote_mode",
+        "description": "Toggle Vote Mode / เปิด-ปิดโหมดโหวต",
+        "type": 1
+    },
+    {
+        "name": "viewsettings",
+        "description": "View current server settings / ดูการตั้งค่าปัจจุบัน",
+        "type": 1
+    },
+    {
+        "name": "fixed",
+        "description": "Fix/Reset the music request channel / แก้ไขหรือรีเซ็ตห้องขอเพลง",
+        "type": 1
+    },
+    {
+        "name": "voicefix",
+        "description": "Fix voice connection issues / แก้ไขปัญหาเสียงหาย",
+        "type": 1
+    },
+    {
+        "name": "rejoin",
+        "description": "Force Reconnect Voice / บังคับเชื่อมต่อเสียงใหม่",
+        "type": 1
+    },
+    {
+        "name": "cleanup",
+        "description": "Clean up bot messages / ลบข้อความของบอท",
+        "type": 1,
+        "options": [
+            {
+                "name": "limit",
+                "description": "…",
+                "type": 4,
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "play",
+        "description": "",
+        "type": 3
     }
 ]

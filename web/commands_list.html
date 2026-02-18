@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Commands | Cyori</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        .page-header {
+            padding: 120px 0 60px;
+            text-align: center;
+            background: radial-gradient(circle at center, rgba(255, 204, 51, 0.05) 0%, transparent 70%);
+        }
+
+        .commands-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px 100px;
+        }
+
+        .search-wrapper {
+            max-width: 600px;
+            margin: -30px auto 40px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 18px 25px 18px 55px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            color: #fff;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 20px rgba(255, 204, 51, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 22px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .payload-badge {
+            background: var(--gold-primary);
+            color: #000;
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .option-tag {
+            font-size: 0.7rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .option-tag.required {
+            border-color: rgba(255, 68, 68, 0.2);
+        }
+
+        .required-star {
+            color: #ff4444;
+            margin-left: 2px;
+        }
+    </style>
+</head>
+
+<body class="dark-theme">
+    <header id="header">
+        <nav class="container content-fade">
+            <a href="index.html" class="logo">
+                <img src="logo-circle.png" alt="Cyori">
+                <span>Cyori</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link lang-text" data-en="Home" data-th="หน้าแรก">Home</a>
+                <a href="dashboard.html" class="nav-link lang-text" data-en="Dashboard"
+                    data-th="แผงควบคุม">Dashboard</a>
+                <a href="premium.html" class="nav-link lang-text" data-en="Premium" data-th="พรีเมียม">Premium</a>
+                <div class="nav-btns">
+                    <button class="lang-btn" onclick="toggleLanguage()">
+                        <i class="fas fa-globe"></i> <span id="curr-lang">EN</span>
+                    </button>
+                    <a href="#" class="btn btn-primary login-btn" onclick="login()">
+                        <i class="fab fa-discord"></i> <span class="lang-text" data-en="Login"
+                            data-th="เข้าสู่ระบบ">Login</span>
+                    </a>
+                </div>
+            </div>
+            <button class="hamburger" onclick="toggleMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
+        </nav>
+    </header>
+
+    <div class="page-header">
+        <div class="container">
+            <span class="hero-badge">API Sync</span>
+            <h1 class="hero-title" style="font-size: 3.5rem; margin-bottom: 20px;">Slash Commands</h1>
+            <p class="hero-desc" style="max-width: 700px; margin: 0 auto;">
+                Explore all available slash commands and their parameters, synced directly from the bot's payload.
+            </p>
+        </div>
+    </div>
+
+    <div class="commands-container">
+        <div class="search-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="command-search" class="search-input"
+                placeholder="Search for commands or descriptions..." oninput="filterCommands()">
+        </div>
+
+        <div id="payload-grid" class="grid-3" style="min-height: 400px;">
+            <!-- Dynamic Content -->
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container footer-grid">
+            <div class="footer-info">
+                <div class="logo">
+                    <img src="logo-circle.png" alt="Cyori">
+                    <span>Cyori</span>
+                </div>
+                <p>Premium Music Bot for Discord. Crystal clear audio, zero lag, and powerful features.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Links</h4>
+                <a href="index.html">Home</a>
+                <a href="commands_list.html">Commands</a>
+                <a href="dashboard.html">Dashboard</a>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>&copy; 2026 CytechX Team. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        let allSlashCommands = [];
+
+        async function loadPayloadOnly() {
+            const grid = document.getElementById('payload-grid');
+            try {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 100px;"><i class="fas fa-circle-notch fa-spin fa-3x" style="color: var(--gold-primary);"></i></div>';
+
+                const url = IS_LOCAL ? "http://localhost:8000/api/commands" : "/api/commands";
+                const res = await fetch(url);
+                const data = await res.json();
+
+                allSlashCommands = data.slash_payload || [];
+                renderSlashCommands(allSlashCommands);
+            } catch (e) {
+                grid.innerHTML = '<p style="text-align: center; grid-column: 1/-1; color: #ff4444;">Failed to load payload data. Make sure the bot is running.</p>';
+            }
+        }
+
+        function renderSlashCommands(cmds) {
+            const grid = document.getElementById('payload-grid');
+            if (cmds.length === 0) {
+                grid.innerHTML = '<p style="text-align: center; grid-column: 1/-1; opacity: 0.5;">No commands found.</p>';
+                return;
+            }
+
+            grid.innerHTML = cmds.map(cmd => `
+                <div class="card command-card" data-cmd-name="${cmd.name}">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <code style="color:var(--gold-primary); font-size: 1.1rem; font-weight: 800;">/${cmd.name}</code>
+                        <span class="payload-badge">Slash</span>
+                    </div>
+                    <p class="cmd-desc" style="font-size: 0.95rem; margin-bottom: 20px; line-height: 1.6;">${cmd.description}</p>
+                    ${cmd.options ? `
+                        <div style="margin-top:auto; padding-top:15px; border-top:1px solid rgba(255,255,255,0.05);">
+                            <p style="font-size: 0.7rem; color: #aaa; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Arguments</p>
+                            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                                ${cmd.options.map(opt => `
+                                    <span class="option-tag ${opt.required ? 'required' : ''}">
+                                        ${opt.name}${opt.required ? '<span class="required-star">*</span>' : ''}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function filterCommands() {
+            const q = document.getElementById('command-search').value.toLowerCase();
+            const filtered = allSlashCommands.filter(c =>
+                c.name.toLowerCase().includes(q) ||
+                c.description.toLowerCase().includes(q)
+            );
+            renderSlashCommands(filtered);
+        }
+
+        document.addEventListener('DOMContentLoaded', loadPayloadOnly);
+    </script>
+</body>
+
+</html>

@@ -359,6 +359,11 @@ function updateLanguage() {
         const place = el.getAttribute(`data-${window.currentLang}-placeholder`);
         if (place) el.setAttribute('placeholder', place);
     });
+
+    document.querySelectorAll('.lang-text-placeholder').forEach(el => {
+        const place = el.getAttribute(`data-${window.currentLang}-placeholder`);
+        if (place) el.setAttribute('placeholder', place);
+    });
 }
 
 // ==========================================
@@ -450,21 +455,12 @@ async function fetchGlobalStats() {
     }
 }
 
-// ==========================================
 // 6. INITIALIZATION
-// ==========================================
-
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Language Init
     updateLanguage();
-
-    // 2. Auth Check
     handleAuth();
-
-    // 3. Stats (Non-blocking)
     fetchGlobalStats();
 
-    // 4. Event Listeners for Menu Close
     document.querySelectorAll('nav a').forEach(link => {
         link.addEventListener('click', () => {
             const nav = document.querySelector('.nav-links');
@@ -472,7 +468,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 5. Scroll Effect
     window.addEventListener('scroll', () => {
         const header = document.getElementById('header');
         if (header) {
