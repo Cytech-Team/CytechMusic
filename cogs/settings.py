@@ -423,9 +423,9 @@ class Settings(commands.Cog):
         except Exception as e:
             await ctx.send(f"Fixed failed: {e}", ephemeral=True)
 
-    @commands.hybrid_command(name="fix", description="Fix voice connection issues / แก้ไขปัญหาเสียงหาย")
+    @commands.hybrid_command(name="voicefix", description="Fix voice connection issues / แก้ไขปัญหาเสียงหาย")
     @commands.has_permissions(manage_guild=True)
-    async def fix(self, ctx: commands.Context):
+    async def voicefix(self, ctx: commands.Context):
         """Fix voice issues by changing region or reconnecting"""
         await ctx.defer()
         lang = await self.bot.get_lang(ctx.guild.id)
@@ -445,9 +445,9 @@ class Settings(commands.Cog):
         except Exception as e:
             await ctx.send(self.bot.i18n.get("fix_voice_error", lang, e=e))
 
-    @commands.hybrid_command(name="voicefix", description="Force Reconnect Voice / บังคับเชื่อมต่อเสียงใหม่")
+    @commands.hybrid_command(name="rejoin", description="Force Reconnect Voice / บังคับเชื่อมต่อเสียงใหม่")
     @commands.has_permissions(manage_guild=True)
-    async def voicefix(self, ctx: commands.Context):
+    async def rejoin(self, ctx: commands.Context):
         """Force bot to disconnect and reconnect to voice channel"""
         await ctx.defer()
         lang = await self.bot.get_lang(ctx.guild.id)

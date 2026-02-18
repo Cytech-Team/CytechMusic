@@ -340,6 +340,38 @@ header .container {
     }
 }
 
+.vote-btn-hero {
+    position: relative;
+    border-color: rgba(255, 215, 0, 0.3);
+}
+
+.vote-btn-hero::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    border: 1px solid var(--gold-primary);
+    opacity: 0;
+    animation: btn-pulse 2s infinite;
+}
+
+@keyframes btn-pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.5;
+    }
+
+    70% {
+        transform: scale(1.05, 1.2);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 0;
+    }
+}
+
 /* --- STATS COUNTERS --- */
 .stats-container {
     display: flex;
@@ -1499,7 +1531,8 @@ input[type=range]::-moz-range-track {
     font-size: 1.5rem;
     color: var(--text-main);
     cursor: pointer;
-    z-index: 2002;
+    z-index: 3000;
+    /* Higher than nav-links (2600) to ensure we can close it */
     transition: 0.3s;
 }
 
@@ -1516,8 +1549,8 @@ input[type=range]::-moz-range-track {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.8);
-    z-index: 1900;
-    /* Behind header/nav-links but above content */
+    z-index: 2500;
+    /* Higher than header to block interaction with background cards */
     backdrop-filter: blur(6px);
     transition: 0.3s;
 }
@@ -1582,26 +1615,48 @@ input[type=range]::-moz-range-track {
         display: block;
     }
 
-    /* Mobile Sidebar Menu (Slide from Left or Right - Choosing Right) */
+    /* Mobile Sidebar Menu */
     .nav-links {
         display: flex;
         position: fixed;
         top: 0;
         right: -100%;
-        /* Hidden off-screen right */
-        width: 280px;
+        width: 300px;
         height: 100vh;
         background: rgba(5, 5, 5, 0.98);
         flex-direction: column;
         justify-content: flex-start;
         align-items: center;
-        gap: 20px;
-        padding-top: 100px;
+        gap: 15px;
+        padding: 100px 20px 40px;
         transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        z-index: 1001;
-        /* Higher than header but lower than toggle if toggle is fixed */
-        box-shadow: -5px 0 30px rgba(0, 0, 0, 0.8);
+        z-index: 2600;
+        /* Above overlay and header */
+        box-shadow: -5px 0 30px rgba(0, 0, 0, 0.9);
         border-left: 1px solid var(--glass-border);
+        overflow-y: auto;
+    }
+
+    .mobile-only-action {
+        display: block !important;
+        width: 100%;
+    }
+
+    .mobile-menu-divider {
+        height: 1px;
+        background: rgba(255, 215, 0, 0.1);
+        margin: 20px 0;
+        width: 100%;
+    }
+
+    .mobile-nav-btn {
+        width: 100%;
+        padding: 15px !important;
+        font-size: 1rem !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
     }
 
     /* Active State */
@@ -1659,15 +1714,33 @@ input[type=range]::-moz-range-track {
         margin-bottom: 20px;
     }
 
-    .grid-3 {
-        grid-template-columns: 1fr;
+    /* Top.gg Box Center */
+    .topgg-box {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 10px;
     }
 
+    .topgg-box img {
+        max-width: 180px;
+        transition: transform 0.3s ease;
+    }
+
+    .topgg-box:hover img {
+        transform: scale(1.05);
+    }
 
     /* Login Wall Fix for Mobile */
     #login-wall {
-        padding: 40px 20px;
+        padding: 80px 20px;
+        /* More padding for header */
     }
+}
+
+/* Ensure mobile-only actions are hidden on desktop */
+.mobile-only-action {
+    display: none;
 }
 
 /* ========================================

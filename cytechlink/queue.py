@@ -62,6 +62,10 @@ class Queue:
         self._queue.append(item)
         return self.count
 
+    def extend(self, items: List[Track]) -> None:
+        for item in items:
+            self.put(item)
+
     def put_at_front(self, item: Track) -> int:
         if self.count >= self._size:
             raise QueueFull("")
@@ -157,6 +161,12 @@ class Queue:
     @property
     def count(self) -> int:
         return len(self._queue[self._position:])
+
+    def __iter__(self):
+        return iter(self._queue[self._position:])
+
+    def __len__(self):
+        return self.count
     
     @property
     def repeat(self) -> str:

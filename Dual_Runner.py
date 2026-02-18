@@ -10,8 +10,14 @@ def run_bot(token, is_deprecated=False):
     mode_text = "MIGRATION MODE" if is_deprecated else "MAIN BOT"
     dep_val = "true" if is_deprecated else "false"
     
+    # ดึง Token ที่ถูกต้องสำหรับแต่ละ Instance
+    load_dotenv() # Reload to ensure we get individual DBL tokens if set
+    dbl_token = os.getenv("DBL_TOKEN_OLD") if is_deprecated else os.getenv("DBL_TOKEN")
+    
     os.environ["BOT_TOKEN"] = token
     os.environ["DEPRECATED_MODE"] = dep_val
+    if dbl_token:
+        os.environ["DBL_TOKEN"] = dbl_token
     
     # Debug print to verify environment within the process
     print(f"[*] [Process] Setting DEPRECATED_MODE={dep_val} for {mode_text}", flush=True)

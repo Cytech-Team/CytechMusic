@@ -83,6 +83,30 @@ class Premium(commands.Cog):
                     except Exception as e:
                         print(f"Failed to DM expired user {uid_str}: {e}")
 
+                    # --- Automatic Role Removal on Expiry ---
+                    try:
+                        from bot import SOURCE_GUILD_ID, SYNC_ROLE_ID
+                        # Try to remove role in all mutual guilds
+                        for guild in self.bot.guilds:
+                            if guild.id == SOURCE_GUILD_ID: continue
+                            
+                            role = guild.get_role(SYNC_ROLE_ID)
+                            if not role: continue
+                            
+                            # Use internal cache if possible
+                            member = guild.get_member(int(uid_str))
+                            if not member:
+                                try: member = await guild.fetch_member(int(uid_str))
+                                except: member = None
+                                
+                            if member and role in member.roles:
+                                try:
+                                    await member.remove_roles(role, reason="Cyori Auto-Sync: Premium Expired")
+                                    print(f"[*] Removed sync role from {uid_str} in {guild.name} (Expired)")
+                                except: pass
+                    except Exception as e:
+                        print(f"Error removing roles for expired user {uid_str}: {e}")
+
                     # Cleanup to prevent loop spam
                     updates[f"users.{uid_str}.premium_expire"] = "" # Unset
                     updates[f"users.{uid_str}.premium"] = "" # Unset (just in case)
@@ -338,6 +362,24 @@ class Premium(commands.Cog):
         
         await ctx.send(self.bot.i18n.get("premium_redeem_success", lang, days=days, expire=expire_str), ephemeral=False)
         
+        # --- Trigger Role Sync immediately ---
+        try:
+            from bot import SOURCE_GUILD_ID, SYNC_ROLE_ID
+            source_guild = self.bot.get_guild(SOURCE_GUILD_ID)
+            if source_guild:
+                # Check if redeemer is in source guild
+                is_in_source = source_guild.get_member(ctx.author.id) or await source_guild.fetch_member(ctx.author.id)
+                if is_in_source:
+                    for guild in self.bot.guilds:
+                        if guild.id == SOURCE_GUILD_ID: continue
+                        role = guild.get_role(SYNC_ROLE_ID)
+                        if role:
+                            member = guild.get_member(ctx.author.id)
+                            if member and role not in member.roles:
+                                try: await member.add_roles(role, reason="Cyori Sync: Premium Redeemed")
+                                except: pass
+        except: pass
+
         # Trigger update if in voice
         if ctx.guild:
              await self._update_controller_if_playing(ctx.guild.id)

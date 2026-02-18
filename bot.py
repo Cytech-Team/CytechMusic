@@ -333,23 +333,17 @@ class Cyori(commands.Bot):
             async with self.session.post(url, json=payload, headers=headers) as resp:
                 if resp.status != 200:
                     text = await resp.text()
-        except Exception:
-            pass
+                    if not DEPRECATED_MODE:
+                        print(f"[TopGG Error] Failed to post stats for {self.user.id}: {resp.status} - {text}")
+                else:
+                    if not DEPRECATED_MODE:
+                        print(f"[TopGG] Successfully posted {len(self.guilds)} servers for {self.user.id}")
+        except Exception as e:
+            if not DEPRECATED_MODE:
+                print(f"[TopGG Error] Exception during stats post: {e}")
 
     async def is_premium(self, user_id: int, guild_id: int = None) -> bool:
         if not user_id: return False
-        
-        # 0. Top.gg Verification Center Whitelist (Reviewer Bypass)
-        # Server ID: 333949691962195969
-        TOPGG_VERIFICATION_CENTER = 333949691962195969
-        if guild_id == TOPGG_VERIFICATION_CENTER:
-            return True
-            
-        # Check if user is in Top.gg verification guild (Alternative bypass)
-        guild = self.get_guild(TOPGG_VERIFICATION_CENTER)
-        if guild and guild.get_member(user_id):
-            return True
-
         try:
             # Search for the document that contains users
             data = await collection_myasync.find_one({"users": {"$exists": True}})
@@ -571,9 +565,11 @@ class Cyori(commands.Bot):
     @tasks.loop(minutes=5)
     async def update_stats_task(self):
         try:
+            # Post stats for each instance using its own DBL_TOKEN
             await self.post_guild_count()
-            if not DEPRECATED_MODE:
-                print(f"[Stats] Synced {len(self.guilds)} guilds.")
+            
+            mode = "OLD" if DEPRECATED_MODE else "MAIN"
+            print(f"[Stats] {self.user.name} ({mode}) synced {len(self.guilds)} guilds to Top.gg.")
         except Exception as e:
             print(f"[Stats Error] {e}")
 
@@ -703,7 +699,7 @@ class Cyori(commands.Bot):
     # --- Role Sync Logic ---
     @tasks.loop(hours=6)
     async def sync_community_roles_task(self):
-        """Audit all guilds to sync roles for existing members."""
+        """Audit all guilds to sync roles for members who are in source guild AND have premium."""
         if DEPRECATED_MODE: return
         
         source_guild = self.get_guild(SOURCE_GUILD_ID)
@@ -713,7 +709,7 @@ class Cyori(commands.Bot):
 
         print(f"[*] Starting Role Sync Audit for {len(self.guilds)} guilds...")
         
-        # Get list of all member IDs in source guild to avoid constant fetches
+        # Get list of all member IDs in source guild
         try:
             source_member_ids = set()
             async for m in source_guild.fetch_members(limit=None):
@@ -730,14 +726,18 @@ class Cyori(commands.Bot):
             try:
                 # Audit members in this guild
                 async for member in guild.fetch_members(limit=None):
+                    # Logic: Must be in SOURCE and MUST have PREMIUM
                     is_in_source = member.id in source_member_ids
+                    is_prem = await self.is_premium(member.id)
+                    
+                    should_have_role = is_in_source and is_prem
                     has_role = role in member.roles
                     
                     try:
-                        if is_in_source and not has_role:
-                            await member.add_roles(role, reason="Cyori Audit: Member of Source Guild")
-                        elif not is_in_source and has_role:
-                            await member.remove_roles(role, reason="Cyori Audit: Not member of Source Guild")
+                        if should_have_role and not has_role:
+                            await member.add_roles(role, reason="Cyori Audit: Member + Premium Sync")
+                        elif not should_have_role and has_role:
+                            await member.remove_roles(role, reason="Cyori Audit: Not Premium/Source anymore")
                     except: pass
             except: pass
         print("[*] Role Sync Audit Completed.")
@@ -1087,14 +1087,17 @@ class Cyori(commands.Bot):
                     is_in_source = source_guild.get_member(member.id) or await source_guild.fetch_member(member.id)
                 except: is_in_source = False
             
+            # Check Premium
+            is_prem = await self.is_premium(member.id)
+            
             role = member.guild.get_role(SYNC_ROLE_ID)
             if role:
                 try:
-                    if is_in_source:
-                        await member.add_roles(role, reason="Cyori Sync: Member of Source Guild")
+                    if is_in_source and is_prem:
+                        await member.add_roles(role, reason="Cyori Sync: Member + Premium")
                     else:
-                        if role in member.roles: # If somehow they have it but aren't in source
-                            await member.remove_roles(role, reason="Cyori Sync: Not member of Source Guild")
+                        if role in member.roles: 
+                            await member.remove_roles(role, reason="Cyori Sync: Missing requirement (Source/Pre)")
                 except: pass
 
     async def on_member_remove(self, member):

@@ -1,0 +1,617 @@
+[
+    {
+        "name": "pause",
+        "description": "Pause or Resume the music / หยุดชั่วคราว หรือ เล่นเพลงต่อ",
+        "type": "Prefix"
+    },
+    {
+        "name": "load",
+        "description": "Load a cog / โหลดส่วนเสริม (Cog)",
+        "type": "Prefix"
+    },
+    {
+        "name": "userinfo",
+        "description": "Show user information / ดูข้อมูลส่วนตัวของคุณหรือของผู้อื่น",
+        "type": "Prefix"
+    },
+    {
+        "name": "move",
+        "description": "Move a song to a different position in the queue / ย้ายตำแหน่งเพลง",
+        "type": "Prefix"
+    },
+    {
+        "name": "say",
+        "description": "Make the bot send a message to a channel / ให้บอทส่งข้อความไปยังห้องที่กำหนด",
+        "type": "Prefix"
+    },
+    {
+        "name": "lowpass",
+        "description": "Apply lowpass filter (muffled sound) / เปิด Lowpass Filter (ตัดเสียงแหลม)",
+        "type": "Prefix"
+    },
+    {
+        "name": "ping",
+        "description": "Check bot latency / เช็คค่าความหน่วง (Ping) ของบอท",
+        "type": "Prefix"
+    },
+    {
+        "name": "fix",
+        "description": "Fix voice issues by changing region / แก้ไขปัญหาเสียงด้วยการเปลี่ยน Region",
+        "type": "Prefix"
+    },
+    {
+        "name": "dmowner",
+        "description": "DM the server owner / ส่งข้อความหาเจ้าของเซิร์ฟเวอร์",
+        "type": "Prefix"
+    },
+    {
+        "name": "speed",
+        "description": "Set playback speed / ปรับความเร็วเพลง",
+        "type": "Prefix"
+    },
+    {
+        "name": "skip",
+        "description": "Skip to next song / ข้ามไปเพลงถัดไป",
+        "type": "Prefix"
+    },
+    {
+        "name": "unload",
+        "description": "Unload a cog / ยกเลิกโหลดส่วนเสริม (Cog)",
+        "type": "Prefix"
+    },
+    {
+        "name": "invite",
+        "description": "Invite the bot to your server / เชิญบอทเข้าเซิร์ฟเวอร์ของคุณ",
+        "type": "Prefix"
+    },
+    {
+        "name": "join",
+        "description": "Joins your voice channel / เข้าร่วมช่องเสียงของคุณ",
+        "type": "Prefix"
+    },
+    {
+        "name": "history",
+        "description": "Show recently played songs / แสดงประวัติเพลงที่เล่นไปแล้ว",
+        "type": "Prefix"
+    },
+    {
+        "name": "channelmix",
+        "description": "Mix audio channels manually / ปรับแต่ง Channel เสียงเอง",
+        "type": "Prefix"
+    },
+    {
+        "name": "uptime",
+        "description": "Check bot uptime / เช็คเวลาทำงานของบอท",
+        "type": "Prefix"
+    },
+    {
+        "name": "remove",
+        "description": "Remove a song from the queue / ลบเพลงออกจากคิว",
+        "type": "Prefix"
+    },
+    {
+        "name": "announce",
+        "description": "Send a DM to all server owners / ประกาศถึงเจ้าของเซิร์ฟเวอร์ทุกคน",
+        "type": "Prefix"
+    },
+    {
+        "name": "help",
+        "description": "Show help info / แสดงวิธีใช้งานและรายชื่อคำสั่ง",
+        "type": "Prefix"
+    },
+    {
+        "name": "karaoke",
+        "description": "Apply karaoke effect (remove vocals) / เปิดโหมดคาราโอเกะ (ตัดเสียงร้อง)",
+        "type": "Prefix"
+    },
+    {
+        "name": "skipto",
+        "description": "Skip to a specific song in the queue / ข้ามไปเพลงที่ระบุลำดับ",
+        "type": "Prefix"
+    },
+    {
+        "name": "sync",
+        "description": "Sync slash commands / ซิงค์คำสั่ง Slash Command",
+        "type": "Prefix"
+    },
+    {
+        "name": "branding",
+        "description": "Customize Bot Appearance & Music Embed / ปรับแต่งหน้าตาบอทและธีมเพลง",
+        "type": "Prefix"
+    },
+    {
+        "name": "leave",
+        "description": "Disconnect the bot from voice channel / ตัดการเชื่อมต่อบอทจากช่องเสียง",
+        "type": "Prefix"
+    },
+    {
+        "name": "nightcore",
+        "description": "Apply Nightcore effect / เปิดโหมด Nightcore",
+        "type": "Prefix"
+    },
+    {
+        "name": "stats",
+        "description": "Show system & node stats / แสดงสถานะระบบและ Music Node",
+        "type": "Prefix"
+    },
+    {
+        "name": "shuffle",
+        "description": "Shuffle the queue / สุ่มลำดับเพลงในคิว",
+        "type": "Prefix"
+    },
+    {
+        "name": "setstatus",
+        "description": "Change bot status / เปลี่ยนสถานะของบอท",
+        "type": "Prefix"
+    },
+    {
+        "name": "tremolo",
+        "description": "Apply tremolo effect / เปิดเอฟเฟกต์ Tremolo (สั่น)",
+        "type": "Prefix"
+    },
+    {
+        "name": "clear",
+        "description": "Clear all songs in the queue / ล้างคิวเพลงทั้งหมด",
+        "type": "Prefix"
+    },
+    {
+        "name": "servers",
+        "description": "List top guilds by member count / แสดงรายการเซิร์ฟเวอร์เรียงตามจำนวนสมาชิก",
+        "type": "Prefix"
+    },
+    {
+        "name": "play",
+        "description": "Play a song from any source / เล่นเพลงจากแหล่งต่างๆ",
+        "type": "Prefix"
+    },
+    {
+        "name": "8d",
+        "description": "Apply 8D Audio effect / เปิดโหมด 8D Audio",
+        "type": "Prefix"
+    },
+    {
+        "name": "botinfo",
+        "description": "Show bot information / แสดงข้อมูลเกี่ยวกับบอท",
+        "type": "Prefix"
+    },
+    {
+        "name": "lyrics",
+        "description": "Get lyrics for the current or specified song / ดูเนื้อร้องเพลง",
+        "type": "Prefix"
+    },
+    {
+        "name": "rename",
+        "description": "Change bot username / เปลี่ยนชื่อผู้ใช้ของบอท",
+        "type": "Prefix"
+    },
+    {
+        "name": "vibrato",
+        "description": "Apply vibrato effect / เปิดเอฟเฟกต์ Vibrato (ลูกคอ)",
+        "type": "Prefix"
+    },
+    {
+        "name": "stop",
+        "description": "Stop music and disconnect / หยุดเพลงและออกจากช่องเสียง",
+        "type": "Prefix"
+    },
+    {
+        "name": "leave_guild",
+        "description": "Force bot to leave a guild / บังคับบอทออกจากเซิร์ฟเวอร์",
+        "type": "Prefix"
+    },
+    {
+        "name": "nowplaying",
+        "description": "Show the currently playing song / แสดงเพลงที่กำลังเล่นอยู่",
+        "type": "Prefix"
+    },
+    {
+        "name": "shutdown",
+        "description": "Shut down the bot / ปิดการทำงานของบอท",
+        "type": "Prefix"
+    },
+    {
+        "name": "vaporwave",
+        "description": "Apply Vaporwave effect / เปิดโหมด Vaporwave",
+        "type": "Prefix"
+    },
+    {
+        "name": "avatar",
+        "description": "Show member's avatar / ดูรูปโปรไฟล์ของสมาชิก",
+        "type": "Prefix"
+    },
+    {
+        "name": "grab",
+        "description": "Save current song to your DM / ส่งข้อมูลเพลงเข้า DM",
+        "type": "Prefix"
+    },
+    {
+        "name": "setavatar",
+        "description": "Change bot avatar / เปลี่ยนรูปโปรไฟล์ของบอท",
+        "type": "Prefix"
+    },
+    {
+        "name": "premium",
+        "description": "Premium Management Commands (Owner Only)",
+        "type": "Prefix"
+    },
+    {
+        "name": "rotation",
+        "description": "Apply rotation effect (8D audio) / เปิดเอฟเฟกต์หมุนเสียง (8D)",
+        "type": "Prefix"
+    },
+    {
+        "name": "seek",
+        "description": "Seek to a specific time in the song / เลื่อนไปยังช่วงเวลาที่ต้องการ",
+        "type": "Prefix"
+    },
+    {
+        "name": "eval",
+        "description": "Execute Python code / รันโค้ด Python",
+        "type": "Prefix"
+    },
+    {
+        "name": "volume",
+        "description": "Set music volume (1-100) / ปรับระดับเสียงเพลง (1-100)",
+        "type": "Prefix"
+    },
+    {
+        "name": "redeem",
+        "description": "Redeem a Premium Key / เติมพรีเมียมด้วยคีย์",
+        "type": "Prefix"
+    },
+    {
+        "name": "reload",
+        "description": "Reload a cog / รีโหลดส่วนเสริม (Cog)",
+        "type": "Prefix"
+    },
+    {
+        "name": "cleareffect",
+        "description": "Clear sound effects / ล้างเอฟเฟกต์เสียงทั้งหมด",
+        "type": "Prefix"
+    },
+    {
+        "name": "serverinfo",
+        "description": "Show server information / ดูข้อมูลของเซิร์ฟเวอร์นี้",
+        "type": "Prefix"
+    },
+    {
+        "name": "queue",
+        "description": "Show current music queue / แสดงคิวเพลงปัจจุบัน",
+        "type": "Prefix"
+    },
+    {
+        "name": "removedupes",
+        "description": "Remove duplicate songs from the queue / ลบเพลงซ้ำในคิว",
+        "type": "Prefix"
+    },
+    {
+        "name": "distortion",
+        "description": "Apply distortion effect / เปิดเอฟเฟกต์ Distortion (เสียงแตก)",
+        "type": "Prefix"
+    },
+    {
+        "name": "speed",
+        "description": "Set playback speed / ปรับความเร็วเพลง",
+        "type": "Slash"
+    },
+    {
+        "name": "karaoke",
+        "description": "Apply karaoke effect (remove vocals) / เปิดโหมดคาราโอเกะ (ตัดเสียงร้อง)",
+        "type": "Slash"
+    },
+    {
+        "name": "tremolo",
+        "description": "Apply tremolo effect / เปิดเอฟเฟกต์ Tremolo (สั่น)",
+        "type": "Slash"
+    },
+    {
+        "name": "vibrato",
+        "description": "Apply vibrato effect / เปิดเอฟเฟกต์ Vibrato (ลูกคอ)",
+        "type": "Slash"
+    },
+    {
+        "name": "rotation",
+        "description": "Apply rotation effect (8D audio) / เปิดเอฟเฟกต์หมุนเสียง (8D)",
+        "type": "Slash"
+    },
+    {
+        "name": "distortion",
+        "description": "Apply distortion effect / เปิดเอฟเฟกต์ Distortion (เสียงแตก)",
+        "type": "Slash"
+    },
+    {
+        "name": "lowpass",
+        "description": "Apply lowpass filter (muffled sound) / เปิด Lowpass Filter (ตัดเสียงแหลม)",
+        "type": "Slash"
+    },
+    {
+        "name": "channelmix",
+        "description": "Mix audio channels manually / ปรับแต่ง Channel เสียงเอง",
+        "type": "Slash"
+    },
+    {
+        "name": "nightcore",
+        "description": "Apply Nightcore effect / เปิดโหมด Nightcore",
+        "type": "Slash"
+    },
+    {
+        "name": "8d",
+        "description": "Apply 8D Audio effect / เปิดโหมด 8D Audio",
+        "type": "Slash"
+    },
+    {
+        "name": "vaporwave",
+        "description": "Apply Vaporwave effect / เปิดโหมด Vaporwave",
+        "type": "Slash"
+    },
+    {
+        "name": "cleareffect",
+        "description": "Clear sound effects / ล้างเอฟเฟกต์เสียงทั้งหมด",
+        "type": "Slash"
+    },
+    {
+        "name": "help",
+        "description": "Show help info / แสดงวิธีใช้งานและรายชื่อคำสั่ง",
+        "type": "Slash"
+    },
+    {
+        "name": "ping",
+        "description": "Check bot latency / เช็คค่าความหน่วง (Ping) ของบอท",
+        "type": "Slash"
+    },
+    {
+        "name": "uptime",
+        "description": "Check bot uptime / เช็คเวลาทำงานของบอท",
+        "type": "Slash"
+    },
+    {
+        "name": "stats",
+        "description": "Show system & node stats / แสดงสถานะระบบและ Music Node",
+        "type": "Slash"
+    },
+    {
+        "name": "botinfo",
+        "description": "Show bot information / แสดงข้อมูลเกี่ยวกับบอท",
+        "type": "Slash"
+    },
+    {
+        "name": "avatar",
+        "description": "Show member's avatar / ดูรูปโปรไฟล์ของสมาชิก",
+        "type": "Slash"
+    },
+    {
+        "name": "serverinfo",
+        "description": "Show server information / ดูข้อมูลของเซิร์ฟเวอร์นี้",
+        "type": "Slash"
+    },
+    {
+        "name": "userinfo",
+        "description": "Show user information / ดูข้อมูลส่วนตัวของคุณหรือของผู้อื่น",
+        "type": "Slash"
+    },
+    {
+        "name": "invite",
+        "description": "Invite the bot to your server / เชิญบอทเข้าเซิร์ฟเวอร์ของคุณ",
+        "type": "Slash"
+    },
+    {
+        "name": "join",
+        "description": "Joins your voice channel / เข้าร่วมช่องเสียงของคุณ",
+        "type": "Slash"
+    },
+    {
+        "name": "leave",
+        "description": "Disconnect the bot from voice channel / ตัดการเชื่อมต่อบอทจากช่องเสียง",
+        "type": "Slash"
+    },
+    {
+        "name": "play",
+        "description": "Play a song from any source / เล่นเพลงจากแหล่งต่างๆ",
+        "type": "Slash"
+    },
+    {
+        "name": "nowplaying",
+        "description": "Show the currently playing song / แสดงเพลงที่กำลังเล่นอยู่",
+        "type": "Slash"
+    },
+    {
+        "name": "volume",
+        "description": "Set music volume (1-100) / ปรับระดับเสียงเพลง (1-100)",
+        "type": "Slash"
+    },
+    {
+        "name": "pause",
+        "description": "Pause or Resume the music / หยุดชั่วคราว หรือ เล่นเพลงต่อ",
+        "type": "Slash"
+    },
+    {
+        "name": "skip",
+        "description": "Skip to next song / ข้ามไปเพลงถัดไป",
+        "type": "Slash"
+    },
+    {
+        "name": "skipto",
+        "description": "Skip to a specific song in the queue / ข้ามไปเพลงที่ระบุลำดับ",
+        "type": "Slash"
+    },
+    {
+        "name": "clear",
+        "description": "Clear all songs in the queue / ล้างคิวเพลงทั้งหมด",
+        "type": "Slash"
+    },
+    {
+        "name": "stop",
+        "description": "Stop music and disconnect / หยุดเพลงและออกจากช่องเสียง",
+        "type": "Slash"
+    },
+    {
+        "name": "seek",
+        "description": "Seek to a specific time in the song / เลื่อนไปยังช่วงเวลาที่ต้องการ",
+        "type": "Slash"
+    },
+    {
+        "name": "queue",
+        "description": "Show current music queue / แสดงคิวเพลงปัจจุบัน",
+        "type": "Slash"
+    },
+    {
+        "name": "fix",
+        "description": "Fix voice issues by changing region / แก้ไขปัญหาเสียงด้วยการเปลี่ยน Region",
+        "type": "Slash"
+    },
+    {
+        "name": "remove",
+        "description": "Remove a song from the queue / ลบเพลงออกจากคิว",
+        "type": "Slash"
+    },
+    {
+        "name": "shuffle",
+        "description": "Shuffle the queue / สุ่มลำดับเพลงในคิว",
+        "type": "Slash"
+    },
+    {
+        "name": "lyrics",
+        "description": "Get lyrics for the current or specified song / ดูเนื้อร้องเพลง",
+        "type": "Slash"
+    },
+    {
+        "name": "grab",
+        "description": "Save current song to your DM / ส่งข้อมูลเพลงเข้า DM",
+        "type": "Slash"
+    },
+    {
+        "name": "removedupes",
+        "description": "Remove duplicate songs from the queue / ลบเพลงซ้ำในคิว",
+        "type": "Slash"
+    },
+    {
+        "name": "move",
+        "description": "Move a song to a different position in the queue / ย้ายตำแหน่งเพลง",
+        "type": "Slash"
+    },
+    {
+        "name": "history",
+        "description": "Show recently played songs / แสดงประวัติเพลงที่เล่นไปแล้ว",
+        "type": "Slash"
+    },
+    {
+        "name": "shutdown",
+        "description": "Shut down the bot / ปิดการทำงานของบอท",
+        "type": "Slash"
+    },
+    {
+        "name": "reload",
+        "description": "Reload a cog / รีโหลดส่วนเสริม (Cog)",
+        "type": "Slash"
+    },
+    {
+        "name": "load",
+        "description": "Load a cog / โหลดส่วนเสริม (Cog)",
+        "type": "Slash"
+    },
+    {
+        "name": "unload",
+        "description": "Unload a cog / ยกเลิกโหลดส่วนเสริม (Cog)",
+        "type": "Slash"
+    },
+    {
+        "name": "sync",
+        "description": "Sync slash commands / ซิงค์คำสั่ง Slash Command",
+        "type": "Slash"
+    },
+    {
+        "name": "servers",
+        "description": "List top guilds by member count / แสดงรายการเซิร์ฟเวอร์เรียงตามจำนวนสมาชิก",
+        "type": "Slash"
+    },
+    {
+        "name": "leave_guild",
+        "description": "Force bot to leave a guild / บังคับบอทออกจากเซิร์ฟเวอร์",
+        "type": "Slash"
+    },
+    {
+        "name": "eval",
+        "description": "Execute Python code / รันโค้ด Python",
+        "type": "Slash"
+    },
+    {
+        "name": "say",
+        "description": "Make the bot send a message to a channel / ให้บอทส่งข้อความไปยังห้องที่กำหนด",
+        "type": "Slash"
+    },
+    {
+        "name": "dmowner",
+        "description": "DM the server owner / ส่งข้อความหาเจ้าของเซิร์ฟเวอร์",
+        "type": "Slash"
+    },
+    {
+        "name": "announce",
+        "description": "Send a DM to all server owners / ประกาศถึงเจ้าของเซิร์ฟเวอร์ทุกคน",
+        "type": "Slash"
+    },
+    {
+        "name": "setstatus",
+        "description": "Change bot status / เปลี่ยนสถานะของบอท",
+        "type": "Slash"
+    },
+    {
+        "name": "rename",
+        "description": "Change bot username / เปลี่ยนชื่อผู้ใช้ของบอท",
+        "type": "Slash"
+    },
+    {
+        "name": "setavatar",
+        "description": "Change bot avatar / เปลี่ยนรูปโปรไฟล์ของบอท",
+        "type": "Slash"
+    },
+    {
+        "name": "premium genkey",
+        "description": "Generate premium keys / สร้างคีย์พรีเมียม (Admin Only)",
+        "type": "Slash"
+    },
+    {
+        "name": "premium listkeys",
+        "description": "List active unused keys / ดูคีย์ที่ยังไม่ได้ใช้",
+        "type": "Slash"
+    },
+    {
+        "name": "premium stats",
+        "description": "View Premium System Statistics / ดูสถิติของระบบพรีเมียม",
+        "type": "Slash"
+    },
+    {
+        "name": "premium check",
+        "description": "Check premium status of a user / ตรวจสอบสถานะของสมาชิก",
+        "type": "Slash"
+    },
+    {
+        "name": "premium extend",
+        "description": "Extend user's premium by days / เพิ่มวันพรีเมียมให้สมาชิก",
+        "type": "Slash"
+    },
+    {
+        "name": "premium active",
+        "description": "List all active premium users / รายชื่อสมาชิกที่มีพรีเมียม",
+        "type": "Slash"
+    },
+    {
+        "name": "premium add",
+        "description": "Enable Lifetime Premium for a User",
+        "type": "Slash"
+    },
+    {
+        "name": "premium remove",
+        "description": "Disable Premium for a User",
+        "type": "Slash"
+    },
+    {
+        "name": "redeem",
+        "description": "Redeem a Premium Key / เติมพรีเมียมด้วยคีย์",
+        "type": "Slash"
+    },
+    {
+        "name": "branding",
+        "description": "Customize Bot Appearance & Music Embed / ปรับแต่งหน้าตาบอทและธีมเพลง",
+        "type": "Slash"
+    }
+]
