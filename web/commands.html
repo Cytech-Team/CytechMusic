@@ -86,31 +86,45 @@
 </head>
 
 <body class="dark-theme">
+    <!-- Background Elements -->
+    <div class="bg-gradient"></div>
+    <div class="mesh-grid"></div>
+
     <header id="header">
-        <nav class="container content-fade">
-            <a href="index.html" class="logo">
-                <img src="logo-circle.png" alt="Cyori">
-                <span>Cyori</span>
+        <div class="container">
+            <a href="index.html" class="brand">
+                <img src="logo-circle.png" alt="Cyori" class="brand-logo">
+                <span class="brand-name">Cyori</span>
             </a>
-            <div class="nav-links">
-                <a href="index.html" class="nav-link lang-text" data-en="Home" data-th="หน้าแรก">Home</a>
-                <a href="dashboard.html" class="nav-link lang-text" data-en="Dashboard"
-                    data-th="แผงควบคุม">Dashboard</a>
-                <a href="premium.html" class="nav-link lang-text" data-en="Premium" data-th="พรีเมียม">Premium</a>
-                <div class="nav-btns">
-                    <button class="lang-btn" onclick="toggleLanguage()">
+
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html" class="nav-link lang-text" data-en="Home" data-th="หน้าแรก">Home</a></li>
+                    <li><a href="dashboard.html" class="nav-link lang-text" data-en="Dashboard"
+                            data-th="แผงควบคุม">Dashboard</a></li>
+                    <li><a href="premium.html" class="nav-link lang-text" data-en="Premium"
+                            data-th="พรีเมียม">Premium</a></li>
+                </ul>
+            </nav>
+
+            <div class="header-actions">
+                <div class="lang-switch">
+                    <button id="lang-btn" onclick="toggleLanguage()" class="btn-glass"
+                        style="padding: 8px 16px; border-radius: 20px;">
                         <i class="fas fa-globe"></i> <span id="curr-lang">EN</span>
                     </button>
-                    <a href="#" class="btn btn-primary login-btn" onclick="login()">
-                        <i class="fab fa-discord"></i> <span class="lang-text" data-en="Login"
-                            data-th="เข้าสู่ระบบ">Login</span>
-                    </a>
+                </div>
+
+                <a href="#" class="btn btn-primary login-btn" onclick="login()">
+                    <i class="fab fa-discord"></i>
+                    <span class="lang-text" data-en="Login" data-th="เข้าสู่ระบบ">Login</span>
+                </a>
+
+                <div class="hamburger mobile-toggle" onclick="toggleMenu()">
+                    <i class="fas fa-bars"></i>
                 </div>
             </div>
-            <button class="hamburger" onclick="toggleMenu()">
-                <i class="fas fa-bars"></i>
-            </button>
-        </nav>
+        </div>
     </header>
 
     <div class="page-header">
@@ -118,7 +132,7 @@
             <span class="hero-badge">API Sync</span>
             <h1 class="hero-title" style="font-size: 3.5rem; margin-bottom: 20px;">Slash Commands</h1>
             <p class="hero-desc" style="max-width: 700px; margin: 0 auto;">
-                Explore all available slash commands and their parameters, synced directly from the bot's payload.
+                Explore all available slash commands and their parameters, synced directly from the CytechCore engine.
             </p>
         </div>
     </div>
@@ -131,7 +145,9 @@
         </div>
 
         <div id="payload-grid" class="grid-3" style="min-height: 400px;">
-            <!-- Dynamic Content -->
+            <div style="grid-column: 1/-1; text-align: center; padding: 100px;">
+                <i class="fas fa-circle-notch fa-spin fa-3x" style="color: var(--gold-primary);"></i>
+            </div>
         </div>
     </div>
 
@@ -165,7 +181,7 @@
             try {
                 grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 100px;"><i class="fas fa-circle-notch fa-spin fa-3x" style="color: var(--gold-primary);"></i></div>';
 
-                const url = IS_LOCAL ? "http://localhost:8000/api/commands" : "/api/commands";
+                const url = IS_LOCAL ? "http://localhost:8000/api/commands" : "/api/proxy?action=commands";
                 const res = await fetch(url);
                 const data = await res.json();
 

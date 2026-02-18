@@ -966,7 +966,8 @@ class DashboardAPI(commands.Cog):
             'stats': self.get_global_stats,
             'find_voice': self.find_voice_channel,
             'bot_guilds': self.get_bot_guilds,
-            'guild_settings': self.get_guild_settings
+            'guild_settings': self.get_guild_settings,
+            'commands': self.get_commands
         }
         
         handler = handlers.get(action)
