@@ -19,6 +19,14 @@
     <link rel="stylesheet" href="style.css">
 
     <style>
+        :root {
+            --cat-music: #FFD700;
+            --cat-info: #00F2FE;
+            --cat-settings: #70FF00;
+            --cat-owner: #FF3CAC;
+            --cat-general: #FFFFFF;
+        }
+
         .page-header {
             padding: 140px 0 80px;
             text-align: center;
@@ -33,7 +41,7 @@
 
         .commands-search-wrapper {
             max-width: 600px;
-            margin: -40px auto 50px;
+            margin: -40px auto 30px;
             position: relative;
             z-index: 10;
         }
@@ -68,6 +76,54 @@
             font-size: 1.2rem;
         }
 
+        /* Categorization UI */
+        .category-grid {
+            margin-top: 60px;
+        }
+
+        .category-section {
+            margin-bottom: 60px;
+            scroll-margin-top: 100px;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .category-icon {
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gold-primary);
+            font-size: 1.25rem;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .category-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            text-transform: capitalize;
+        }
+
+        .category-badge {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
         .payload-badge {
             background: var(--gold-metallic);
             color: #000;
@@ -81,7 +137,7 @@
 
         .option-tag {
             font-size: 0.75rem;
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.04);
             padding: 5px 12px;
             border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -108,20 +164,23 @@
         .cmd-card {
             display: flex;
             flex-direction: column;
-            min-height: 200px;
+            min-height: 180px;
             border: 1px solid rgba(255, 255, 255, 0.03);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.3s, box-shadow 0.3s;
+            background: rgba(20, 20, 20, 0.4);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .cmd-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            border-color: rgba(255, 215, 0, 0.3);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 215, 0, 0.05);
+            transform: translateY(-8px);
+            border-color: rgba(255, 215, 0, 0.25);
+            background: rgba(25, 25, 25, 0.7);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.05);
         }
 
         .cmd-name {
             color: var(--gold-primary);
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             font-weight: 800;
             font-family: 'Space Grotesk', sans-serif;
         }
@@ -133,6 +192,39 @@
             background: rgba(255, 255, 255, 0.02);
             border-radius: 30px;
             border: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+
+        /* Filter Pills */
+        .filter-pills {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 40px;
+        }
+
+        .pill {
+            padding: 8px 18px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pill:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .pill.active {
+            background: rgba(255, 215, 0, 0.15);
+            border-color: var(--gold-primary);
+            color: var(--gold-primary);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.1);
         }
     </style>
 </head>
@@ -223,11 +315,15 @@
         <div class="commands-search-wrapper">
             <i class="fas fa-search commands-search-icon"></i>
             <input type="text" id="command-search" class="commands-search-input"
-                placeholder="Search commands (e.g. play, skip, filter)..." oninput="filterCommands()">
+                placeholder="Search commands (e.g. play, skip, filter)..." oninput="handleSearch()">
         </div>
 
-        <div id="payload-grid" class="grid-3" style="min-height: 400px;">
-            <div style="grid-column: 1/-1; text-align: center; padding: 120px;">
+        <div id="filter-pills-container" class="filter-pills">
+            <!-- Pills added via JS -->
+        </div>
+
+        <div id="category-grid" class="category-grid">
+            <div style="text-align: center; padding: 120px;">
                 <i class="fas fa-circle-notch fa-spin fa-3x"
                     style="color: var(--gold-primary); margin-bottom: 20px;"></i>
                 <p class="lang-text" data-en="Synchronizing with Bot..." data-th="กำลังเชื่อมต่อกับระบบบอท...">
@@ -299,140 +395,167 @@
 
     <script src="script.js"></script>
     <script>
-        let allCommands = [];
+        let allCommands = []; // Complete list of commands
+        let activeCategory = 'all';
+
+        const categoryMeta = {
+            'Music': { icon: 'fa-music', color: '#FFD700' },
+            'Settings': { icon: 'fa-cog', color: '#70FF00' },
+            'Info': { icon: 'fa-info-circle', color: '#00F2FE' },
+            'General': { icon: 'fa-th-large', color: '#FFFFFF' },
+            'Filter': { icon: 'fa-vial', color: '#6610f2' },
+            'Premium': { icon: 'fa-crown', color: '#FFD700' },
+            'Owner': { icon: 'fa-shield-alt', color: '#FF3CAC' },
+            'Other': { icon: 'fa-cube', color: '#A0A0A0' }
+        };
 
         async function tryFetchLocalPayload() {
             try {
-                console.log("[Commands] Attempting local payload fallback...");
                 const res = await fetch("slash_commands_payload.json");
-                if (!res.ok) throw new Error("Local payload file not found (404)");
-
-                const contentType = res.headers.get("content-type");
-                if (contentType && !contentType.includes("application/json")) {
-                    throw new Error("Local payload returned non-JSON content (likely HTML 404)");
-                }
-
-                return await res.json();
-            } catch (e) {
-                console.error("[Commands] Local payload fallback failed:", e);
-                return null;
-            }
+                if (!res.ok) return null;
+                const data = await res.json();
+                return data.map(c => ({ ...c, category: c.category || 'Other' }));
+            } catch (e) { return null; }
         }
 
         async function loadCommands() {
-            const grid = document.getElementById('payload-grid');
-
+            const grid = document.getElementById('category-grid');
             var isLocalEnv = false;
-            try { isLocalEnv = IS_LOCAL; } catch (e) {
-                isLocalEnv = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-            }
+            try { isLocalEnv = IS_LOCAL; } catch (e) { isLocalEnv = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'; }
 
             try {
-                // Determine API Endpoint - Try DIRECT /api/commands first as it's more reliable
+                // Try Direct API
                 const url = isLocalEnv ? "http://localhost:8000/api/commands" : "/api/commands";
-                console.log("[Commands] Fetching from:", url);
+                console.log("[Commands] Fetching:", url);
 
-                let res = await fetch(url).catch(err => {
-                    console.warn("[Commands] Direct API failed, trying proxy...", err);
-                    return null;
-                });
-
-                // If direct fails or returns error, try proxy
+                let res = await fetch(url).catch(e => null);
                 if (!res || !res.ok) {
                     const proxyUrl = isLocalEnv ? "http://localhost:8000/api/proxy?action=commands" : "/api/proxy?action=commands";
-                    console.log("[Commands] Fetching from proxy:", proxyUrl);
                     res = await fetch(proxyUrl).catch(e => null);
                 }
 
-                if (!res || !res.ok) {
-                    throw new Error("Both direct and proxy API failed");
-                }
-
-                const data = await res.json();
-                console.log("[Commands] Data received:", data);
-
-                if (data.error || data.status === "error") {
-                    console.warn("[Commands] API returned logical error, falling back to local payload.", data);
-                    allCommands = await tryFetchLocalPayload();
-                } else if (data.slash_payload && data.slash_payload.length > 0) {
-                    allCommands = data.slash_payload;
-                } else if (data.commands && data.commands.length > 0) {
-                    allCommands = data.commands.map(c => ({
-                        name: c.name,
-                        description: c.description || "No description",
-                        options: c.args ? [{ name: c.args, required: false }] : [],
-                        is_legacy: true
-                    }));
-                } else if (Array.isArray(data)) {
-                    allCommands = data;
+                if (res && res.headers.get("content-type")?.includes("application/json")) {
+                    const data = await res.json();
+                    if (data.commands && Array.isArray(data.commands)) {
+                        allCommands = data.commands;
+                    } else if (data.slash_payload && Array.isArray(data.slash_payload)) {
+                        allCommands = data.slash_payload.map(c => ({ ...c, category: c.category || 'Music' }));
+                    }
                 }
 
                 if (!allCommands || allCommands.length === 0) {
-                    allCommands = await tryFetchLocalPayload();
+                    allCommands = await tryFetchLocalPayload() || [];
                 }
 
-                renderCommands(allCommands);
+                initFilterPills();
+                renderCategorized();
                 if (typeof updateLanguage === 'function') updateLanguage();
 
             } catch (e) {
-                console.error("[Commands] API Process Error:", e);
-                allCommands = await tryFetchLocalPayload();
-                if (allCommands) {
-                    renderCommands(allCommands);
-                } else {
-                    grid.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fas fa-exclamation-triangle fa-3x" style="color: #ff4444; margin-bottom: 20px;"></i>
-                            <h3 class="lang-text" data-en="Failed to link with Bot" data-th="ไม่สามารถเชื่อมต่อกับบอทได้">Failed to link with Bot</h3>
-                            <p style="opacity: 0.6; margin-top: 10px;">The background music engine might be offline.</p>
-                            <button class="btn btn-glass" onclick="loadCommands()" style="margin-top: 20px;">Retry</button>
-                        </div>
-                    `;
-                }
+                console.error("[Commands] Load error:", e);
+                allCommands = await tryFetchLocalPayload() || [];
+                initFilterPills();
+                renderCategorized();
             }
         }
 
-        function renderCommands(cmds) {
-            const grid = document.getElementById('payload-grid');
-            if (!cmds || cmds.length === 0) {
-                grid.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-search-minus fa-3x" style="opacity: 0.3; margin-bottom: 20px;"></i>
-                        <h3 class="lang-text" data-en="No matching commands" data-th="ไม่พบคำสั่งที่ระบุ">No matching commands</h3>
-                    </div>
-                `;
-                return;
-            }
+        function initFilterPills() {
+            const container = document.getElementById('filter-pills-container');
+            const categories = ['all', ...new Set(allCommands.map(c => c.category || 'Other'))];
 
-            grid.innerHTML = cmds.map(cmd => `
-                <div class="card cmd-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <span class="cmd-name">/${cmd.name}</span>
-                        <span class="payload-badge">${cmd.is_legacy ? 'Legacy' : 'Slash'}</span>
-                    </div>
-                    <p class="cmd-desc" style="font-size: 0.95rem; margin-bottom: 20px; line-height: 1.6; color: rgba(255,255,255,0.7); flex-grow: 1;">${cmd.description || "No description provided."}</p>
-                    ${cmd.options && cmd.options.length > 0 ? `
-                        <div style="margin-top:auto; padding-top:15px; border-top:1px solid rgba(255,255,255,0.05);">
-                            <div style="display:flex; flex-wrap:wrap; gap:8px;">
-                                ${cmd.options.map(opt => `
-                                    <span class="option-tag ${opt.required ? 'required' : ''}" title="${opt.description || ''}">
-                                        ${opt.name}${opt.required ? '<span class="required-star">*</span>' : ''}
-                                    </span>
-                                `).join('')}
-                            </div>
-                        </div>
-                    ` : ''}
+            container.innerHTML = categories.map(cat => `
+                <div class="pill ${cat === 'all' ? 'active' : ''}" onclick="setCategory('${cat}', this)">
+                    ${cat.toUpperCase()}
                 </div>
             `).join('');
         }
 
-        function filterCommands() {
+        function setCategory(cat, el) {
+            activeCategory = cat;
+            document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
+            handleSearch();
+        }
+
+        function handleSearch() {
             const q = document.getElementById('command-search').value.toLowerCase();
-            const filtered = allCommands.filter(c =>
-                c.name.toLowerCase().includes(q) ||
-                (c.description && c.description.toLowerCase().includes(q))
-            );
-            renderCommands(filtered);
+            let filtered = allCommands;
+
+            if (activeCategory !== 'all') {
+                filtered = filtered.filter(c => c.category === activeCategory);
+            }
+
+            if (q) {
+                filtered = filtered.filter(c =>
+                    c.name.toLowerCase().includes(q) ||
+                    (c.description && c.description.toLowerCase().includes(q))
+                );
+            }
+
+            renderCategorized(filtered);
+        }
+
+        function renderCategorized(cmds = allCommands) {
+            const grid = document.getElementById('category-grid');
+            if (!cmds || cmds.length === 0) {
+                grid.innerHTML = `<div class="empty-state"><h3>No matching commands</h3></div>`;
+                return;
+            }
+
+            // Group by Category
+            const groups = {};
+            cmds.forEach(c => {
+                const cat = c.category || 'Other';
+                if (!groups[cat]) groups[cat] = [];
+                groups[cat].push(c);
+            });
+
+            const sortedCats = Object.keys(groups).sort((a, b) => {
+                if (a === 'Music') return -1;
+                if (b === 'Music') return 1;
+                return a.localeCompare(b);
+            });
+
+            grid.innerHTML = sortedCats.map(cat => {
+                const meta = categoryMeta[cat] || categoryMeta['Other'];
+                const items = groups[cat];
+
+                return `
+                    <div class="category-section" id="cat-${cat}">
+                        <div class="category-header">
+                            <div class="category-icon" style="background: ${meta.color}15; color: ${meta.color}; border-color: ${meta.color}30;">
+                                <i class="fas ${meta.icon}"></i>
+                            </div>
+                            <h2 class="category-title">${cat}</h2>
+                            <span class="category-badge">${items.length} Commands</span>
+                        </div>
+                        <div class="grid-3">
+                            ${items.map(cmd => `
+                                <div class="card cmd-card">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                                        <span class="cmd-name">/${cmd.name}</span>
+                                        <span class="payload-badge">Slash</span>
+                                    </div>
+                                    <p class="cmd-desc" style="font-size: 0.95rem; margin-bottom: 20px; line-height: 1.6; color: rgba(255,255,255,0.65); flex-grow: 1;">
+                                        ${cmd.description || "No description provided."}
+                                    </p>
+                                    ${cmd.options && cmd.options.length > 0 ? `
+                                        <div style="margin-top:auto; padding-top:15px; border-top:1px solid rgba(255,255,255,0.05);">
+                                            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                                                ${cmd.options.map(opt => `
+                                                    <span class="option-tag ${opt.required ? 'required' : ''}" title="${opt.description || ''}">
+                                                        ${opt.name}${opt.required ? '<span class="required-star">*</span>' : ''}
+                                                    </span>
+                                                `).join('')}
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         document.addEventListener('DOMContentLoaded', loadCommands);
