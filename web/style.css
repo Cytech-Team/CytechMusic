@@ -390,21 +390,30 @@ header .container {
     margin-top: 40px;
 }
 
-.stat-item {
+.stat-box {
     text-align: center;
     background: rgba(255, 255, 255, 0.03);
-    padding: 20px 40px;
-    border-radius: 16px;
+    padding: 24px 40px;
+    border-radius: 20px;
     border: 1px solid var(--glass-border);
     min-width: 200px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s var(--ease-smooth);
 }
 
-.stat-value {
+.stat-box:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 215, 0, 0.05);
+    border-color: var(--gold-primary-faded);
+}
+
+.stat-number {
     display: block;
-    font-size: 2.5rem;
+    font-size: 2.8rem;
     font-weight: 800;
     color: var(--gold-primary);
     margin-bottom: 5px;
+    font-family: 'Space Grotesk', sans-serif;
 }
 
 .stat-label {
@@ -1746,21 +1755,29 @@ input[type=range]::-moz-range-track {
         margin-bottom: 20px;
     }
 
-    /* Top.gg Box Center */
+    /* Top.gg Box Adjustment */
     .topgg-box {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        min-width: unset !important;
         display: flex;
         justify-content: center;
         align-items: center;
-        margin-top: 10px;
+        margin: 10px 0;
     }
 
     .topgg-box img {
-        max-width: 180px;
+        width: 100%;
+        max-width: 220px;
+        height: auto;
+        display: block;
         transition: transform 0.3s ease;
     }
 
     .topgg-box:hover img {
-        transform: scale(1.05);
+        transform: translateY(-5px) scale(1.05);
     }
 
     /* Login Wall Fix for Mobile */
