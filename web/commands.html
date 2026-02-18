@@ -5,11 +5,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bot Commands | Cyori</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/all.min.css">
+    <link rel="icon" href="logo-circle.png" type="image/png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+
     <style>
         .page-header {
             padding: 140px 0 60px;
@@ -23,14 +31,15 @@
             padding: 0 20px 100px;
         }
 
-        .search-wrapper-commands {
+        /* Override style.css search-wrapper for this specific page if needed, but keeping it consistent */
+        .commands-search-wrapper {
             max-width: 600px;
             margin: -30px auto 40px;
             position: relative;
             z-index: 10;
         }
 
-        .search-input-commands {
+        .commands-search-input {
             width: 100%;
             padding: 18px 25px 18px 55px;
             background: rgba(255, 255, 255, 0.03);
@@ -42,14 +51,14 @@
             transition: all 0.3s ease;
         }
 
-        .search-input-commands:focus {
+        .commands-search-input:focus {
             outline: none;
             border-color: var(--gold-primary);
             box-shadow: 0 0 20px rgba(255, 204, 51, 0.1);
             background: rgba(255, 255, 255, 0.05);
         }
 
-        .search-icon-commands {
+        .commands-search-icon {
             position: absolute;
             left: 22px;
             top: 50%;
@@ -85,20 +94,11 @@
             margin-left: 2px;
         }
 
-        .command-card {
+        /* Ensure command cards match style.css .card precisely */
+        .cmd-card {
             display: flex;
             flex-direction: column;
-            background: var(--bg-card);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 25px;
-            transition: 0.3s;
-        }
-
-        .command-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--gold-primary);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            min-height: 180px;
         }
     </style>
 </head>
@@ -107,8 +107,8 @@
     <!-- Background Elements -->
     <div class="bg-gradient"></div>
     <div class="mesh-grid"></div>
-    <div class="menu-overlay" id="overlay" onclick="toggleMenu()"></div>
 
+    <!-- Header (Synced 1:1 with index.html) -->
     <header id="header">
         <div class="container">
             <a href="index.html" class="brand">
@@ -118,11 +118,36 @@
 
             <nav>
                 <ul class="nav-links">
-                    <li><a href="index.html" class="nav-link lang-text" data-en="Home" data-th="หน้าแรก">Home</a></li>
+                    <li><a href="index.html#hero" class="nav-link lang-text" data-en="Home" data-th="หน้าแรก">Home</a>
+                    </li>
+                    <li><a href="index.html#features" class="nav-link lang-text" data-en="Features"
+                            data-th="ฟีเจอร์">Features</a></li>
+                    <li><a href="commands.html" class="nav-link active lang-text" data-en="Commands"
+                            data-th="คำสั่ง">Commands</a></li>
                     <li><a href="dashboard.html" class="nav-link lang-text" data-en="Dashboard"
                             data-th="แผงควบคุม">Dashboard</a></li>
                     <li><a href="premium.html" class="nav-link lang-text" data-en="Premium"
                             data-th="พรีเมียม">Premium</a></li>
+                    <li><a href="https://top.gg/bot/1469606905948405833/vote" target="_blank" class="nav-link lang-text"
+                            data-en="Vote" data-th="โหวต">Vote</a></li>
+
+                    <!-- Mobile Exclusive Actions -->
+                    <li class="mobile-only-action">
+                        <div class="mobile-menu-divider"></div>
+                        <button onclick="toggleLanguage()" class="btn-glass mobile-nav-btn">
+                            <i class="fas fa-globe"></i>
+                            <span class="lang-text" data-en="Switch to Thai"
+                                data-th="เปลี่ยนเป็นภาษาอังกฤษ">Language</span>
+                        </button>
+                    </li>
+                    <li class="mobile-only-action">
+                        <a href="#" class="btn btn-primary login-btn" id="mobile-login-btn-tray" onclick="login()"
+                            style="width: 100%; margin-top: 10px;">
+                            <i class="fab fa-discord"></i>
+                            <span class="lang-text" data-en="Login to Dashboard"
+                                data-th="เข้าสู่ระบบแดชบอร์ด">Login</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
 
@@ -150,20 +175,22 @@
         <div class="container">
             <span class="hero-badge lang-text" data-en="API Sync" data-th="ซิงค์ข้อมูลจริง">API Sync</span>
             <h1 class="hero-title lang-text" data-en="Slash Commands" data-th="คำสั่งบอท"
-                style="font-size: 3.5rem; margin-bottom: 20px;">Slash Commands</h1>
+                style="font-size: 3.5rem; margin-bottom: 20px; font-family: 'Space Grotesk', sans-serif;">Slash Commands
+            </h1>
             <p class="hero-desc lang-text"
                 data-en="Explore all available slash commands and their parameters, synced directly from the CytechCore engine."
                 data-th="สำรวจคำสั่ง Slash ทั้งหมดและพารามิเตอร์ต่างๆ ที่ซิงค์โดยตรงจากระบบ CytechCore"
-                style="max-width: 700px; margin: 0 auto;">
+                style="max-width: 700px; margin: 0 auto; color: var(--text-muted);">
                 Explore all available slash commands and their parameters, synced directly from the CytechCore engine.
             </p>
         </div>
     </div>
 
     <div class="commands-container">
-        <div class="search-wrapper-commands">
-            <i class="fas fa-search search-icon-commands"></i>
-            <input type="text" id="command-search" class="search-input-commands"
+        <div class="commands-search-wrapper">
+            <i class="fas fa-search commands-icon-commands"></i>
+            <i class="fas fa-search commands-search-icon"></i>
+            <input type="text" id="command-search" class="commands-search-input"
                 placeholder="Search for commands or descriptions..." oninput="filterCommands()">
         </div>
 
@@ -174,6 +201,7 @@
         </div>
     </div>
 
+    <!-- Footer (Synced 1:1 with index.html) -->
     <footer>
         <div class="container">
             <div class="footer-content">
@@ -185,7 +213,7 @@
                     <p class="lang-text"
                         data-en="The ultimate music experience for your Discord server. Remade for performance and style."
                         data-th="ประสบการณ์การฟังเพลงที่ดีที่สุดสำหรับ Discord ของคุณ ออกแบบใหม่เพื่อประสิทธิภาพและสไตล์ที่เหนือกว่า">
-                        The ultimate music experience for your Discord server. Remade for performance and style.
+                        The ultimate music experience.
                     </p>
                 </div>
 
@@ -198,16 +226,17 @@
                         </li>
                         <li><a href="dashboard.html" class="lang-text" data-en="Dashboard"
                                 data-th="แดชบอร์ด">Dashboard</a></li>
-                        <li><a href="commands.html" class="lang-text" data-en="Commands" data-th="คำสั่ง">Commands</a>
-                        </li>
+                        <li><a href="https://top.gg/bot/1469606905948405833/vote" target="_blank" class="lang-text"
+                                data-en="Vote on Top.gg" data-th="โหวตบน Top.gg">Vote on Top.gg</a></li>
                     </ul>
                 </div>
 
                 <div class="footer-col">
                     <h4 class="lang-text" data-en="Resources" data-th="ทรัพยากร">Resources</h4>
                     <ul>
-                        <li><a href="#" class="lang-text" data-en="Documentation"
+                        <li><a href="documentation.html" class="lang-text" data-en="Documentation"
                                 data-th="คู่มือการใช้">Documentation</a></li>
+                        <li><a href="#" class="lang-text" data-en="API Status" data-th="สถานะระบบ">API Status</a></li>
                         <li><a href="https://discord.gg/jcJ2P6Bh2p" class="lang-text" data-en="Community"
                                 data-th="ชุมชน">Community</a></li>
                     </ul>
@@ -219,29 +248,28 @@
                         <li><a href="privacy.html" class="lang-text" data-en="Privacy Policy"
                                 data-th="นโยบายความเป็นส่วนตัว">Privacy Policy</a></li>
                         <li><a href="terms.html" class="lang-text" data-en="Terms of Service"
-                                data-th="เงื่อนไขการใช้งาน">Terms of Service</a></li>
+                                data-th="ข้อตกลงการใช้บริการ">Terms of Service</a></li>
                     </ul>
                 </div>
             </div>
-            <div class="copyright">
-                <p>&copy; 2026 CytechX Team. All rights reserved.</p>
+
+            <div class="copyright lang-text" data-en="© 2026 Cytech Team. All rights reserved."
+                data-th="© 2026 Cytech Team สงวนลิขสิทธิ์">
+                © 2026 Cytech Team. All rights reserved.
             </div>
         </div>
     </footer>
 
+    <!-- Overlay for mobile menu -->
+    <div class="menu-overlay" id="overlay" onclick="toggleMenu()"></div>
+
     <script src="script.js"></script>
     <script>
-        // Global Local Detection
-        const IS_LOCAL = window.location.hostname === 'localhost' ||
-            window.location.hostname === '127.0.0.1' ||
-            window.location.protocol === 'file:';
-
         let allSlashCommands = [];
 
         async function loadPayloadOnly() {
             const grid = document.getElementById('payload-grid');
             try {
-                // Ensure placeholder
                 grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 100px;"><i class="fas fa-circle-notch fa-spin fa-3x" style="color: var(--gold-primary);"></i></div>';
 
                 const url = IS_LOCAL ? "http://localhost:8000/api/commands" : "/api/proxy?action=commands";
@@ -251,7 +279,6 @@
                 allSlashCommands = data.slash_payload || [];
                 renderSlashCommands(allSlashCommands);
 
-                // Update language for dynamically rendered content if script.js is loaded
                 if (typeof updateLanguage === 'function') updateLanguage();
             } catch (e) {
                 console.error("[Commands] Load error:", e);
@@ -267,7 +294,7 @@
             }
 
             grid.innerHTML = cmds.map(cmd => `
-                <div class="command-card" data-cmd-name="${cmd.name}">
+                <div class="card cmd-card" data-cmd-name="${cmd.name}">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                         <code style="color:var(--gold-primary); font-size: 1.1rem; font-weight: 800;">/${cmd.name}</code>
                         <span class="payload-badge">Slash</span>
@@ -298,7 +325,6 @@
             renderSlashCommands(filtered);
         }
 
-        // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             loadPayloadOnly();
         });
