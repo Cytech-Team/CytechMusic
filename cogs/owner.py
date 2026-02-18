@@ -18,10 +18,17 @@ class Owner(commands.Cog):
             raise commands.NotOwner("You do not own this bot.")
         return True
 
+    @commands.hybrid_group(name="own", description="Owner-only management commands / คำสั่งจัดการสำหรับเจ้าของบอท")
+    @commands.is_owner()
+    async def own_group(self, ctx: commands.Context):
+        """Main group for owner commands."""
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(ctx.command)
+
     # ===================================================================
     # SHUTDOWN
     # ===================================================================
-    @commands.hybrid_command(name="shutdown", description="Shut down the bot / ปิดการทำงานของบอท")
+    @own_group.command(name="shutdown", description="Shut down the bot / ปิดการทำงานของบอท")
     @commands.is_owner()
     async def shutdown(self, ctx: commands.Context):
         await ctx.defer(ephemeral=True)
@@ -31,7 +38,7 @@ class Owner(commands.Cog):
     # ===================================================================
     # EXTENSION MANAGEMENT
     # ===================================================================
-    @commands.hybrid_command(name="reload", description="Reload a cog / รีโหลดส่วนเสริม (Cog)")
+    @own_group.command(name="reload", description="Reload a cog / รีโหลดส่วนเสริม (Cog)")
     @commands.is_owner()
     async def reload(self, ctx: commands.Context, cog: str):
         await ctx.defer(ephemeral=True)
@@ -41,7 +48,7 @@ class Owner(commands.Cog):
         except Exception as e:
             await ctx.send(f"Failed to reload `{cog}`:\n```py\n{e}\n```", ephemeral=True)
 
-    @commands.hybrid_command(name="load", description="Load a cog / โหลดส่วนเสริม (Cog)")
+    @own_group.command(name="load", description="Load a cog / โหลดส่วนเสริม (Cog)")
     @commands.is_owner()
     async def load(self, ctx: commands.Context, cog: str):
         await ctx.defer(ephemeral=True)
@@ -51,7 +58,7 @@ class Owner(commands.Cog):
         except Exception as e:
             await ctx.send(f"Failed to load `{cog}`:\n```py\n{e}\n```", ephemeral=True)
 
-    @commands.hybrid_command(name="unload", description="Unload a cog / ยกเลิกโหลดส่วนเสริม (Cog)")
+    @own_group.command(name="unload", description="Unload a cog / ยกเลิกโหลดส่วนเสริม (Cog)")
     @commands.is_owner()
     async def unload(self, ctx: commands.Context, cog: str):
         await ctx.defer(ephemeral=True)
@@ -64,7 +71,7 @@ class Owner(commands.Cog):
     # ===================================================================
     # SYNC COMMANDS
     # ===================================================================
-    @commands.hybrid_command(name="sync", description="Sync slash commands / ซิงค์คำสั่ง Slash Command")
+    @own_group.command(name="sync", description="Sync slash commands / ซิงค์คำสั่ง Slash Command")
     @commands.is_owner()
     async def sync(self, ctx: commands.Context):
         await ctx.defer(ephemeral=True)
@@ -77,7 +84,7 @@ class Owner(commands.Cog):
     # ===================================================================
     # SERVER MANAGEMENT
     # ===================================================================
-    @commands.hybrid_command(name="servers", description="List top guilds by member count / แสดงรายการเซิร์ฟเวอร์เรียงตามจำนวนสมาชิก")
+    @own_group.command(name="servers", description="List top guilds by member count / แสดงรายการเซิร์ฟเวอร์เรียงตามจำนวนสมาชิก")
     @commands.is_owner()
     async def servers(self, ctx: commands.Context):
         await ctx.defer(ephemeral=True)
@@ -94,7 +101,7 @@ class Owner(commands.Cog):
             
         await ctx.send(msg, ephemeral=True)
 
-    @commands.hybrid_command(name="leave_guild", description="Force bot to leave a guild / บังคับบอทออกจากเซิร์ฟเวอร์")
+    @own_group.command(name="leave", description="Force bot to leave a guild / บังคับบอทออกจากเซิร์ฟเวอร์")
     @commands.is_owner()
     async def leave_guild(self, ctx: commands.Context, guild_id: str):
         await ctx.defer(ephemeral=True)
@@ -111,7 +118,7 @@ class Owner(commands.Cog):
     # ===================================================================
     # EVAL (ปลอดภัยและสวยขึ้น)
     # ===================================================================
-    @commands.hybrid_command(name="eval", description="Execute Python code / รันโค้ด Python")
+    @own_group.command(name="eval", description="Execute Python code / รันโค้ด Python")
     @commands.is_owner()
     async def eval(self, ctx: commands.Context, *, code: str):
         await ctx.defer(ephemeral=True)
@@ -153,7 +160,7 @@ class Owner(commands.Cog):
     # ===================================================================
     # SAY
     # ===================================================================
-    @commands.hybrid_command(name="say", description="Make the bot send a message to a channel / ให้บอทส่งข้อความไปยังห้องที่กำหนด")
+    @own_group.command(name="say", description="Make the bot send a message to a channel / ให้บอทส่งข้อความไปยังห้องที่กำหนด")
     @commands.is_owner()
     async def say(self, ctx: commands.Context, channel: discord.TextChannel, *, message: str):
         await ctx.defer(ephemeral=True)
@@ -166,7 +173,7 @@ class Owner(commands.Cog):
     # ===================================================================
     # DM OWNER
     # ===================================================================
-    @commands.hybrid_command(name="dmowner", description="DM the server owner / ส่งข้อความหาเจ้าของเซิร์ฟเวอร์")
+    @own_group.command(name="dm", description="DM the server owner / ส่งข้อความหาเจ้าของเซิร์ฟเวอร์")
     @commands.is_owner()
     async def dmowner(self, ctx: commands.Context, *, message: str):
         if not ctx.guild:
@@ -186,7 +193,7 @@ class Owner(commands.Cog):
     # ===================================================================
     # ANNOUNCE TO ALL OWNERS
     # ===================================================================
-    @commands.hybrid_command(name="announce", description="Send a DM to all server owners / ประกาศถึงเจ้าของเซิร์ฟเวอร์ทุกคน")
+    @own_group.command(name="announce", description="Send a DM to all server owners / ประกาศถึงเจ้าของเซิร์ฟเวอร์ทุกคน")
     @commands.is_owner()
     async def announce(self, ctx: commands.Context, *, message: str):
         await ctx.defer(ephemeral=True)
@@ -219,7 +226,7 @@ class Owner(commands.Cog):
     # ===================================================================
     # BOT PRESENCE & IDENTITY (NEW)
     # ===================================================================
-    @commands.hybrid_command(name="setstatus", description="Change bot status / เปลี่ยนสถานะของบอท")
+    @own_group.command(name="status", description="Change bot status / เปลี่ยนสถานะของบอท")
     @commands.is_owner()
     @app_commands.describe(type="Type: playing, listening... / ประเภทสถานะ", text="Status text / ข้อความสถานะ")
     @app_commands.choices(type=[
@@ -243,7 +250,7 @@ class Owner(commands.Cog):
         except Exception as e:
             await ctx.send(f"Failed to set status: {e}", ephemeral=True)
 
-    @commands.hybrid_command(name="rename", description="Change bot username / เปลี่ยนชื่อผู้ใช้ของบอท")
+    @own_group.command(name="rename", description="Change bot username / เปลี่ยนชื่อผู้ใช้ของบอท")
     @commands.is_owner()
     async def rename(self, ctx: commands.Context, *, name: str):
         await ctx.defer(ephemeral=True)
@@ -253,7 +260,7 @@ class Owner(commands.Cog):
         except discord.HTTPException as e:
             await ctx.send(f"Failed (Rate Limit?): {e}", ephemeral=True)
 
-    @commands.hybrid_command(name="setavatar", description="Change bot avatar / เปลี่ยนรูปโปรไฟล์ของบอท")
+    @own_group.command(name="avatar", description="Change bot avatar / เปลี่ยนรูปโปรไฟล์ของบอท")
     @commands.is_owner()
     async def setavatar(self, ctx: commands.Context, url: str = None):
         await ctx.defer(ephemeral=True)
