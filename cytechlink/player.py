@@ -655,6 +655,65 @@ class MusicControls(discord.ui.View):
         except Exception as e:
             await interaction.followup.send(f"❌ Random search failed: {e}", ephemeral=True)
 
+class JukeboxIdleView(discord.ui.View):
+    def __init__(self, player) -> None:
+        super().__init__(timeout=None)
+        self.player = player
+
+    @discord.ui.button(emoji="🎲", label="Random", custom_id='idle_random_button', style=discord.ButtonStyle.gray)
+    async def idle_random_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not interaction.response.is_done():
+            try:
+                await interaction.response.defer(thinking=True, ephemeral=True)
+            except: pass
+            
+        bot = self.player.bot if self.player else interaction.client
+        lang = await bot.get_lang(interaction.guild.id)
+        
+        # 1. VC Check
+        if not interaction.user.voice or not interaction.user.voice.channel:
+             return await interaction.followup.send(bot.i18n.get("error_voice_required", lang), ephemeral=True)
+             
+        # 2. Player Check / Auto Connect
+        player = self.player
+        if not player:
+            player = interaction.guild.voice_client
+            if not player:
+                try:
+                    player = await connect_channel(interaction)
+                    self.player = player
+                except Exception as e:
+                    return await interaction.followup.send(f"❌ Failed to join voice: {e}", ephemeral=True)
+        
+        # 3. Check privileges
+        if not await player.is_privileged(interaction.user):
+             return await interaction.followup.send(bot.i18n.get("dj_required", lang), ephemeral=True)
+
+        import random
+        search_query = "ytmsearch:Trending Music Thailand" if lang == "th" else "ytmsearch:Trending Global Hits"
+        
+        # UI Feedback
+        await interaction.followup.send("🎲 **Searching for a surprise...**", ephemeral=True)
+        
+        try:
+            node = player.node
+            load_res = await node.get_tracks(search_query, requester=interaction.user)
+            tracks = load_res if isinstance(load_res, list) else getattr(load_res, 'tracks', [])
+            
+            if tracks:
+                track = random.choice(tracks[:15]) # Pick from top 15
+                await player.add_track(track)
+                await interaction.followup.send(f"🎲 | **Random Selection:** [{track.title}]({track.uri})", ephemeral=True)
+                
+                if not player.is_playing:
+                    await player.do_next()
+                else:
+                    await player.update_controller(force=True)
+            else:
+                await interaction.followup.send("❌ Could not find random tracks.", ephemeral=True)
+        except Exception as e:
+            await interaction.followup.send(f"❌ Random search failed: {e}", ephemeral=True)
+
 async def connect_channel(ctx: Union[commands.Context, Interaction], channel: VoiceChannel = None):
     try:
         channel = channel or ctx.author.voice.channel if isinstance(ctx, commands.Context) else ctx.user.voice.channel
@@ -1171,7 +1230,7 @@ class Player(VoiceProtocol):
             else:
                 # กรณีไม่มีเพลงเล่นอยู่
                 embed = self.bot.none_play_embed(lang, guild_data)
-                view = None
+                view = JukeboxIdleView(self)
 
             # ───────────────────────────────
             # 2. อัปเดต play_embed (ถาวร)

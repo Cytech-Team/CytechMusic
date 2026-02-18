@@ -511,7 +511,11 @@ class Cyori(commands.Bot):
                 queue_message = await channel.fetch_message(queue_embed_id)
                 play_message = await channel.fetch_message(play_embed_id)
                 await queue_message.edit(embed=discord.Embed(title=self.i18n.get("no_queue", lang), color=ui_config.EMBED_COLOR))
-                await play_message.edit(embed=self.none_play_embed(lang, guild_data), view=None)
+                
+                from cytechlink import JukeboxIdleView
+                player = guild.voice_client if guild else None
+                view = JukeboxIdleView(player)
+                await play_message.edit(embed=self.none_play_embed(lang, guild_data), view=view)
             except Exception:
                 pass
 

@@ -106,8 +106,11 @@ class Settings(commands.Cog):
             queue_embed = discord.Embed(title=self.bot.i18n.get("no_queue", lang), color=ui_config.EMBED_COLOR)
             play_embed = self.bot.none_play_embed(lang, g_data)
 
+            from cytechlink import JukeboxIdleView
+            view = JukeboxIdleView(ctx.guild.voice_client)
+
             q_msg = await channel.send(embed=queue_embed)
-            p_msg = await channel.send(embed=play_embed)
+            p_msg = await channel.send(embed=play_embed, view=view)
 
             await save_data_setup(guild_id, q_msg.id, p_msg.id, channel.id)
             await ctx.send(self.bot.i18n.get("setup_complete", lang, channel=channel.mention), ephemeral=False)
@@ -413,8 +416,11 @@ class Settings(commands.Cog):
             queue_embed = discord.Embed(title=self.bot.i18n.get("no_queue", lang), color=ui_config.EMBED_COLOR)
             play_embed = self.bot.none_play_embed(lang, g_data)
 
+            from cytechlink import JukeboxIdleView
+            view = JukeboxIdleView(ctx.guild.voice_client)
+
             q_msg = await channel.send(embed=queue_embed)
-            p_msg = await channel.send(embed=play_embed)
+            p_msg = await channel.send(embed=play_embed, view=view)
 
             await save_data_setup(guild_id, q_msg.id, p_msg.id, channel.id)
             await ctx.send(self.bot.i18n.get("setup_complete", lang, channel=channel.mention), ephemeral=False)
