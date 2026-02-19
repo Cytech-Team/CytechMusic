@@ -103,25 +103,66 @@ class Cyori(commands.Bot):
 
     async def build_dashboard_state(self, guild_id: int):
         """Constructs a JSON-serializable state object for the dashboard."""
-        g = self.get_guild(guild_id)
-        p = g.voice_client if g else None
-        d = {"playing": False, "paused": False, "pos": 0, "len": 0}
-        
-        if p and p.is_playing and p.current:
-            d.update({
-                "playing": True, "paused": p.is_paused, 
-                "pos": p.position, "len": p.current.length,
-                "is_stream": getattr(p.current, 'is_stream', False),
-                "title": p.current.title, "author": p.current.author,
-                "thumb": p.current.thumbnail if p.current and p.current.thumbnail and "null" not in p.current.thumbnail else "logo-circle.png",
-                "vol": p.volume,
-                "loop_mode": p.queue._repeat.mode.name.capitalize() if hasattr(p.queue, '_repeat') else "Off",
-                "queue": [
-                    {"title": t.title, "author": t.author, "uri": t.uri, "encoded": t.track_id} 
-                    for t in list(p.queue.tracks())[:20]
-                ]
-            })
-        return d
+        try:
+            g = self.get_guild(guild_id)
+            if not g: return {"playing": False, "paused": False, "pos": 0, "len": 0}
+
+            p = g.voice_client
+            d = {"playing": False, "paused": False, "pos": 0, "len": 0}
+            
+            # Check if player exists and has a current track
+            if p and hasattr(p, 'current') and p.current:
+                # Loop Mode Logic (Safe Access)
+                loop_mode = "Off"
+                try:
+                    if hasattr(p.queue, 'mode'): # Standard Wavelink 2/3
+                         loop_mode = str(p.queue.mode).split('.')[-1].capitalize()
+                    elif hasattr(p.queue, '_repeat'): # Data structure specific
+                         loop_mode = p.queue._repeat.mode.name.capitalize()
+                except: pass
+
+                # Queue Logic (Safe Iterator)
+                queue_tracks = []
+                try:
+                    # Handle different queue implementations logic
+                    raw_queue = []
+                    if hasattr(p.queue, 'tracks'):
+                        # Wavelink 3.x property or method
+                        t = p.queue.tracks
+                        raw_queue = list(t() if callable(t) else t)
+                    elif isinstance(p.queue, list):
+                        raw_queue = p.queue
+                    else:
+                        # Fallback for iterable queues
+                        raw_queue = list(p.queue)
+
+                    for t in raw_queue[:20]: # Limit to 20 for payload size
+                         queue_tracks.append({
+                             "title": getattr(t, 'title', 'Unknown'),
+                             "author": getattr(t, 'author', 'Unknown'),
+                             "uri": getattr(t, 'uri', ''),
+                             "encoded": getattr(t, 'track_id', '')
+                         })
+                except: pass
+
+                d.update({
+                    "playing": True, # Activity Flag
+                    "paused": p.is_paused if hasattr(p, 'is_paused') else False,
+                    "pos": p.position if hasattr(p, 'position') else 0,
+                    "len": p.current.length if hasattr(p.current, 'length') else 0,
+                    "is_stream": getattr(p.current, 'is_stream', False),
+                    "title": getattr(p.current, 'title', 'Unknown Track'),
+                    "author": getattr(p.current, 'author', 'Unknown Artist'),
+                    "thumb": p.current.thumbnail if getattr(p.current, 'thumbnail', None) and "null" not in p.current.thumbnail else "logo-circle.png",
+                    "vol": p.volume if hasattr(p, 'volume') else 100,
+                    "loop_mode": loop_mode,
+                    "queue": queue_tracks
+                })
+            
+            return d
+        except Exception as e:
+            print(f"[Dashboard State Error] {e}")
+            return {"playing": False, "paused": False, "error": str(e)}
 
     async def log_error(self, error, ctx=None, event_name=None):
         """Sends error logs to a designated Discord channel or Webhook."""
