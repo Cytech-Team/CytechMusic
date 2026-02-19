@@ -463,3 +463,25 @@ async function saveSettings() {
         }, 3000);
     }
 }
+// ==========================================
+// 4. NAVIGATION
+// ==========================================
+
+function closeSettings() {
+    currentGuildId = null;
+
+    // Remove guild_id from URL
+    const cleanUrl = window.location.pathname + window.location.hash;
+    window.history.pushState({}, '', cleanUrl);
+
+    // Switch Screen
+    document.getElementById('server-selection-screen').style.display = 'block';
+    document.getElementById('settings-content').style.display = 'none';
+
+    // Clear search if any
+    const searchInput = document.getElementById('server-search');
+    if (searchInput) {
+        searchInput.value = '';
+        filterServers();
+    }
+}
