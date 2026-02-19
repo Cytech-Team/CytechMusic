@@ -480,8 +480,18 @@ class Settings(commands.Cog):
         if limit > 100: limit = 100
         
         try:
+            # Resolve prefix correctly (handle callable or static)
+            prefixes = await self.bot.get_prefix(ctx.message)
+            if isinstance(prefixes, str):
+                prefixes = [prefixes]
+            
+            # Additional check for Mention prefix (bot user mention)
+            prefixes_tuple = tuple(prefixes)
+
             def is_bot(m):
-                return m.author == self.bot.user or m.content.startswith(tuple(self.bot.command_prefix))
+                # Check if message is from bot OR starts with any valid prefix
+                is_command = m.content.startswith(prefixes_tuple) or m.content.startswith(f"<@{self.bot.user.id}>")
+                return m.author == self.bot.user or is_command
 
             deleted = await ctx.channel.purge(limit=limit, check=is_bot)
             await ctx.send(self.bot.i18n.get("cleanup_message", lang, count=len(deleted)), ephemeral=True)
