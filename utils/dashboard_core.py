@@ -141,12 +141,25 @@ class DashboardSystem:
         user_doc = await collection_myasync.find_one({"user_id": str(uid)}) or {}
         
         is_prem = await self.bot.is_premium(int(uid))
+        from utils.config import OWNER_IDS
+        is_owner = int(uid) in OWNER_IDS
+        
+        plan_name = user_data.get("premium_plan", "Free Member")
+        if is_owner:
+            plan_name = "Premium Lifetime (Admin)"
+            is_prem = True
+        elif is_prem and plan_name == "Free Member":
+            plan_name = "Premium Member"
+
+        playlist_limit = 100 if (is_prem or is_owner) else 20
         
         resp = {
             "id": uid,
             "premium": is_prem,
+            "is_owner": is_owner,
             "expire": user_data.get("premium_expire"),
-            "plan": user_data.get("premium_plan", "Free"),
+            "plan": plan_name,
+            "playlist_limit": playlist_limit,
             "favorites": user_doc.get("favorites", []),
             "playlists": user_doc.get("playlists", [])
         }

@@ -1082,13 +1082,19 @@ header .container {
 }
 
 .badge-premium {
-    background: var(--gold-metallic);
-    color: #000;
     font-size: 0.75rem;
     padding: 3px 10px;
-    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.badge-premium.lifetime {
+    background: linear-gradient(45deg, var(--gold-primary), #FFF5B7);
+    color: #000;
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
     font-weight: 700;
-    text-transform: uppercase;
 }
 
 .sidebar-links {
@@ -1271,6 +1277,22 @@ header .container {
     border-color: #FF4444 !important;
     color: #fff !important;
     box-shadow: 0 0 15px rgba(255, 68, 68, 0.4);
+}
+
+.badge-premium {
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.badge-premium.lifetime {
+    background: linear-gradient(45deg, var(--gold-primary), #FFF5B7);
+    color: #000;
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+    font-weight: 700;
 }
 
 .no-servers-msg {

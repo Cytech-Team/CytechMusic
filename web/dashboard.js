@@ -197,15 +197,13 @@ function formatTime(ms) {
 // 3. AUTH & CONNECTION
 // ==========================================
 
-let isInitialized = false;
-
 function onUserLoggedIn(user) {
     if (!user) return;
 
-    // GUARD: Prevent double initialization on same session
-    if (isInitialized && currentUserId === user.id) return;
-    isInitialized = true;
     currentUserId = user.id;
+
+    // Dynamic Page Title
+    document.title = `${user.username}'s Dashboard - Cyori`;
 
     showDashboard();
 
@@ -213,8 +211,23 @@ function onUserLoggedIn(user) {
     const avatarEl = document.getElementById('user-avatar');
     const discEl = document.getElementById('user-discriminator');
 
-    if (nameEl) nameEl.textContent = user.username;
-    if (discEl) discEl.textContent = `#${user.discriminator || '0000'}`;
+    if (nameEl) {
+        // Find or create the primary text node for the username
+        let textNode = null;
+        for (let node of nameEl.childNodes) {
+            if (node.nodeType === 3) {
+                textNode = node;
+                break;
+            }
+        }
+
+        if (textNode) {
+            textNode.textContent = user.username + " ";
+        } else {
+            nameEl.prepend(document.createTextNode(user.username + " "));
+        }
+    }
+    if (discEl) discEl.textContent = user.discriminator ? `#${user.discriminator}` : "";
     if (avatarEl) {
         const avatarUrl = user.avatar
             ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
@@ -874,7 +887,7 @@ function renderPlaylistOptions() {
 
     // Add "Create New" option at top
     html += `
-        <button class="btn-primary" onclick="createNewPlaylistFromModal()" 
+        <button class="btn-primary" onclick="createNewPlaylistPrompt()" 
                 style="width: 100%; text-align: center; padding: 12px; border-radius: 12px; margin-bottom: 10px; font-weight: 600;">
             <i class="fas fa-plus"></i> Create New Playlist
         </button>
@@ -900,7 +913,7 @@ function renderPlaylistOptions() {
     container.innerHTML = html;
 }
 
-async function createNewPlaylistFromModal() {
+async function createNewPlaylistPrompt() {
     const name = prompt("ชื่อเพลย์ลิสต์ใหม่ (New Playlist Name):");
     if (!name) return;
     const desc = prompt("คำอธิบาย (Description):", "คอลเลกชันเพลงใหม่ของฉัน");
@@ -1073,6 +1086,21 @@ async function renderCollection() {
         userPlaylists = data.playlists || [];
         userFavorites = data.favorites || [];
         const limit = data.playlist_limit || 20;
+
+        // Sync local cache for script.js
+        window.userPremium = data;
+        localStorage.setItem('user_premium', JSON.stringify(data));
+
+        // Update Sidebar Badge & Visual Status
+        const badge = document.getElementById('user-badge');
+        if (badge && data.plan) {
+            badge.textContent = data.plan;
+            if (data.is_owner || data.premium) {
+                badge.className = "badge-premium lifetime"; // Add gold styling for admin/lifetime
+            } else {
+                badge.className = "badge-premium";
+            }
+        }
 
         if (limitInfo) limitInfo.textContent = `Playlists: ${userPlaylists.length} / ${limit}`;
 
