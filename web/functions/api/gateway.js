@@ -1,39 +1,83 @@
 /**
- * CYORI REALTIME GATEWAY PROXY (Force Header)
- * Ensures 'Upgrade' header is explicitly sent to the VPS Bot
+ * CYORI WEBSOCKET GATEWAY PROXY
+ * Proxies WSS (from browser) → WS (to bot VPS)
+ * Uses Cloudflare WebSocketPair API for proper bidirectional proxying.
  */
 
-const BOT_WS_URL = "http://bkk.fe-grp.com:11050/api/gateway";
+const BOT_WS_URL = "ws://bkk.fe-grp.com:11050/api/gateway";
 
 export async function onRequest(context) {
     const { request } = context;
 
-    // Explicitly reconstruct the request to ensure headers are preserved/set correctly
-    // for a WebSocket upgrade over HTTP
-    const init = {
-        method: request.method,
-        headers: new Headers(request.headers),
-        // body: request.body // WS handshake has no body
-    };
+    // Only handle WebSocket upgrade requests
+    const upgradeHeader = request.headers.get("Upgrade");
+    if (!upgradeHeader || upgradeHeader.toLowerCase() !== "websocket") {
+        return new Response("Expected a WebSocket upgrade request", { status: 426 });
+    }
 
-    // Force key headers if missing (though browser usually sends them)
-    if (!init.headers.has("Upgrade")) init.headers.set("Upgrade", "websocket");
-    if (!init.headers.has("Connection")) init.headers.set("Connection", "Upgrade");
+    // Create a WebSocketPair: [client-facing, worker-facing]
+    const [clientSocket, workerSocket] = Object.values(new WebSocketPair());
 
-    // Create a new Request object to avoid immutable properties of the original
-    const newRequest = new Request(BOT_WS_URL, init);
-
-    // Fetch from origin
-    const response = await fetch(newRequest, {
-        cf: {
-            // Essential: Cloudflare specific flag to handle WebSocket upgrades
-            cacheTtl: -1,
-            polish: false,
-            minify: { javascript: false, css: false, html: false }
-        }
+    // Handle the proxy in background (non-blocking)
+    proxyWebSocket(workerSocket, request).catch((err) => {
+        console.error("[Gateway] Proxy error:", err);
+        try { workerSocket.close(1011, "Proxy error"); } catch (_) { }
     });
 
-    // If the response is a 101 Switching Protocols, we return it as is.
-    // Cloudflare handles the underlying TCP connection upgrade.
-    return response;
+    // Return 101 Switching Protocols with the client-facing socket
+    return new Response(null, {
+        status: 101,
+        webSocket: clientSocket,
+    });
+}
+
+async function proxyWebSocket(workerSocket, request) {
+    workerSocket.accept();
+
+    // Connect to backend bot WS
+    const backendResponse = await fetch(BOT_WS_URL, {
+        headers: {
+            "Upgrade": "websocket",
+            "Connection": "Upgrade",
+            "Sec-WebSocket-Version": request.headers.get("Sec-WebSocket-Version") || "13",
+            "Sec-WebSocket-Key": request.headers.get("Sec-WebSocket-Key") || "",
+        },
+    });
+
+    const backendSocket = backendResponse.webSocket;
+    if (!backendSocket) {
+        workerSocket.close(1014, "Backend did not accept WebSocket");
+        return;
+    }
+
+    backendSocket.accept();
+
+    // Pipe: Client → Backend
+    workerSocket.addEventListener("message", (event) => {
+        try { backendSocket.send(event.data); } catch (_) { }
+    });
+
+    // Pipe: Backend → Client
+    backendSocket.addEventListener("message", (event) => {
+        try { workerSocket.send(event.data); } catch (_) { }
+    });
+
+    // Handle close from client
+    workerSocket.addEventListener("close", (event) => {
+        try { backendSocket.close(event.code || 1000, event.reason || ""); } catch (_) { }
+    });
+
+    // Handle close from backend
+    backendSocket.addEventListener("close", (event) => {
+        try { workerSocket.close(event.code || 1000, event.reason || ""); } catch (_) { }
+    });
+
+    // Handle errors
+    workerSocket.addEventListener("error", () => {
+        try { backendSocket.close(1011, "Client error"); } catch (_) { }
+    });
+
+    backendSocket.addEventListener("error", () => {
+        try { workerSocket.close(1011, "Backend error"); } catch (_) { }
+    });
 }
