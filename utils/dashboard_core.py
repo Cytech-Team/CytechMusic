@@ -83,6 +83,17 @@ class DashboardSystem:
         }
         return web.json_response(data, headers=self.cors_headers)
 
+    async def post_control(self, request):
+        try:
+            payload = await request.json()
+            gid = payload.get('guild_id')
+            if gid:
+                asyncio.create_task(self.handle_ws_control(payload, int(gid)))
+                return web.json_response({'status': 'ok'}, headers=self.cors_headers)
+            return web.json_response({'error': 'no_guild'}, headers=self.cors_headers)
+        except Exception as e:
+            return web.json_response({'error': str(e)}, headers=self.cors_headers)
+
     async def join_guild_endpoint(self, request):
         # Auto-join user to Support Server via OAuth token from dashboard
         guild_id = request.query.get('guild_id')
