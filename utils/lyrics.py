@@ -222,7 +222,7 @@ class MusixMatch(LyricsPlatform):
         return await self.make_request(url)
 
     async def get_latest_app(self):
-        url = "https://www.musixmatch.com/search"use spotify u stupid nig
+        url = "https://www.musixmatch.com/search"
 
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers={**self.headers, "Cookie": "mxm_bab=AB"}) as response:
