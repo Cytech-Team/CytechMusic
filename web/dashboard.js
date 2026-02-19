@@ -407,11 +407,12 @@ function initRealtime(guildId) {
     if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
         wsUrl = `ws://${location.hostname}:8000/api/gateway`;
     }
-    // 2. PRODUCTION (Direct to Bot Host)
+    // 2. PRODUCTION (Proxy through Cloudflare Pages Function)
     else {
-        // HARDCODED BACKEND: Using the bot's direct IP/Port 
-        // NOTE: If frontend is HTTPS, this 'ws://' might be blocked (Mixed Content). Use a Reverse Proxy with SSL if possible.
-        wsUrl = `ws://bkk.fe-grp.com:11050/api/gateway`;
+        // Use the same domain as frontend to avoid Mixed Content (HTTPS -> WSS)
+        // The /api/gateway function will proxy this to the backend
+        const protocol = location.protocol === 'https:' ? 'wss://' : 'ws://';
+        wsUrl = `${protocol}${location.host}/api/gateway`;
     }
 
     // console.log("[Realtime] Connecting:", wsUrl);
