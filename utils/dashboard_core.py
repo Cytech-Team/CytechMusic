@@ -84,7 +84,7 @@ class DashboardSystem:
         return web.Response(headers=self.cors_headers)
 
     async def get_bot_guilds(self, request):
-        return web.json_response([str(g.id) for g in self.bot.guilds], headers=self.cors_headers)
+        return web.json_response({"guilds": [str(g.id) for g in self.bot.guilds]}, headers=self.cors_headers)
 
     async def get_status(self, request):
         gid = request.query.get('guild_id')

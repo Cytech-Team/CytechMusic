@@ -125,8 +125,10 @@ async function fetchServerListFresh(accessToken, grid, loader, force = false) {
         try {
             const botRes = await fetch(`${BOT_API}?action=bot_guilds`, { mode: 'cors' });
             const botData = await botRes.json();
-            if (botData.guilds && botData.guilds.length > 0) {
-                botGuildIds = botData.guilds;
+            // รองรับทั้ง {"guilds": [...]} และ bare array []
+            const fetchedIds = Array.isArray(botData) ? botData : (botData.guilds || []);
+            if (fetchedIds.length > 0) {
+                botGuildIds = fetchedIds;
                 botFetchOk = true;
                 // Cache bot_guilds แยกต่างหาก (สำหรับ fallback)
                 localStorage.setItem('cyori_bot_guilds', JSON.stringify(botGuildIds));
