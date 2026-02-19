@@ -328,8 +328,7 @@ class DashboardSystem:
                  m = g.get_member(int(uid)) if uid else None
                  if not m or not m.voice: return
                  if not p:
-                     ctx = FakeContext(self.bot, g, m.voice.channel, m)
-                     p = await m.voice.channel.connect(cls=cytechlink.Player(self.bot, m.voice.channel, ctx))
+                     p = await m.voice.channel.connect(cls=cytechlink.Player)
                  
                  encoded = val.get('encoded') if isinstance(val, dict) else val
                  uri = val.get('uri') if isinstance(val, dict) else None
@@ -494,7 +493,7 @@ class DashboardSystem:
                  p = g.voice_client
                  if not p:
                      ctx = FakeContext(self.bot, g, m.voice.channel, m)
-                     p = await m.voice.channel.connect(cls=cytechlink.Player(self.bot, m.voice.channel, ctx))
+                     p = await m.voice.channel.connect(cls=cytechlink.Player)
                  
                  for t in pl_tracks:
                      track = await p.node.build_track(t['encoded'], requester=m)
