@@ -1043,12 +1043,57 @@ header .container {
     background: var(--bg-card);
     border: 1px solid var(--glass-border);
     border-radius: 20px;
-    padding: 20px;
+    padding: 24px;
     height: fit-content;
+    position: sticky;
+    top: 100px;
 }
 
-.sidebar-menu {
+.user-profile-mini {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding-bottom: 25px;
+    margin-bottom: 25px;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.avatar-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 2px solid var(--gold-primary);
+    padding: 3px;
+    margin-bottom: 15px;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+    object-fit: cover;
+}
+
+.user-info-text h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text-main);
+}
+
+.user-info-text span {
+    display: block;
+    margin-top: 5px;
+}
+
+.badge-premium {
+    background: var(--gold-metallic);
+    color: #000;
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.sidebar-links {
     list-style: none;
+    margin-top: 20px;
 }
 
 .sidebar-btn {
