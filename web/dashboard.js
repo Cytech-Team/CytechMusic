@@ -732,6 +732,12 @@ function updatePlayerUI(data) {
     updateFavoriteButton();
 
     if (data.queue) renderQueue(data.queue);
+
+    // Auto-update lyrics if tab is visible and song changed
+    const lyricsTab = document.getElementById('tab-lyrics');
+    if (lyricsTab && lyricsTab.style.display !== 'none') {
+        fetchLyrics();
+    }
 }
 
 // ==========================================

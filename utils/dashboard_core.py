@@ -467,22 +467,30 @@ class DashboardSystem:
 
             elif not p: return
             
-            elif act == 'pause': await p.set_pause(not p.is_paused)
+            elif act == 'pause':
+                await p.set_pause(not p.is_paused)
+                await p.update_controller(force=True)
             elif act == 'skip': await p.stop()
             elif act == 'stop': await p.teardown()
-            elif act == 'volume': await p.set_volume(max(0, min(int(val), 100)))
-            elif act == 'seek': await p.seek(int(val))
+            elif act == 'volume':
+                await p.set_volume(max(0, min(int(val), 100)))
+                await p.update_controller(force=True)
+            elif act == 'seek':
+                await p.seek(int(val))
+                await p.update_controller(force=True)
             elif act == 'loop':
                 from cytechlink.enums import LoopType
                 cm = p.queue._repeat.mode
                 if cm == LoopType.off: p.queue._repeat.set_mode(LoopType.queue)
                 elif cm == LoopType.queue: p.queue._repeat.set_mode(LoopType.track)
                 else: p.queue._repeat.set_mode(LoopType.off)
+                await p.update_controller(force=True)
             elif act == 'skipto':
                 p.queue.skipto(int(val) + 1)
                 await p.stop()
             elif act == 'remove':
                 p.queue.remove(int(val) + 1)
+                await p.update_controller(force=True)
             elif act == 'favorite':
                 if uid:
                     from bot import collection_myasync
@@ -514,25 +522,41 @@ class DashboardSystem:
                     else: 
                         return
 
-                    if not song_data.get('uri'): return
+                    if not song_data.get('uri') and not song_data.get('encoded'): return
 
                     # Fetch current favorites to check existence
                     user_doc = await collection_myasync.find_one({"user_id": str(uid)}) or {}
                     favorites = user_doc.get("favorites", [])
                     
-                    # Check if already exists (by URI)
-                    exists = False
-                    for fav in favorites:
-                        if fav.get('uri') == song_data['uri']:
-                            exists = True
+                    # Robust check: Match by URI or Track ID (encoded) or Title+Author
+                    exists_index = -1
+                    for i, fav in enumerate(favorites):
+                        # Match URI
+                        if fav.get('uri') and fav.get('uri') == song_data['uri']:
+                            exists_index = i
+                            break
+                        # Match Encoded
+                        if fav.get('encoded') and fav.get('encoded') == song_data['encoded']:
+                            exists_index = i
+                            break
+                        # Match Identifier
+                        if fav.get('identifier') and fav.get('identifier') == song_data.get('identifier'):
+                            exists_index = i
                             break
                     
-                    if exists:
-                        # Remove
+                    if exists_index > -1:
+                        # Toggle Remove
+                        target_fav = favorites[exists_index]
                         await collection_myasync.update_one(
                             {"user_id": str(uid)}, 
-                            {"$pull": {"favorites": {"uri": song_data['uri']}}}
+                            {"$pull": {"favorites": {"uri": target_fav.get('uri') if target_fav.get('uri') else None, "encoded": target_fav.get('encoded')}}}
                         )
+                        # Backup pull by specific fields if simple pull fails
+                        if target_fav.get('uri'):
+                             await collection_myasync.update_one(
+                                {"user_id": str(uid)}, 
+                                {"$pull": {"favorites": {"uri": target_fav['uri']}}}
+                            )
                     else:
                         # Add
                         await collection_myasync.update_one(

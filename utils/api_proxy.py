@@ -25,6 +25,8 @@ import datetime
 class APIProxyManager:
     def __init__(self, bot):
         self.bot = bot
+        from utils.lyrics import LyricsManager
+        self.lyrics_manager = LyricsManager()
         self.cors_headers = {
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -158,6 +160,25 @@ class APIProxyManager:
                 if hasattr(p, 'is_playing') and p.is_playing
             )
         })
+
+    async def handle_lyrics(self, params):
+        """Fetch lyrics for a song (used by dashboard)."""
+        query = params.get('query') or ""
+        title = query
+        artist = ""
+        if " - " in query:
+            parts = query.split(" - ", 1)
+            artist = parts[0]
+            title = parts[1]
+
+        try:
+            lyrics_data = await self.lyrics_manager.get_lyrics(title, artist)
+            if lyrics_data:
+                lyrics_text = lyrics_data.get("default") or list(lyrics_data.values())[0]
+                return self.ok({"lyrics": lyrics_text})
+            return self.ok({"lyrics": None})
+        except Exception as e:
+            return self.error(str(e))
 
     async def handle_user_info(self, params):
         """User premium status, playlists, and favorites."""
