@@ -407,10 +407,11 @@ function initRealtime(guildId) {
     if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
         wsUrl = `ws://${location.hostname}:8000/api/gateway`;
     }
-    // 2. REMOTE / PRODUCTION (Using Cloudflare Gateway Proxy)
+    // 2. PRODUCTION (Direct to Bot Host)
     else {
-        const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        wsUrl = `${proto}//${location.host}/api/gateway`;
+        // HARDCODED BACKEND: Using the bot's direct IP/Port 
+        // NOTE: If frontend is HTTPS, this 'ws://' might be blocked (Mixed Content). Use a Reverse Proxy with SSL if possible.
+        wsUrl = `ws://bkk.fe-grp.com:11050/api/gateway`;
     }
 
     // console.log("[Realtime] Connecting:", wsUrl);
@@ -702,25 +703,8 @@ function updatePlayerUI(data) {
     updateProgressUI(playerState.position, playerState.duration);
 
     // Update Favorite Icon Color
-    const favIcon = document.querySelector('#btn-favorite i');
-    if (favIcon) {
-        const favorites = (window.userPremium && window.userPremium.favorites) ? window.userPremium.favorites : [];
-        const currentUri = data.uri || (window.currentTrack ? window.currentTrack.uri : "");
-        const currentEncoded = data.encoded || (window.currentTrack ? window.currentTrack.encoded : "");
-
-        const isFav = favorites.some(f =>
-            (f.uri && currentUri && f.uri === currentUri) ||
-            (f.encoded && currentEncoded && f.encoded === currentEncoded)
-        );
-
-        if (isFav) {
-            favIcon.className = 'fas fa-heart';
-            favIcon.style.color = '#ff5555'; // Red color
-        } else {
-            favIcon.className = 'far fa-heart';
-            favIcon.style.color = ''; // Default color
-        }
-    }
+    // Update Favorite Icon Color
+    updateFavoriteButton();
 
     if (data.queue) renderQueue(data.queue);
 }
@@ -1084,24 +1068,73 @@ async function fetchLyrics(force = false) {
 }
 
 
+// Helper to update favorite button state based on current track
+function updateFavoriteButton() {
+    const favIcon = document.querySelector('#btn-favorite i');
+    if (!favIcon || !window.currentTrack) return;
+
+    const favorites = window.userFavorites || (window.userPremium && window.userPremium.favorites) || [];
+    const currentUri = window.currentTrack.uri;
+    const currentEncoded = window.currentTrack.encoded;
+
+    const isFav = favorites.some(f =>
+        (f.uri && currentUri && f.uri === currentUri) ||
+        (f.encoded && currentEncoded && f.encoded === currentEncoded)
+    );
+
+    if (isFav) {
+        favIcon.className = 'fas fa-heart';
+        favIcon.style.color = '#ff5555'; // Red color
+    } else {
+        favIcon.className = 'far fa-heart';
+        favIcon.style.color = ''; // Default
+    }
+}
+
 async function addToFavorite() {
-    if (!window.currentTrack || !playerState.duration) {
+    if (!window.currentTrack) {
         showNotification("No Music", "ไม่มีเพลง", "No music is playing right now.", "ขณะนี้ไม่มีเพลงที่กำลังเล่นอยู่", "error");
         return;
     }
 
-    const icon = document.querySelector('#btn-favorite i');
-    if (icon) {
-        icon.className = 'fas fa-heart';
-        icon.style.color = '#ff5555';
+    // 1. Optimistic Update (Toggle Local State)
+    const favorites = window.userFavorites || [];
+    const currentUri = window.currentTrack.uri;
+    const currentEncoded = window.currentTrack.encoded;
+
+    const existingIndex = favorites.findIndex(f =>
+        (f.uri && currentUri && f.uri === currentUri) ||
+        (f.encoded && currentEncoded && f.encoded === currentEncoded)
+    );
+
+    let actionName = "Add";
+
+    if (existingIndex > -1) {
+        // REMOVE
+        favorites.splice(existingIndex, 1);
+        actionName = "Remove";
+        showNotification("Removed from Favorites", "ลบแล้ว", "Removed from your collection.", "ลบเพลงออกจากคอลเลคชันแล้ว", "success");
+    } else {
+        // ADD
+        // Create full track object locally
+        const newFav = { ...window.currentTrack, added_at: Math.floor(Date.now() / 1000) };
+        favorites.push(newFav);
+        actionName = "Add";
+        showNotification("Added to Favorites", "เพิ่มแล้ว", "Saved to your collection.", "บันทึกเพลงลงคอลเลคชันแล้ว", "success");
     }
 
+    // Update Global State references
+    window.userFavorites = favorites;
+    if (window.userPremium) window.userPremium.favorites = favorites;
+
+    // Refresh UI immediately
+    updateFavoriteButton();
+
+    // 2. Send to Backend
     await sendControl('favorite', window.currentTrack);
 
-    // Refresh favorites list from backend to sync UI
+    // 3. Sync persistence in background
     setTimeout(renderCollection, 1000);
-
-    showNotification("Added to Favorites", "เพิ่มแล้ว", "Saved to your collection.", "บันทึกเพลงลงคอลเลคชันแล้ว", "success");
 }
 
 function handleQueueAction(action, index) {

@@ -373,17 +373,59 @@ class DashboardSystem:
                 if uid:
                     from bot import collection_myasync
                     import time
+                    
                     if isinstance(val, dict):
                          song_data = {
-                            "title": val.get('title'), "uri": val.get('uri'), "author": val.get('author', 'Unknown'),
-                            "identifier": val.get('identifier'), "thumbnail": val.get('thumb') or val.get('thumbnail') or "logo-circle.png",
-                            "length": val.get('len') or val.get('length') or 0, "added_at": int(time.time()), "encoded": val.get('encoded')
+                            "title": val.get('title', 'Unknown'), 
+                            "uri": val.get('uri'), 
+                            "author": val.get('author', 'Unknown'),
+                            "identifier": val.get('identifier'), 
+                            "thumbnail": val.get('thumb') or val.get('thumbnail') or "logo-circle.png",
+                            "length": val.get('len') or val.get('length') or 0, 
+                            "added_at": int(time.time()), 
+                            "encoded": val.get('encoded')
                         }
                     elif p and p.current:
                         track = p.current
-                        song_data = {"title": track.title, "uri": track.uri, "author": track.author, "identifier": track.identifier, "thumbnail": track.thumbnail, "length": track.length, "added_at": int(time.time()), "encoded": track.track_id}
-                    else: return
-                    await collection_myasync.update_one({"user_id": str(uid)}, {"$addToSet": {"favorites": song_data}}, upsert=True)
+                        song_data = {
+                            "title": track.title, 
+                            "uri": track.uri, 
+                            "author": track.author, 
+                            "identifier": track.identifier, 
+                            "thumbnail": track.thumbnail, 
+                            "length": track.length, 
+                            "added_at": int(time.time()), 
+                            "encoded": track.track_id
+                        }
+                    else: 
+                        return
+
+                    if not song_data.get('uri'): return
+
+                    # Fetch current favorites to check existence
+                    user_doc = await collection_myasync.find_one({"user_id": str(uid)}) or {}
+                    favorites = user_doc.get("favorites", [])
+                    
+                    # Check if already exists (by URI)
+                    exists = False
+                    for fav in favorites:
+                        if fav.get('uri') == song_data['uri']:
+                            exists = True
+                            break
+                    
+                    if exists:
+                        # Remove
+                        await collection_myasync.update_one(
+                            {"user_id": str(uid)}, 
+                            {"$pull": {"favorites": {"uri": song_data['uri']}}}
+                        )
+                    else:
+                        # Add
+                        await collection_myasync.update_one(
+                            {"user_id": str(uid)}, 
+                            {"$addToSet": {"favorites": song_data}}, 
+                            upsert=True
+                        )
             
             # Broadcast update
             await asyncio.sleep(0.05)
