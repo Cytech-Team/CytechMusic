@@ -197,6 +197,8 @@ function formatTime(ms) {
 // 3. AUTH & CONNECTION
 // ==========================================
 
+let isAutoConnecting = false; // Guard: prevent duplicate auto-connect calls
+
 function onUserLoggedIn(user) {
     if (!user) return;
 
@@ -233,9 +235,13 @@ function onUserLoggedIn(user) {
         avatarEl.src = avatarUrl;
     }
 
-    startAutoConnect(user.id);
+    // GUARD: Only run auto-connect once (onUserLoggedIn can be called multiple times)
+    if (!isAutoConnecting) {
+        isAutoConnecting = true;
+        startAutoConnect(user.id);
+    }
 
-    // Init Favorites & Recommendations
+    // Init Favorites & Recommendations (idempotent — safe to call multiple times)
     setTimeout(() => {
         renderCollection();
         fetchRecommendations();
@@ -391,9 +397,11 @@ function selectServer(guildId) {
 // REALTIME ENGINE (ZERO DELAY)
 // =========================================
 function initRealtime(guildId) {
-    // GUARD: Avoid redundant connections to same guild
-    if (wsConnection && wsConnection.readyState === WebSocket.OPEN && selectedGuildId === guildId) {
-        return;
+    // GUARD: Avoid redundant connections (OPEN or mid-handshake CONNECTING)
+    if (wsConnection &&
+        (wsConnection.readyState === WebSocket.OPEN ||
+            wsConnection.readyState === WebSocket.CONNECTING)) {
+        return; // Already connected or connecting — do not create a new socket
     }
 
     if (wsConnection) {
