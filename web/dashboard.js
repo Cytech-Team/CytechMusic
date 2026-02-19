@@ -1030,7 +1030,7 @@ async function fetchLyrics(force = false) {
 
     if (!titleEl || !textEl) return;
 
-    if (!window.currentTrack || !playerState || !playerState.paused === false && !playerState.is_playing) {
+    if (!window.currentTrack) {
         // Nothing playing
         titleEl.textContent = "No Song Playing";
         artistEl.textContent = "-";
@@ -1043,18 +1043,24 @@ async function fetchLyrics(force = false) {
     }
 
     // Check if we already have lyrics for this track to avoid re-fetching
+    // Check if we already have lyrics for this track to avoid re-fetching
     const currentSignature = `${window.currentTrack.title}-${window.currentTrack.author}`;
-    if (!force && window.lastLyricsSignature === currentSignature && textEl.textContent.length > 100) {
-        return; // Already loaded
+    // Use a simpler check for loaded content
+    if (!force && window.lastLyricsSignature === currentSignature && textEl.innerText.length > 50 && !textEl.innerText.includes("Lyrics not found")) {
+        return;
     }
 
     // Update UI
-    titleEl.textContent = window.currentTrack.title;
-    artistEl.textContent = window.currentTrack.author;
+    titleEl.textContent = window.currentTrack.title || "Unknown Title";
+    artistEl.textContent = window.currentTrack.author || "Unknown Artist";
     if (loadingEl) loadingEl.style.display = 'flex';
+    textEl.innerHTML = ''; // Clear previous lyrics while loading
 
     try {
-        const query = `${window.currentTrack.author} - ${window.currentTrack.title}`;
+        const t = window.currentTrack.title || "";
+        const a = window.currentTrack.author || "";
+        const query = `${a} - ${t}`.trim();
+
         const res = await smartFetch(`?action=lyrics&query=${encodeURIComponent(query)}&guild_id=${selectedGuildId || ''}`);
         const data = await res.json();
 
