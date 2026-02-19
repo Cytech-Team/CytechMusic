@@ -151,7 +151,7 @@ class APIProxyManager:
     async def handle_global_stats(self, params):
         """Global bot statistics (guilds, users, active players)."""
         return self.ok({
-            "guilds": len(self.bot.guilds),
+            "servers": len(self.bot.guilds),
             "users": len(self.bot.users),
             "playing": sum(
                 1 for p in self.bot.voice_clients
