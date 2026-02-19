@@ -45,6 +45,8 @@ class DashboardSystem:
         router.add_get('/api/guild_settings', self.get_guild_settings)
         router.add_post('/api/guild_settings', self.post_guild_settings)
         router.add_post('/api/playlist', self.post_playlist)
+        router.add_get('/api/find_voice', self.get_find_voice)
+        router.add_get('/api/recommended', self.get_recommended)
         
         router.add_options('/api/playlist', self.handle_options)
         router.add_options('/api/status', self.handle_options)
@@ -159,6 +161,41 @@ class DashboardSystem:
             results = await node.get_tracks(f"ytmsearch:{q}", requester=self.bot.user)
             tracks = []
             res_list = results if isinstance(results, list) else getattr(results, 'tracks', [])
+            for t in res_list[:20]:
+                tracks.append({
+                    "title": t.title, "author": t.author, "uri": t.uri, 
+                    "thumbnail": t.thumbnail or "logo-circle.png", "length": t.length, "encoded": t.track_id
+                })
+            return web.json_response({"results": tracks}, headers=self.cors_headers)
+        except:
+            return web.json_response({"results": []}, headers=self.cors_headers)
+
+    async def get_find_voice(self, request):
+        uid = request.query.get('user_id')
+        if not uid: return web.json_response({"found": False}, headers=self.cors_headers)
+        try:
+            for g in self.bot.guilds:
+                m = g.get_member(int(uid))
+                if m and m.voice and m.voice.channel:
+                    return web.json_response({
+                        "found": True,
+                        "guild_id": str(g.id),
+                        "guild_name": g.name,
+                        "channel_id": str(m.voice.channel.id)
+                    }, headers=self.cors_headers)
+        except: pass
+        return web.json_response({"found": False}, headers=self.cors_headers)
+
+    async def get_recommended(self, request):
+        try:
+            if not cytechlink.NodePool._nodes:
+                return web.json_response({"results": []}, headers=self.cors_headers)
+            node = list(cytechlink.NodePool._nodes.values())[0]
+            results = await node.get_tracks("ytmsearch:trending music", requester=self.bot.user)
+            tracks = []
+            res_list = results if isinstance(results, list) else getattr(results, 'tracks', [])
+            import random
+            random.shuffle(res_list)
             for t in res_list[:20]:
                 tracks.append({
                     "title": t.title, "author": t.author, "uri": t.uri, 
