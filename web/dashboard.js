@@ -212,20 +212,18 @@ function onUserLoggedIn(user) {
     const discEl = document.getElementById('user-discriminator');
 
     if (nameEl) {
-        // Find or create the primary text node for the username
-        let textNode = null;
-        for (let node of nameEl.childNodes) {
-            if (node.nodeType === 3) {
-                textNode = node;
-                break;
-            }
-        }
+        // Safe update: Remove text nodes but keep elements (like badges/spans)
+        // Then prepend the new username text
 
-        if (textNode) {
-            textNode.textContent = user.username + " ";
-        } else {
-            nameEl.prepend(document.createTextNode(user.username + " "));
-        }
+        // 1. Filter out existing text nodes to clear "Loading..."
+        Array.from(nameEl.childNodes).forEach(node => {
+            if (node.nodeType === 3) { // Text node
+                node.remove();
+            }
+        });
+
+        // 2. Insert new text at the beginning
+        nameEl.prepend(document.createTextNode(user.username));
     }
     if (discEl) discEl.textContent = user.discriminator ? `#${user.discriminator}` : "";
     if (avatarEl) {
