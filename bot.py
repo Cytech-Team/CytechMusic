@@ -153,6 +153,8 @@ class Cyori(commands.Bot):
                     "is_stream": getattr(p.current, 'is_stream', False),
                     "title": getattr(p.current, 'title', 'Unknown Track'),
                     "author": getattr(p.current, 'author', 'Unknown Artist'),
+                    "uri": getattr(p.current, 'uri', ''),
+                    "encoded": getattr(p.current, 'track_id', ''),
                     "thumb": p.current.thumbnail if getattr(p.current, 'thumbnail', None) and "null" not in p.current.thumbnail else "logo-circle.png",
                     "vol": p.volume if hasattr(p, 'volume') else 100,
                     "loop_mode": loop_mode,

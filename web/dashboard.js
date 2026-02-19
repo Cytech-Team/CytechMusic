@@ -1192,7 +1192,12 @@ async function renderCollection() {
         if (listFav) {
             listFav.innerHTML = userFavorites.length === 0
                 ? `<div class="queue-empty" style="text-align:center; padding:20px; color:var(--text-muted);">No favorites yet</div>`
-                : userFavorites.map((track) => `
+                : userFavorites.map((track) => {
+                    const enc = track.encoded && track.encoded !== 'undefined' && track.encoded !== 'null' ? track.encoded : '';
+                    const uri = track.uri || '';
+                    const safeEnc = enc.replace(/'/g, "\\'");
+                    const safeUri = uri.replace(/'/g, "\\'");
+                    return `
                     <div class="queue-item" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(255,255,255,0.05); margin-bottom: 5px; border-radius: 12px;">
                         <img src="${track.thumbnail || 'logo-circle.png'}" style="width:40px; height:40px; border-radius:8px; object-fit: cover;">
                         <div style="flex:1; overflow:hidden;">
@@ -1200,11 +1205,11 @@ async function renderCollection() {
                             <div style="font-size:0.75rem; color:var(--text-muted);">${track.author}</div>
                         </div>
                         <div style="display: flex; gap: 5px;">
-                            <button class="btn-glass" onclick="playTrack('${track.encoded}', '${track.uri}')" style="width:30px; height:30px; padding:0;"><i class="fas fa-play" style="font-size:0.7rem;"></i></button>
-                            <button class="btn-glass" onclick="removeFavorite('${track.uri}')" style="width:30px; height:30px; padding:0; color:#ff4d4d;"><i class="fas fa-trash" style="font-size:0.7rem;"></i></button>
+                            <button class="btn-glass" onclick="playTrack('${safeEnc}', '${safeUri}')" style="width:30px; height:30px; padding:0;"><i class="fas fa-play" style="font-size:0.7rem;"></i></button>
+                            <button class="btn-glass" onclick="removeFavorite('${safeUri}')" style="width:30px; height:30px; padding:0; color:#ff4d4d;"><i class="fas fa-trash" style="font-size:0.7rem;"></i></button>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
         }
 
         if (listCustom) {

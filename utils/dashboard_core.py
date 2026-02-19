@@ -332,6 +332,11 @@ class DashboardSystem:
                  
                  encoded = val.get('encoded') if isinstance(val, dict) else val
                  uri = val.get('uri') if isinstance(val, dict) else None
+                 
+                 # Guard: reject bogus strings from frontend (JS undefined→'undefined')
+                 if encoded in (None, '', 'undefined', 'null'):
+                     encoded = None
+                 
                  node = p.node
                  
                  if encoded:
