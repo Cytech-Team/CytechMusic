@@ -28,21 +28,29 @@ class FakeContext:
             async def __aexit__(self, *args): pass
         return Magic()
 
+from utils.api_proxy import APIProxyManager
+
 class DashboardSystem:
     def __init__(self, bot):
         self.bot = bot
         self.cors_headers = bot.cors_headers
         self.lyrics_manager = LyricsManager()
+        self.api_proxy = APIProxyManager(bot)
 
     async def setup_routes(self, app):
         router = app.router
+        
+        # New Centralized Proxy Route
+        router.add_route('*', '/api/proxy', self.handle_proxy_route)
+        
+        # Keep existing specific routes for now, migrate gradually
         router.add_get('/api/status', self.get_status)
         router.add_post('/api/control', self.post_control)
         router.add_get('/api/gateway', self.websocket_handler)
         router.add_get('/api/search', self.get_search)
         router.add_get('/api/lyrics', self.get_lyrics)
         router.add_get('/api/user_info', self.get_user_info)
-        router.add_get('/api/bot_guilds', self.get_bot_guilds)
+        router.add_get('/api/bot_guilds', self.get_bot_guilds) # Deprecated by proxy, keeping for compat if needed
         router.add_get('/api/stats', self.get_stats)
         router.add_get('/api/join_guild', self.join_guild_endpoint)
         router.add_get('/api/guild_settings', self.get_guild_settings)
@@ -58,7 +66,11 @@ class DashboardSystem:
         
         # Start Periodic Broadcaster (Heartbeat)
         self.bot.loop.create_task(self.realtime_broadcaster())
-        print("[CytechX] Dashboard System Embedded & Ready")
+        print("[CytechX] Dashboard System Embedded & Ready (Refactored Proxy)")
+
+    async def handle_proxy_route(self, request):
+        """Delegates to the new APIProxyManager"""
+        return await self.api_proxy.handle_proxy_request(request)
 
     async def realtime_broadcaster(self):
         """Ticker for smooth progress bars (300ms). Only broadcasts to guilds with active WS."""

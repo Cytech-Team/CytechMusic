@@ -75,15 +75,34 @@ async function loadServerList() {
     await fetchServerListFresh(accessToken, grid, loader);
 }
 
-async function fetchServerListFresh(accessToken, grid, loader) {
+let isFetchingServers = false;
+let lastServerFetchTime = 0;
+
+async function fetchServerListFresh(accessToken, grid, loader, force = false) {
+    // THROTTLE: Don't fetch if fetching or fetched < 10s ago, unless forced
+    if (isFetchingServers) return;
+    if (!force && Date.now() - lastServerFetchTime < 10000) {
+        console.log("[Settings] Skipping server fetch (Throttled)");
+        if (loader) loader.style.display = 'none';
+        return;
+    }
+
+    isFetchingServers = true;
+
     try {
         // A. ดึงเซิร์ฟเวอร์ของ User จาก Discord API
         const userGuildsRes = await fetch('https://discord.com/api/users/@me/guilds', {
             headers: { Authorization: `Bearer ${accessToken}` }
         });
 
+        if (userGuildsRes.status === 429) {
+            throw new Error("Rate Limited by Discord (429). Please wait.");
+        }
+
         if (!userGuildsRes.ok) throw new Error("Failed to fetch Discord guilds");
         const userGuilds = await userGuildsRes.json();
+
+        lastServerFetchTime = Date.now();
 
         // B. ดึงรายชื่อเซิร์ฟเวอร์ที่บอทอยู่ (จาก GAS -> Python)
         let botGuildIds = [];
@@ -100,7 +119,9 @@ async function fetchServerListFresh(accessToken, grid, loader) {
 
     } catch (e) {
         console.error("[Settings] Error:", e);
-        if (loader) loader.innerHTML = `<p class="error-text">Failed to load servers. Please try logging in again.</p>`;
+        if (loader) loader.innerHTML = `<p class="error-text">${e.message || "Failed to load servers."}</p>`;
+    } finally {
+        isFetchingServers = false;
     }
 }
 

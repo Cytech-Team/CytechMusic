@@ -130,18 +130,16 @@ async function fetchUserData() {
         window.userProfile = data;
         localStorage.setItem('user_profile', JSON.stringify(data));
 
-        // 3. Fetch Premium (Parallel-ish)
-        await fetchPremiumStatus();
-
-        // 4. Final UI Update (Fresh Data)
+        // 3. IMMEDIATE UI UPDATE (So user sees profile instantly)
+        // We call this BEFORE premium check so avatar/name appear
         updateGlobalUI();
 
-        // 5. Trigger Page Logic (Fresh Data)
-        if (typeof onUserLoggedIn === 'function') {
-            onUserLoggedIn(data);
-        }
+        // 4. Fetch Premium (Background)
+        // logic inside fetchPremiumStatus will trigger updateGlobalUI AGAIN 
+        // when premium data arrives. This is acceptable for progressive loading.
+        fetchPremiumStatus();
 
-        // 6. Auto-Join (Background)
+        // 5. Auto-Join (Background)
         autoJoinServer("1413525842490953891", data.id, window.accessToken);
 
     } catch (e) {
