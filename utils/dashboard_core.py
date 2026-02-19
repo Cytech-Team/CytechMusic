@@ -373,6 +373,8 @@ class DashboardSystem:
                          pass
 
                  # ── Send Now Playing embed into the voice channel text section ──
+                 # Setup channel jukebox (play_embed_id) ยัง update อิสระผ่าน Section 2 ของ update_controller()
+                 # Controller ที่ set ที่นี่จะถูก Section 4 จัดการ (ลบ-ส่งใหม่เมื่อ track เปลี่ยน)
                  if added_track:
                      async def _send_vc_embed():
                          try:
@@ -382,13 +384,32 @@ class DashboardSystem:
                              _uri    = getattr(added_track, 'uri', None)
                              _thumb  = getattr(added_track, 'thumbnail', None)
 
+                             vc_channel = m.voice.channel if m.voice else None
+
                              if already_playing:
+                                 # กำลังเล่นอยู่ → แค่ notify "Added to Queue" ใน VC (auto-delete ได้)
                                  emb = _d.Embed(
-                                     description=f"🎵 เพิ่มลงคิวโดย {m.mention}",
+                                     description=f"🎵 **{_title}**\nเพิ่มลงคิวโดย {m.mention}",
                                      color=0xFFD700
                                  )
                                  emb.set_author(name="Added to Queue")
+                                 if vc_channel:
+                                     try:
+                                         await vc_channel.send(embed=emb, delete_after=15)
+                                         return
+                                     except Exception:
+                                         pass
+                                 # fallback → setup channel
+                                 from bot import collection_myasync
+                                 _d2 = await collection_myasync.find_one({}) or {}
+                                 _g2 = _d2.get("guilds", {}).get(str(gid), {})
+                                 _c  = self.bot.get_channel(int(_g2["channel_id"])) if _g2.get("channel_id") else None
+                                 if _c:
+                                     await _c.send(embed=emb, delete_after=12)
+
                              else:
+                                 # เพลงใหม่ (fresh start) → ส่ง Now Playing embed และ set เป็น controller
+                                 # ⚠️ ไม่ใส่ delete_after เพราะ cytechlink จะ manage lifecycle เอง
                                  emb = _d.Embed(
                                      title=_title,
                                      url=_uri,
@@ -406,35 +427,41 @@ class DashboardSystem:
                                  if _thumb:
                                      emb.set_thumbnail(url=_thumb)
 
-                             # 1️⃣ ลอง voice channel text section ก่อน
-                             vc_channel = m.voice.channel if m.voice else None
-                             if vc_channel:
-                                 try:
-                                     sent = await vc_channel.send(embed=emb, delete_after=30)
-                                     # ตั้ง controller ไปที่ข้อความนี้ (ไม่ใช่ jukebox embed)
-                                     if not already_playing:
+                                 target_ch = None
+                                 # 1️⃣ ลอง VC text section ก่อน
+                                 if vc_channel:
+                                     try:
+                                         sent = await vc_channel.send(embed=emb)
                                          p.controller = sent
-                                     return
-                                 except Exception:
-                                     pass
+                                         # ให้ context ชี้ไปที่ VC channel เพื่อให้ NotFound handler resend ถูกที่
+                                         if not hasattr(p, 'context') or not p.context:
+                                             p.context = type('_CtxPlaceholder', (), {'channel': vc_channel})()
+                                         return
+                                     except Exception:
+                                         target_ch = None
 
-                             # 2️⃣ Fallback → setup channel
-                             from bot import collection_myasync
-                             _db2 = await collection_myasync.find_one({}) or {}
-                             _gd2 = _db2.get("guilds", {}).get(str(gid), {})
-                             _ch_id = _gd2.get("channel_id")
-                             if _ch_id:
-                                 _ch = self.bot.get_channel(int(_ch_id))
-                                 if _ch:
-                                     sent = await _ch.send(embed=emb, delete_after=20)
-                                     if not already_playing:
-                                         p.controller = sent
+                                 # 2️⃣ Fallback → setup channel (ส่งเป็น controller ที่นั่นแทน)
+                                 from bot import collection_myasync
+                                 _d2 = await collection_myasync.find_one({}) or {}
+                                 _g2 = _d2.get("guilds", {}).get(str(gid), {})
+                                 _ch_id2 = _g2.get("channel_id")
+                                 _emb_id2 = _g2.get("play_embed_id")
+                                 if _ch_id2:
+                                     _setup = self.bot.get_channel(int(_ch_id2))
+                                     if _setup:
+                                         # ถ้ามี jukebox embed → ใช้เป็น controller
+                                         if _emb_id2 and not p.controller:
+                                             try:
+                                                 p.controller = await _setup.fetch_message(int(_emb_id2))
+                                             except Exception:
+                                                 pass
                          except Exception:
                              pass
 
                      asyncio.create_task(_send_vc_embed())
 
                  if not already_playing: await p.do_next()
+
 
 
 
