@@ -358,10 +358,10 @@ class DashboardSystem:
                  if not p.controller:
                      try:
                          from bot import collection_myasync
-                         data = await collection_myasync.find_one({}) or {}
-                         gd = data.get("guilds", {}).get(str(gid), {})
-                         ch_id  = gd.get("channel_id")
-                         emb_id = gd.get("play_embed_id")
+                         _db = await collection_myasync.find_one({}) or {}
+                         _gd = _db.get("guilds", {}).get(str(gid), {})
+                         ch_id  = _gd.get("channel_id")
+                         emb_id = _gd.get("play_embed_id")
                          if ch_id and emb_id:
                              setup_ch = self.bot.get_channel(int(ch_id))
                              if setup_ch:
@@ -372,28 +372,70 @@ class DashboardSystem:
                      except Exception:
                          pass
 
-                 # ── Send Discord notification in setup channel ──
+                 # ── Send Now Playing embed into the voice channel text section ──
                  if added_track:
-                     try:
-                         from bot import collection_myasync
-                         import discord as _d
-                         _data = await collection_myasync.find_one({}) or {}
-                         _gd = _data.get("guilds", {}).get(str(gid), {})
-                         _ch_id = _gd.get("channel_id")
-                         if _ch_id:
-                             _ch = self.bot.get_channel(int(_ch_id))
-                             if _ch:
-                                 _title = getattr(added_track, 'title', 'Unknown Track')
-                                 if already_playing:
-                                     _desc = f"🎵 **{_title}**\nเพิ่มลงคิวจาก Dashboard โดย {m.mention}"
-                                 else:
-                                     _desc = f"▶️ **{_title}**\nเริ่มเล่นจาก Dashboard โดย {m.mention}"
-                                 _notif = _d.Embed(description=_desc, color=0xFFD700)
-                                 asyncio.create_task(_ch.send(embed=_notif, delete_after=12))
-                     except Exception:
-                         pass
+                     async def _send_vc_embed():
+                         try:
+                             import discord as _d
+                             _title  = getattr(added_track, 'title', 'Unknown Track')
+                             _author = getattr(added_track, 'author', '')
+                             _uri    = getattr(added_track, 'uri', None)
+                             _thumb  = getattr(added_track, 'thumbnail', None)
+
+                             if already_playing:
+                                 emb = _d.Embed(
+                                     description=f"🎵 เพิ่มลงคิวโดย {m.mention}",
+                                     color=0xFFD700
+                                 )
+                                 emb.set_author(name="Added to Queue")
+                             else:
+                                 emb = _d.Embed(
+                                     title=_title,
+                                     url=_uri,
+                                     color=0xFFD700
+                                 )
+                                 emb.set_author(
+                                     name="▶️ Now Playing · Dashboard",
+                                     icon_url=self.bot.user.display_avatar.url
+                                 )
+                                 emb.add_field(name="Artist", value=f"`{_author}`", inline=True)
+                                 emb.set_footer(
+                                     text=f"Requested by {m.display_name}",
+                                     icon_url=m.display_avatar.url
+                                 )
+                                 if _thumb:
+                                     emb.set_thumbnail(url=_thumb)
+
+                             # 1️⃣ ลอง voice channel text section ก่อน
+                             vc_channel = m.voice.channel if m.voice else None
+                             if vc_channel:
+                                 try:
+                                     sent = await vc_channel.send(embed=emb, delete_after=30)
+                                     # ตั้ง controller ไปที่ข้อความนี้ (ไม่ใช่ jukebox embed)
+                                     if not already_playing:
+                                         p.controller = sent
+                                     return
+                                 except Exception:
+                                     pass
+
+                             # 2️⃣ Fallback → setup channel
+                             from bot import collection_myasync
+                             _db2 = await collection_myasync.find_one({}) or {}
+                             _gd2 = _db2.get("guilds", {}).get(str(gid), {})
+                             _ch_id = _gd2.get("channel_id")
+                             if _ch_id:
+                                 _ch = self.bot.get_channel(int(_ch_id))
+                                 if _ch:
+                                     sent = await _ch.send(embed=emb, delete_after=20)
+                                     if not already_playing:
+                                         p.controller = sent
+                         except Exception:
+                             pass
+
+                     asyncio.create_task(_send_vc_embed())
 
                  if not already_playing: await p.do_next()
+
 
 
             elif not p: return
