@@ -136,6 +136,104 @@ class APIProxyManager:
             
         return self.error_response("Unknown command")
 
+    async def handle_play(self, params):
+        """Delegates play action to DashboardSystem.handle_ws_control"""
+        guild_id = params.get('guild_id')
+        if not guild_id:
+            return self.error_response("Missing guild_id")
+        try:
+            gid = int(guild_id)
+            # Build a control data dict matching the WS format
+            control_data = {
+                'op': 'control',
+                'action': 'play',
+                'guild_id': guild_id,
+                'user_id': params.get('user_id'),
+                'value': params.get('value')  # Already a dict from JSON body
+            }
+            import asyncio
+            asyncio.create_task(self.bot.dashboard.handle_ws_control(control_data, gid))
+            return self.success_response({"status": "ok"})
+        except Exception as e:
+            return self.error_response(str(e))
+
+    async def handle_random(self, params):
+        """Play a random/recommended track."""
+        guild_id = params.get('guild_id')
+        if not guild_id:
+            return self.error_response("Missing guild_id")
+        try:
+            import cytechlink, random
+            gid = int(guild_id)
+            g = self.bot.get_guild(gid)
+            uid = params.get('user_id')
+            m = g.get_member(int(uid)) if g and uid else None
+            if not m or not m.voice:
+                return self.error_response("User not in voice channel")
+
+            node = list(cytechlink.NodePool._nodes.values())[0]
+            results = await node.get_tracks("ytmsearch:trending music", requester=self.bot.user)
+            res_list = results if isinstance(results, list) else getattr(results, 'tracks', [])
+            if not res_list:
+                return self.error_response("No tracks found")
+            
+            track = random.choice(res_list)
+            control_data = {
+                'action': 'play',
+                'guild_id': guild_id,
+                'user_id': uid,
+                'value': {'encoded': track.track_id, 'uri': track.uri}
+            }
+            import asyncio
+            asyncio.create_task(self.bot.dashboard.handle_ws_control(control_data, gid))
+            return self.success_response({"status": "ok", "title": track.title})
+        except Exception as e:
+            return self.error_response(str(e))
+
+    async def handle_status(self, params):
+        """Returns current player status for a guild."""
+        guild_id = params.get('guild_id')
+        if not guild_id:
+            return self.error_response("Missing guild_id")
+        try:
+            state = await self.bot.build_dashboard_state(int(guild_id))
+            return self.success_response(state)
+        except Exception as e:
+            return self.error_response(str(e))
+
+    async def handle_control(self, params):
+        """Generic control handler (pause, skip, stop, volume, seek, loop, etc.)"""
+        guild_id = params.get('guild_id')
+        if not guild_id:
+            return self.error_response("Missing guild_id")
+        try:
+            gid = int(guild_id)
+            import asyncio
+            asyncio.create_task(self.bot.dashboard.handle_ws_control(params, gid))
+            return self.success_response({"status": "ok"})
+        except Exception as e:
+            return self.error_response(str(e))
+
+    async def handle_find_voice(self, params):
+        """Find which voice channel a user is in."""
+        uid = params.get('user_id')
+        if not uid:
+            return self.error_response("Missing user_id")
+        try:
+            target_uid = int(uid)
+            for guild in self.bot.guilds:
+                member = guild.get_member(target_uid)
+                if member and member.voice and member.voice.channel:
+                    return self.success_response({
+                        "found": True,
+                        "guild_id": str(guild.id),
+                        "guild_name": guild.name,
+                        "channel_id": str(member.voice.channel.id)
+                    })
+            return self.success_response({"found": False})
+        except Exception as e:
+            return self.error_response(str(e))
+
     # --- UTILS ---
 
     def success_response(self, data):

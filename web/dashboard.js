@@ -353,7 +353,7 @@ async function playFavorite(encoded, uri) {
     // Optimistic UI Feedback
     showNotification("Adding to Queue", "กำลังเพิ่มลงคิว", "Song added from collection.", "เพิ่มเพลงจากคอลเลกชันแล้ว", "success");
 
-    await sendControl('play', payload);
+    await sendControl('play', { encoded, uri, source: 'favorite' });
 }
 
 function showDashboard() {
@@ -823,11 +823,7 @@ async function playTrack(encoded, uri) {
     // UI Feedback: Show loading on the card if possible or global notification
     console.log(`[Dashboard] Playing track: ${encoded || uri}`);
 
-    await sendControl('play', JSON.stringify({
-        encoded: encoded,
-        uri: uri,
-        source: 'dashboard'
-    }));
+    await sendControl('play', { encoded, uri, source: 'dashboard' });
 }
 
 // --- Add to Playlist Feature ---
@@ -961,7 +957,7 @@ async function confirmAddTrackToPlaylist(plIdx) {
 
 async function playTrack(encoded, uri) {
     if (!selectedGuildId) return showNotification("No Channel", "ไม่ระบุช่อง", "Please join a voice channel first.", "กรุณาเข้าห้องเสียงก่อนนะครับ", "error");
-    await sendControl('play', JSON.stringify({ encoded, uri, source: 'dashboard' }));
+    await sendControl('play', { encoded, uri, source: 'dashboard' });
 }
 
 function attachSeekListener() {
