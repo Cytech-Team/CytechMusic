@@ -60,15 +60,29 @@ async function loadServerList() {
     // 1. Try Cache First (Valid for 5 minutes)
     const cached = localStorage.getItem('cyori_server_list');
     const cacheTime = localStorage.getItem('cyori_server_list_time');
+    const cacheValid = cached && cacheTime && (Date.now() - cacheTime < 300000);
 
-    if (cached && cacheTime && (Date.now() - cacheTime < 300000)) { // 5 min cache
+    if (cacheValid) {
         try {
             const data = JSON.parse(cached);
-            if (loader) loader.style.display = 'none';
-            renderServerList(data);
-            // Background refresh if older than 1 min
-            if (Date.now() - cacheTime > 60000) fetchServerListFresh(accessToken, grid, loader);
-            return;
+
+            // SANITY CHECK: ถ้า cache ผิดปกติ (ไม่มีเซิร์ฟเวอร์ priority=1 เลย แต่มี priority=2 เยอะ)
+            // ให้ถือว่า cache เสีย แล้ว fresh fetch แทน
+            const hasManageable = data.some(g => g.priority === 1);
+            const allInvite = data.every(g => g.priority >= 2);
+            const botGuildCached = localStorage.getItem('cyori_bot_guilds');
+
+            if (!hasManageable && allInvite && !botGuildCached) {
+                console.warn("[Settings] Stale cache detected (all invite, no manageable). Forcing refresh.");
+                localStorage.removeItem('cyori_server_list');
+                localStorage.removeItem('cyori_server_list_time');
+            } else {
+                if (loader) loader.style.display = 'none';
+                renderServerList(data);
+                // Background refresh if older than 1 min
+                if (Date.now() - cacheTime > 60000) fetchServerListFresh(accessToken, grid, loader);
+                return;
+            }
         } catch (e) { }
     }
 
@@ -104,18 +118,38 @@ async function fetchServerListFresh(accessToken, grid, loader, force = false) {
 
         lastServerFetchTime = Date.now();
 
-        // B. ดึงรายชื่อเซิร์ฟเวอร์ที่บอทอยู่ (จาก GAS -> Python)
+        // B. ดึงรายชื่อเซิร์ฟเวอร์ที่บอทอยู่ (จาก Proxy -> Bot)
         let botGuildIds = [];
+        let botFetchOk = false;
+
         try {
             const botRes = await fetch(`${BOT_API}?action=bot_guilds`, { mode: 'cors' });
             const botData = await botRes.json();
-            if (botData.guilds) botGuildIds = botData.guilds;
+            if (botData.guilds && botData.guilds.length > 0) {
+                botGuildIds = botData.guilds;
+                botFetchOk = true;
+                // Cache bot_guilds แยกต่างหาก (สำหรับ fallback)
+                localStorage.setItem('cyori_bot_guilds', JSON.stringify(botGuildIds));
+                localStorage.setItem('cyori_bot_guilds_time', Date.now());
+            }
         } catch (e) {
-            console.warn("[Settings] Bot fetch failed, assuming bot is offline or empty list.");
+            console.warn("[Settings] Bot guilds fetch failed, trying cache fallback.");
         }
 
-        // C. ประมวลผลและจัดเรียง
-        processAndSortGuilds(userGuilds, botGuildIds);
+        // FALLBACK: ถ้า API ล้มเหลว ใช้ cached bot_guilds แทน (อายุไม่เกิน 30 นาที)
+        if (!botFetchOk) {
+            const cachedBotGuilds = localStorage.getItem('cyori_bot_guilds');
+            const cachedBotTime = localStorage.getItem('cyori_bot_guilds_time');
+            if (cachedBotGuilds && cachedBotTime && (Date.now() - cachedBotTime < 1800000)) {
+                botGuildIds = JSON.parse(cachedBotGuilds);
+                console.log(`[Settings] Using cached bot_guilds (${botGuildIds.length} servers)`);
+            } else {
+                console.warn("[Settings] No bot_guilds cache available. Server list may show incorrect status.");
+            }
+        }
+
+        // C. ประมวลผลและจัดเรียง (Cache เฉพาะตอน bot_guilds ได้ข้อมูลจริง)
+        processAndSortGuilds(userGuilds, botGuildIds, botFetchOk || botGuildIds.length > 0);
 
     } catch (e) {
         console.error("[Settings] Error:", e);
@@ -125,7 +159,7 @@ async function fetchServerListFresh(accessToken, grid, loader, force = false) {
     }
 }
 
-function processAndSortGuilds(userGuilds, botGuildIds) {
+function processAndSortGuilds(userGuilds, botGuildIds, shouldCache = true) {
     // Permission Constants (BigInt for precision)
     const PERM_ADMIN = BigInt(0x8);
     const PERM_MANAGE_GUILD = BigInt(0x20);
@@ -146,29 +180,21 @@ function processAndSortGuilds(userGuilds, botGuildIds) {
         // --- SORTING LOGIC (1-4) ---
         let priority = 4;
         let statusText = "No Access";
-        let subText = "";
         let actionType = "disabled";
 
         if (hasBot && hasPerm) {
-            // 1. Bot & User are in guild + User has Perms -> Manage
             priority = 1;
             statusText = "Manageable";
             actionType = "manage";
-        }
-        else if (!hasBot && hasPerm) {
-            // 2. Bot NOT in guild + User has Perms -> Invite
+        } else if (!hasBot && hasPerm) {
             priority = 2;
             statusText = "Invite Bot";
             actionType = "invite";
-        }
-        else if (hasBot && !hasPerm) {
-            // 3. Bot & User in guild + User NO Perms -> No Permission
+        } else if (hasBot && !hasPerm) {
             priority = 3;
             statusText = "No Permission";
             actionType = "no_perm";
-        }
-        else {
-            // 4. Bot NOT in guild + User NO Perms -> No Access
+        } else {
             priority = 4;
             statusText = "No Access";
             actionType = "disabled";
@@ -177,12 +203,16 @@ function processAndSortGuilds(userGuilds, botGuildIds) {
         return { ...guild, isOwner, isAdmin, hasBot, priority, statusText, actionType };
     });
 
-    // เรียงลำดับ: Priority น้อยขึ้นก่อน (1 -> 2 -> 3 -> 4)
+    // เรียงลำดับ: Priority น้อยขึ้นก่อน
     allGuilds.sort((a, b) => a.priority - b.priority);
 
-    // Cache Result
-    localStorage.setItem('cyori_server_list', JSON.stringify(allGuilds));
-    localStorage.setItem('cyori_server_list_time', Date.now());
+    // Cache เฉพาะเมื่อ bot_guilds ได้ข้อมูลจริง (ป้องกัน cache ผิด)
+    if (shouldCache) {
+        localStorage.setItem('cyori_server_list', JSON.stringify(allGuilds));
+        localStorage.setItem('cyori_server_list_time', Date.now());
+    } else {
+        console.warn("[Settings] Skipping server list cache (bot_guilds was empty/failed)");
+    }
 
     renderServerList(allGuilds);
 }
