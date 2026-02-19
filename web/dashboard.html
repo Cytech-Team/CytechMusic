@@ -144,12 +144,6 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#" class="sidebar-btn" onclick="switchTab('quests', this)">
-                            <i class="fas fa-tasks"></i> <span class="lang-text" data-en="Quests"
-                                data-th="ภารกิจ">Quests</span>
-                        </a>
-                    </li>
-                    <li>
                         <a href="settings.html" class="sidebar-btn">
                             <i class="fas fa-cog"></i> <span class="lang-text" data-en="Settings"
                                 data-th="ตั้งค่า">Settings</span>
@@ -293,59 +287,6 @@
                     </div>
                 </div>
 
-                <!-- TAB: QUESTS -->
-                <div id="tab-quests" class="dash-tab-content" style="display: none;">
-                    <div class="quest-system-container">
-                        <!-- User Rank Card -->
-                        <div class="card glass-effect"
-                            style="margin-bottom: 30px; padding: 30px; display: flex; align-items: center; gap: 30px; border: 1px solid var(--gold-primary-faded);">
-                            <div class="rank-avatar-wrapper" style="position: relative;">
-                                <img id="quest-user-avatar" src="logo-circle.png"
-                                    style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--gold-primary); box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);">
-                                <div id="quest-user-level"
-                                    style="position: absolute; bottom: -5px; right: -5px; background: var(--gold-metallic); color: #000; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; border: 2px solid #000;">
-                                    1</div>
-                            </div>
-                            <div style="flex: 1;">
-                                <div
-                                    style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
-                                    <div>
-                                        <h2 id="quest-user-name"
-                                            style="margin: 0; font-size: 1.8rem; color: var(--gold-primary);">User</h2>
-                                        <p style="margin: 5px 0 0; color: var(--text-muted); font-size: 0.9rem;">Next
-                                            rank at <span id="quest-xp-next">1000</span> XP</p>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <div
-                                            style="font-size: 0.8rem; color: var(--gold-dim); letter-spacing: 1px; font-weight: 700;">
-                                            TOTAL POINTS</div>
-                                        <div id="quest-total-points"
-                                            style="font-size: 1.5rem; font-weight: 800; color: #fff;">0</div>
-                                    </div>
-                                </div>
-                                <div class="progress-bar" style="height: 12px; background: rgba(255,255,255,0.05);">
-                                    <div id="quest-xp-bar" class="progress-fill" style="width: 30%;"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                            <h3 class="text-gradient"
-                                style="font-size: 1.4rem; display: flex; align-items: center; gap: 12px; margin: 0;">
-                                <i class="fas fa-calendar-check"></i>
-                                <span class="lang-text" data-en="Daily Quests" data-th="ภารกิจรายวัน">Daily
-                                    Quests</span>
-                            </h3>
-                            <div style="font-size: 0.8rem; color: var(--text-muted);">Resets every 24h</div>
-                        </div>
-
-                        <div id="quest-list" class="quest-list"
-                            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
-                            <!-- Quests here -->
-                        </div>
-                    </div>
-                </div>
 
                 <!-- TAB: QUEUE -->
                 <div id="tab-queue" class="dash-tab-content" style="display: none;">

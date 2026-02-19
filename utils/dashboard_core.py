@@ -45,15 +45,11 @@ class DashboardSystem:
         router.add_get('/api/guild_settings', self.get_guild_settings)
         router.add_post('/api/guild_settings', self.post_guild_settings)
         router.add_post('/api/playlist', self.post_playlist)
-        router.add_get('/api/quests', self.get_quests)
-        router.add_post('/api/quest_claim', self.post_quest_claim)
         
         router.add_options('/api/playlist', self.handle_options)
         router.add_options('/api/status', self.handle_options)
         router.add_options('/api/control', self.handle_options)
         router.add_options('/api/guild_settings', self.handle_options)
-        router.add_options('/api/quests', self.handle_options)
-        router.add_options('/api/quest_claim', self.handle_options)
         
         # Start Periodic Broadcaster (Heartbeat)
         self.bot.loop.create_task(self.realtime_broadcaster())
@@ -264,26 +260,6 @@ class DashboardSystem:
             await self.bot.broadcast_guild(gid)
         except: pass
 
-    async def get_quests(self, request):
-        uid = request.query.get('user_id')
-        if not uid: return web.json_response({'error': 'no_user'}, headers=self.cors_headers)
-        
-        from utils.quest_system import QuestManager
-        # Quest: Daily Login (Trigger progress to 1 on first check)
-        asyncio.create_task(QuestManager.update_quest_progress(uid, "daily_login"))
-        
-        data = await QuestManager.get_user_quests(uid)
-        return web.json_response(data, headers=self.cors_headers)
-
-    async def post_quest_claim(self, request):
-        payload = await request.json()
-        uid = payload.get('user_id')
-        qid = payload.get('quest_id')
-        if not uid or not qid: return web.json_response({'error': 'missing_params'}, headers=self.cors_headers)
-        
-        from utils.quest_system import QuestManager
-        res = await QuestManager.claim_reward(uid, qid)
-        return web.json_response(res, headers=self.cors_headers)
 
     async def post_playlist(self, request):
         payload = await request.json()

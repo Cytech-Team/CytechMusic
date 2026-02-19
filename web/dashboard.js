@@ -240,7 +240,6 @@ function switchTab(tabId, btn) {
     const target = document.getElementById(`tab-${tabId}`);
     if (target) {
         target.style.display = tabId === 'player' ? 'block' : 'block'; // Ensure block display
-        if (tabId === 'quests') fetchQuests();
         if (tabId === 'favorites') renderCollection();
     }
 
@@ -1241,126 +1240,6 @@ document.head.appendChild(styleSheet);
 
 
 
-// ==========================================
-// 8. QUEST SYSTEM
-// ==========================================
-async function fetchQuests() {
-    if (!currentUserId) return;
-
-    try {
-        const resp = await smartFetch(`/api/quests?user_id=${currentUserId}`);
-        const data = await resp.json();
-
-        if (data.error) return;
-
-        updateQuestRankCard(data);
-        renderQuestList(data.quests);
-    } catch (e) {
-        console.error("Quest Fetch Error:", e);
-    }
-}
-
-function updateQuestRankCard(data) {
-    const avatar = document.getElementById('quest-user-avatar');
-    const name = document.getElementById('quest-user-name');
-    const level = document.getElementById('quest-user-level');
-    const points = document.getElementById('quest-total-points');
-    const xpNext = document.getElementById('quest-xp-next');
-    const xpBar = document.getElementById('quest-xp-bar');
-
-    if (avatar && window.userProfile) avatar.src = window.userProfile.avatar || "logo-circle.png";
-    if (name && window.userProfile) name.textContent = window.userProfile.username || "User";
-    if (level) level.textContent = data.level || 1;
-    if (points) points.textContent = data.points.toLocaleString();
-    if (xpNext) xpNext.textContent = data.xp_next;
-
-    if (xpBar) {
-        const progress = Math.min(((data.points % 1000) / 1000) * 100, 100);
-        xpBar.style.width = `${progress}%`;
-    }
-}
-
-function renderQuestList(quests) {
-    const list = document.getElementById('quest-list');
-    if (!list) return;
-
-    const langBtn = document.getElementById('curr-lang');
-    const lang = langBtn ? langBtn.textContent.trim().toUpperCase() : 'EN';
-
-    list.innerHTML = quests.map(q => {
-        const title = lang === 'TH' ? q.title_th : q.title_en;
-        const desc = lang === 'TH' ? q.desc_th : q.desc_en;
-        const progressPercent = Math.min((q.progress / q.target) * 100, 100);
-        const isFinished = q.progress >= q.target;
-        const isClaimed = q.claimed;
-
-        let statusHtml = '';
-        if (isClaimed) {
-            statusHtml = `<span style="color: #4CAF50; font-weight: 700;"><i class="fas fa-check-double"></i> CLAIMED</span>`;
-        } else if (isFinished) {
-            statusHtml = `<button class="btn btn-gold" onclick="claimQuest('${q.id}')" style="padding: 5px 15px; font-size: 0.8rem;">CLAIM +${q.reward}</button>`;
-        } else {
-            statusHtml = `<span style="color: var(--text-muted); font-size: 0.8rem;">${q.progress} / ${q.target}</span>`;
-        }
-
-        return `
-        <div class="card glass-effect quest-item-card" style="padding: 20px; border: 1px solid ${isFinished ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)'}; position: relative; overflow: hidden;">
-            ${isFinished && !isClaimed ? '<div class="quest-glow"></div>' : ''}
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-                <div style="flex:1;">
-                    <h4 style="margin: 0; color: ${isFinished ? 'var(--gold-primary)' : '#fff'}; font-size: 1.1rem;">${title}</h4>
-                    <p style="margin: 5px 0 0; font-size: 0.85rem; color: var(--text-muted);">${desc}</p>
-                </div>
-                <div style="background: rgba(212, 175, 55, 0.1); color: var(--gold-primary); padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; border: 1px solid var(--gold-primary-faded); margin-left: 10px;">
-                    +${q.reward}
-                </div>
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-                <div class="progress-bar" style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px;">
-                    <div class="progress-fill" style="width: ${progressPercent}%; background: ${isFinished ? 'var(--gold-metallic)' : 'var(--gold-primary)'}; border-radius: 3px;"></div>
-                </div>
-            </div>
-            
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="font-size: 0.75rem; color: var(--gold-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
-                    ${q.type === 'daily' ? 'Daily' : 'Achievement'}
-                </div>
-                <div id="quest-status-${q.id}">
-                    ${statusHtml}
-                </div>
-            </div>
-        </div>
-        `;
-    }).join('');
-}
-
-async function claimQuest(quest_id) {
-    if (!currentUserId) return;
-
-    // UI Feedback
-    const statusDiv = document.getElementById(`quest-status-${quest_id}`);
-    if (statusDiv) statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
-    try {
-        const resp = await smartFetch('/api/quest_claim', {
-            method: 'POST',
-            body: JSON.stringify({
-                user_id: currentUserId,
-                quest_id: quest_id
-            })
-        });
-        const data = await resp.json();
-
-        if (data.status === 'ok') {
-            showNotification("Reward Claimed!", "รับรางวัลแล้ว!", `You earned ${data.reward} points!`, `คุณได้รับ ${data.reward} พอยท์!`, "success");
-        }
-    } catch (e) {
-        console.error("Claim Error:", e);
-    } finally {
-        fetchQuests();
-    }
-}
 
 window.onUserLoggedIn = (profile) => {
     currentUserId = profile.id;

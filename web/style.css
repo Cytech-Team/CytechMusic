@@ -2749,68 +2749,6 @@ input[type="range"].slider::-ms-fill-upper {
     transform: scale(1.2);
 }
 
-/* --- QUEST SYSTEM PREMIUM STYLES --- */
-.quest-item-card {
-    transition: all 0.4s var(--ease-smooth);
-}
-
-.quest-item-card:hover {
-    transform: translateY(-5px);
-    border-color: var(--gold-primary) !important;
-    background: rgba(212, 175, 55, 0.05) !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.1);
-}
-
-.quest-glow {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(45deg, transparent, rgba(212, 175, 55, 0.05), transparent);
-    animation: quest-sweep 3s infinite linear;
-    pointer-events: none;
-}
-
-@keyframes quest-sweep {
-    0% {
-        transform: translateX(-100%) skewX(-20deg);
-    }
-
-    100% {
-        transform: translateX(200%) skewX(-20deg);
-    }
-}
-
-.rank-avatar-wrapper::after {
-    content: '';
-    position: absolute;
-    top: -5px;
-    left: -5px;
-    right: -5px;
-    bottom: -5px;
-    border: 2px solid var(--gold-primary-faded);
-    border-radius: 50%;
-    opacity: 0.5;
-    animation: pulse-ring 2s infinite;
-}
-
-@keyframes pulse-ring {
-    0% {
-        transform: scale(0.95);
-        opacity: 0.5;
-    }
-
-    50% {
-        transform: scale(1.05);
-        opacity: 0.2;
-    }
-
-    100% {
-        transform: scale(0.95);
-        opacity: 0.5;
-    }
-}
 
 /* Scrollbar for Modal Body */
 .modal-body::-webkit-scrollbar {
