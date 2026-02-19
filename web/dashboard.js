@@ -254,6 +254,7 @@ function switchTab(tabId, btn) {
     if (target) {
         target.style.display = tabId === 'player' ? 'block' : 'block'; // Ensure block display
         if (tabId === 'favorites') renderCollection();
+        if (tabId === 'lyrics') fetchLyrics();
     }
 
     // 3. Update sidebar buttons
@@ -998,44 +999,86 @@ function renderQueue(queue) {
 
     list.innerHTML = queue.map((track, index) => {
         const safeTitle = (track.title || "Unknown").replace(/'/g, "\\'");
-        const safeUri = (track.uri || "").replace(/'/g, "\\'");
-        const encoded = track.encoded || "";
+
+        // Format duration
+        const duration = formatTime(track.length); // Use helper function
 
         return `
-        <div class="queue-item" id="q-item-${index}" 
-             style="display: grid; grid-template-columns: 30px 1fr 80px; align-items: center; gap: 10px; padding: 10px; background: rgba(255,255,255,0.05); margin-bottom: 5px; border-radius: 12px; transition: 0.2s;">
-            
-            <div class="result-icon" style="text-align: center; color: var(--gold-primary); font-weight: bold; font-size: 0.8rem;">
-                ${index + 1}
+        <div class="queue-item">
+            <div class="qi-thumb">
+                <img src="${track.thumbnail || 'logo-circle.png'}" onerror="this.src='logo-circle.png'">
             </div>
-            
-            <div class="queue-details" onclick="handleQueueAction('skipto', ${index})" style="overflow: hidden; cursor: pointer;">
-                <div class="queue-title" style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-main); font-size: 0.9rem;">
-                    ${track.title || 'Unknown'} 
-                </div>
-                <div class="queue-artist" style="font-size: 0.75rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis;">
-                    ${track.author || '-'}
-                </div>
+            <div class="qi-info">
+                <div class="qi-title" onclick="playTrack('${track.encoded}', '${track.uri}')">${track.title}</div>
+                <div class="qi-artist">${track.author} • ${duration}</div>
             </div>
-            
-            <div class="queue-actions-row" style="display: flex; gap: 8px; justify-content: flex-end;">
-                <div onclick="sendControl('favorite', {title: '${safeTitle}', uri: '${safeUri}', encoded: '${encoded}'})" 
-                     style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: #ff5555; cursor: pointer;" title="Favorite">
-                    <i class="far fa-heart"></i>
-                </div>
-                <button class="btn-glass" onclick="showAddToPlaylistModal('${encoded}', '${safeUri}', '${safeTitle}')" 
-                        style="width: 28px; height: 28px; border-radius: 50%; padding: 0; font-size: 0.7rem; color: var(--gold-primary);" title="Add to Playlist">
-                    <i class="fas fa-plus"></i>
-                </button>
-                <div onclick="handleQueueAction('remove', ${index})" 
-                     style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: #ff4d4d; cursor: pointer;">
-                    <i class="fas fa-trash"></i>
-                </div>
+            <div class="qi-actions">
+                <button class="btn-glass btn-sm" onclick="sendControl('remove', ${index})" title="Remove"><i class="fas fa-trash"></i></button>
             </div>
         </div>
         `;
     }).join('');
 }
+
+// ==========================================
+// 8. LYRICS FEATURE
+// ==========================================
+
+async function fetchLyrics(force = false) {
+    const titleEl = document.getElementById('lyrics-title');
+    const artistEl = document.getElementById('lyrics-artist');
+    const textEl = document.getElementById('lyrics-text');
+    const loadingEl = document.getElementById('lyrics-loading');
+
+    if (!titleEl || !textEl) return;
+
+    if (!window.currentTrack || !playerState || !playerState.paused === false && !playerState.is_playing) {
+        // Nothing playing
+        titleEl.textContent = "No Song Playing";
+        artistEl.textContent = "-";
+        textEl.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); padding-top: 100px;">
+                <i class="fas fa-music" style="font-size: 4rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                <p>Play a song to see lyrics</p>
+            </div>`;
+        return;
+    }
+
+    // Check if we already have lyrics for this track to avoid re-fetching
+    const currentSignature = `${window.currentTrack.title}-${window.currentTrack.author}`;
+    if (!force && window.lastLyricsSignature === currentSignature && textEl.textContent.length > 100) {
+        return; // Already loaded
+    }
+
+    // Update UI
+    titleEl.textContent = window.currentTrack.title;
+    artistEl.textContent = window.currentTrack.author;
+    if (loadingEl) loadingEl.style.display = 'flex';
+
+    try {
+        const query = `${window.currentTrack.author} - ${window.currentTrack.title}`;
+        const res = await smartFetch(`?action=lyrics&query=${encodeURIComponent(query)}&guild_id=${selectedGuildId || ''}`);
+        const data = await res.json();
+
+        if (loadingEl) loadingEl.style.display = 'none';
+
+        if (data.lyrics) {
+            textEl.textContent = data.lyrics;
+            window.lastLyricsSignature = currentSignature;
+        } else {
+            textEl.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); padding-top: 50px;">
+                <i class="fas fa-align-slash" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                <p>Lyrics not found for this song.</p>
+            </div>`;
+        }
+    } catch (e) {
+        if (loadingEl) loadingEl.style.display = 'none';
+        console.error("Lyrics Fetch Error:", e);
+        textEl.textContent = "Failed to load lyrics. Please try again.";
+    }
+}
+
 
 async function addToFavorite() {
     if (!window.currentTrack || !playerState.duration) {

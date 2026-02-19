@@ -242,9 +242,11 @@ function updateMobileTrayBtn(btn, profile, isPrem, premiumData) {
     if (isPrem) {
         if (premiumData.expire === "Lifetime") {
             expireText = window.currentLang === 'th' ? "ถาวร" : "Lifetime";
-        } else if (premiumData.expire) {
+        } else if (premiumData.expire && premiumData.expire > 10000000) {
             const date = new Date(premiumData.expire * 1000);
             expireText = !isNaN(date.getTime()) ? date.toLocaleDateString() : premiumData.expire;
+        } else {
+            expireText = window.currentLang === 'th' ? "ไม่มีวันหมดอายุ" : "Never";
         }
     } else {
         expireText = window.currentLang === 'th' ? "ยังไม่มีพรีเมียม" : "No Subscription";

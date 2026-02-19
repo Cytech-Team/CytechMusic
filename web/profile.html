@@ -606,7 +606,7 @@
 
                         if (expiryEl) {
                             expiryEl.classList.add('gold');
-                            if (window.userPremium.expire === 'Lifetime') {
+                            if (window.userPremium.expire === 'Lifetime' || !window.userPremium.expire || window.userPremium.expire < 10000000) {
                                 expiryEl.textContent = isTH ? "ถาวร" : "Lifetime";
                             } else {
                                 const d = new Date(window.userPremium.expire * 1000);

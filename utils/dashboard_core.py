@@ -6,6 +6,7 @@ import traceback
 import time
 import cytechlink
 from cytechlink.enums import LoopType
+from utils.lyrics import LyricsManager
 
 class FakeContext:
     def __init__(self, bot, guild, channel, author):
@@ -31,6 +32,7 @@ class DashboardSystem:
     def __init__(self, bot):
         self.bot = bot
         self.cors_headers = bot.cors_headers
+        self.lyrics_manager = LyricsManager()
 
     async def setup_routes(self, app):
         router = app.router
@@ -38,6 +40,7 @@ class DashboardSystem:
         router.add_post('/api/control', self.post_control)
         router.add_get('/api/gateway', self.websocket_handler)
         router.add_get('/api/search', self.get_search)
+        router.add_get('/api/lyrics', self.get_lyrics)
         router.add_get('/api/user_info', self.get_user_info)
         router.add_get('/api/bot_guilds', self.get_bot_guilds)
         router.add_get('/api/stats', self.get_stats)
@@ -165,7 +168,7 @@ class DashboardSystem:
                 "id": uid,
                 "premium": is_prem,
                 "is_owner": is_owner,
-                "expire": user_data.get("premium_expire") if user_data else None,
+                "expire": user_data.get("premium_expire") if (user_data and user_data.get("premium_expire")) else ("Lifetime" if is_owner else None),
                 "plan": plan_name,
                 "playlist_limit": playlist_limit,
                 "favorites": user_doc.get("favorites", []) if user_doc else [],
@@ -192,6 +195,36 @@ class DashboardSystem:
             return web.json_response({"results": tracks}, headers=self.cors_headers)
         except:
             return web.json_response({"results": []}, headers=self.cors_headers)
+
+    async def get_lyrics(self, request):
+        query = request.query.get('query')
+        if not query:
+            return web.json_response({"error": "no_query"}, headers=self.cors_headers)
+        
+        try:
+            # Check if it's "Artist - Title" format
+            if " - " in query:
+                parts = query.split(" - ", 1)
+                title = parts[1]
+                artist = parts[0]
+            else:
+                title = query
+                artist = ""
+            
+            lyrics_data = await self.lyrics_manager.get_lyrics(title, artist)
+            
+            if lyrics_data:
+                # Format for frontend
+                # If multiple parts, join them or just take default
+                text = lyrics_data.get("default", "")
+                if not text and len(lyrics_data) > 0:
+                    text = list(lyrics_data.values())[0]
+                    
+                return web.json_response({"lyrics": text, "source": "Auto"}, headers=self.cors_headers)
+            else:
+                 return web.json_response({"error": "not_found"}, headers=self.cors_headers)
+        except Exception as e:
+            return web.json_response({"error": str(e)}, headers=self.cors_headers)
 
     async def get_find_voice(self, request):
         uid = request.query.get('user_id')

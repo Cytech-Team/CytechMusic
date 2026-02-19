@@ -162,6 +162,10 @@ class LanguageManager:
                 "dashboard_title": "Web Dashboard",
                 "dashboard_desc": "Manage your music, settings, and more directly from your browser!",
                 "button_dashboard": "Open Dashboard",
+                "lyrics_title": "Lyrics: {title}",
+                "lyrics_search_title": "Lyrics Search: {query}",
+                "lyrics_not_found": "Couldn't fetch full lyrics automatically.",
+                "lyrics_click_google": "[👉 Click here to search on Google]({url})",
                 
                 # Player Controls
                 "vol_level": "Level: {volume}%",
@@ -433,6 +437,10 @@ class LanguageManager:
                 "dashboard_title": "แดชบอร์ดควบคุม",
                 "dashboard_desc": "จัดการเพลง, ตั้งค่า และอื่นๆ ได้โดยตรงผ่านบราวเซอร์ของคุณ!",
                 "button_dashboard": "เปิดแดชบอร์ด",
+                "lyrics_title": "เนื้อเพลง: {title}",
+                "lyrics_search_title": "ค้นหาเนื้อเพลง: {query}",
+                "lyrics_not_found": "ไม่สามารถดึงเนื้อเพลงโดยอัตโนมัติได้",
+                "lyrics_click_google": "[👉 คลิกที่นี่เพื่อค้นหาบน Google]({url})",
 
                 # Player Controls
                 "vol_level": "ระดับ: {volume}%",

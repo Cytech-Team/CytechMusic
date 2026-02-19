@@ -10,6 +10,7 @@ from typing import Union, Optional
 from discord.ext import commands, tasks
 from bot import Cyori, collection_myasync
 from utils import config as ui_config
+from utils.lyrics import LyricsManager
 
 async def check_access(ctx: Union[commands.Context, discord.Interaction]):
     player: cytechlink.Player = ctx.guild.voice_client
@@ -138,6 +139,7 @@ class Music(commands.Cog):
             "brazil", "europe", "india", "dubai", "southafrica"
         ]
         self.disconnect_timers = {}
+        self.lyrics_manager = LyricsManager()
         self.player_check.start()
         self.ctx_menu = app_commands.ContextMenu(
             name="play",
@@ -1066,22 +1068,51 @@ class Music(commands.Cog):
         await ctx.defer()
         lang = await self.bot.get_lang(ctx.guild.id)
         
+        artist = ""
         if not query:
             player: cytechlink.Player = ctx.guild.voice_client
             if player and player.is_playing:
                 query = player.current.title
-                import re
-                query = re.sub(r"[\(\[].*?[\)\]]", "", query).strip()
+                artist = player.current.author
             else:
                 return await ctx.send(self.bot.i18n.get("nothing_playing", lang), ephemeral=True)
         
-        search_url = f"https://www.google.com/search?q={query.replace(' ', '+')}+lyrics"
-        embed = discord.Embed(
-            title=f"Lyrics Search: {query}",
-            description=f"Couldn't fetch full lyrics automatically (No API Key).\n[👉 Click here to search on Google]({search_url})",
-            color=ui_config.EMBED_COLOR
-        )
-        await ctx.send(embed=embed)
+        # Try to fetch lyrics
+        try:
+            lyrics_data = await self.lyrics_manager.get_lyrics(query, artist)
+        except Exception as e:
+            print(f"Lyrics Error: {e}")
+            lyrics_data = None
+
+        if not lyrics_data:
+            search_url = f"https://www.google.com/search?q={query.replace(' ', '+')}+lyrics"
+            embed = discord.Embed(
+                title=self.bot.i18n.get("lyrics_search_title", lang, query=query),
+                description=f"{self.bot.i18n.get('lyrics_not_found', lang)}\n{self.bot.i18n.get('lyrics_click_google', lang, url=search_url)}",
+                color=ui_config.EMBED_COLOR
+            )
+            return await ctx.send(embed=embed)
+
+        content = lyrics_data.get("default") or list(lyrics_data.values())[0]
+        
+        # Paginate if lyrics are too long
+        pages = []
+        if len(content) > 2000:
+            for i in range(0, len(content), 1900):
+                pages.append(content[i:i+1900])
+        else:
+            pages.append(content)
+
+        for i, page_text in enumerate(pages):
+            embed = discord.Embed(
+                title=self.bot.i18n.get("lyrics_title", lang, title=query) + (f" (Page {i+1})" if len(pages) > 1 else ""),
+                description=page_text,
+                color=ui_config.EMBED_COLOR
+            )
+            if i == 0:
+                await ctx.send(embed=embed)
+            else:
+                await ctx.channel.send(embed=embed)
 
 
     @commands.hybrid_command(name="grab", aliases=["save", "yoink"])
