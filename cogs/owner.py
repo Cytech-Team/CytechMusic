@@ -7,6 +7,7 @@ import io
 import contextlib
 import traceback
 import textwrap
+import asyncio
 
 
 class Owner(commands.Cog):
@@ -213,6 +214,8 @@ class Owner(commands.Cog):
                 await guild.owner.send(f"Bot Announcement:\n\n{message}")
                 owners_sent.add(guild.owner.id)
                 sent += 1
+                # Rate Limit Protection
+                await asyncio.sleep(1.5) 
             except:
                 failed += 1
 
@@ -228,17 +231,17 @@ class Owner(commands.Cog):
     # ===================================================================
     @own_group.command(name="status", description="Change bot status / เปลี่ยนสถานะของบอท")
     @commands.is_owner()
-    @app_commands.describe(type="Type: playing, listening... / ประเภทสถานะ", text="Status text / ข้อความสถานะ")
-    @app_commands.choices(type=[
+    @app_commands.describe(status_type="Type: playing, listening... / ประเภทสถานะ", text="Status text / ข้อความสถานะ")
+    @app_commands.choices(status_type=[
         app_commands.Choice(name="Playing", value="playing"),
         app_commands.Choice(name="Listening", value="listening"),
         app_commands.Choice(name="Watching", value="watching"),
         app_commands.Choice(name="Competing", value="competing")
     ])
-    async def setstatus(self, ctx: commands.Context, type: str, *, text: str):
+    async def setstatus(self, ctx: commands.Context, status_type: str, *, text: str):
         await ctx.defer(ephemeral=True)
         try:
-            activity_type = getattr(discord.ActivityType, type, discord.ActivityType.playing)
+            activity_type = getattr(discord.ActivityType, status_type, discord.ActivityType.playing)
             activity = discord.Activity(type=activity_type, name=text)
             await self.bot.change_presence(activity=activity)
             
@@ -246,7 +249,7 @@ class Owner(commands.Cog):
             if hasattr(self.bot, "status_loop") and self.bot.status_loop.is_running():
                 self.bot.status_loop.cancel()
                 
-            await ctx.send(f"Status changed to: `{type.capitalize()} {text}`", ephemeral=True)
+            await ctx.send(f"Status changed to: `{status_type.capitalize()} {text}`", ephemeral=True)
         except Exception as e:
             await ctx.send(f"Failed to set status: {e}", ephemeral=True)
 
