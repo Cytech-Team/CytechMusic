@@ -353,7 +353,8 @@ class DashboardSystem:
                              added_track = results[0] if isinstance(results, list) else results
                              await p.add_track(added_track)
                  
-                 # ── Anchor controller to the jukebox embed so update_controller() works ──
+                 # ── Anchor controller to jukebox embed (first connect only) ──
+                 already_playing = p.is_playing
                  if not p.controller:
                      try:
                          from bot import collection_myasync
@@ -368,21 +369,31 @@ class DashboardSystem:
                                      p.controller = await setup_ch.fetch_message(int(emb_id))
                                  except Exception:
                                      pass
-                                 # Short notification so user sees feedback in Discord
-                                 if added_track:
-                                     import discord as _d
-                                     title = getattr(added_track, 'title', 'Unknown Track')
-                                     notif = _d.Embed(
-                                         description=f"▶️ **{title}**\nเพิ่มจาก Dashboard โดย {m.mention}",
-                                         color=0xFFD700
-                                     )
-                                     asyncio.create_task(
-                                         setup_ch.send(embed=notif, delete_after=12)
-                                     )
                      except Exception:
                          pass
-                 
-                 if not p.is_playing: await p.do_next()
+
+                 # ── Send Discord notification in setup channel ──
+                 if added_track:
+                     try:
+                         from bot import collection_myasync
+                         import discord as _d
+                         _data = await collection_myasync.find_one({}) or {}
+                         _gd = _data.get("guilds", {}).get(str(gid), {})
+                         _ch_id = _gd.get("channel_id")
+                         if _ch_id:
+                             _ch = self.bot.get_channel(int(_ch_id))
+                             if _ch:
+                                 _title = getattr(added_track, 'title', 'Unknown Track')
+                                 if already_playing:
+                                     _desc = f"🎵 **{_title}**\nเพิ่มลงคิวจาก Dashboard โดย {m.mention}"
+                                 else:
+                                     _desc = f"▶️ **{_title}**\nเริ่มเล่นจาก Dashboard โดย {m.mention}"
+                                 _notif = _d.Embed(description=_desc, color=0xFFD700)
+                                 asyncio.create_task(_ch.send(embed=_notif, delete_after=12))
+                     except Exception:
+                         pass
+
+                 if not already_playing: await p.do_next()
 
 
             elif not p: return

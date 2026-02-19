@@ -452,6 +452,8 @@ function initRealtime(guildId) {
                         title: d.title || 'Nothing Playing',
                         author: d.author || '-',
                         thumbnail: d.thumb,
+                        encoded: d.encoded || '',
+                        uri: d.uri || '',
                         volume: d.vol || 100,
                         is_stream: d.is_stream || false,
                         loop_mode: d.loop_mode || "off",
@@ -489,8 +491,22 @@ async function fetchStatus() {
 
     try {
         const res = await smartFetch(`?action=status&guild_id=${selectedGuildId}`);
-        const data = await res.json();
-        if (!data.error) updatePlayerUI(data);
+        const d = await res.json();
+        if (!d.error) updatePlayerUI({
+            is_playing: d.playing,
+            paused: d.paused,
+            position: d.pos,
+            duration: d.len,
+            title: d.title || 'Nothing Playing',
+            author: d.author || '-',
+            thumbnail: d.thumb,
+            encoded: d.encoded || '',
+            uri: d.uri || '',
+            volume: d.vol || 100,
+            is_stream: d.is_stream || false,
+            loop_mode: d.loop_mode || 'off',
+            queue: d.queue || []
+        });
     } catch (e) {
         console.error("Fetch Status Error:", e);
     }
