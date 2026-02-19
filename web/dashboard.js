@@ -1349,13 +1349,14 @@ document.head.appendChild(styleSheet);
 
 
 
-window.onUserLoggedIn = (profile) => {
-    currentUserId = profile.id;
-    console.log(`[Dashboard] Logged in as: ${profile.username} (${currentUserId})`);
-
-    // Auto-connect to voice if possible
-    setTimeout(() => startAutoConnect(currentUserId), 2000);
-
-    // Initial data sync
-    renderCollection();
-};
+// AUTO-INIT: If profile is already loaded in script.js, trigger dashboard logic immediately
+if (window.userProfile) {
+    // Ensure DOM is ready before trying to update UI elements
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof onUserLoggedIn === 'function') onUserLoggedIn(window.userProfile);
+        });
+    } else {
+        if (typeof onUserLoggedIn === 'function') onUserLoggedIn(window.userProfile);
+    }
+}
