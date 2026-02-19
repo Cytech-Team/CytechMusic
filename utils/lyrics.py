@@ -315,7 +315,8 @@ class LyricsManager:
             # Remove content in brackets/parentheses like (feat.) [Official]
             text = re.sub(r"[\(\[].*?[\)\]]", "", text)
             # Remove non-alphanumeric chars usually incorrectly parsed
-            text = re.sub(r"[^\w\s\-\']", "", text)
+            # Allow Thai characters (\u0E00-\u0E7F) and common punctuation
+            text = re.sub(r"[^\w\s\-\'\u0E00-\u0E7F]", "", text)
             return text.strip()
 
         clean_title = clean_text(title)
