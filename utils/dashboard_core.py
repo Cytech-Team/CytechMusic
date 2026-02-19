@@ -81,7 +81,7 @@ class DashboardSystem:
         data = {
             "guilds": len(self.bot.guilds),
             "users": len(self.bot.users),
-            "playing": sum(1 for p in self.bot.voice_clients if p.is_playing)
+            "playing": sum(1 for p in self.bot.voice_clients if hasattr(p, 'is_playing') and p.is_playing)
         }
         return web.json_response(data, headers=self.cors_headers)
 
@@ -140,30 +140,40 @@ class DashboardSystem:
         
         user_doc = await collection_myasync.find_one({"user_id": str(uid)}) or {}
         
-        is_prem = await self.bot.is_premium(int(uid))
-        from utils.config import OWNER_IDS
-        is_owner = int(uid) in OWNER_IDS
-        
-        plan_name = user_data.get("premium_plan", "Free Member")
-        if is_owner:
-            plan_name = "Premium Lifetime (Admin)"
-            is_prem = True
-        elif is_prem and plan_name == "Free Member":
-            plan_name = "Premium Member"
+        try:
+            target_uid = int(uid)
+            is_prem = await self.bot.is_premium(target_uid)
+            from utils.config import OWNER_IDS
+            is_owner = target_uid in OWNER_IDS
+            
+            # Default fallback if DB is missing or slow
+            plan_name = user_data.get("premium_plan", "Free Member") if user_data else "Free Member"
+            
+            if is_owner:
+                plan_name = "Premium Lifetime (Admin)"
+                is_prem = True
+            elif is_prem and plan_name == "Free Member":
+                plan_name = "Premium Member"
 
-        playlist_limit = 100 if (is_prem or is_owner) else 20
-        
-        resp = {
-            "id": uid,
-            "premium": is_prem,
-            "is_owner": is_owner,
-            "expire": user_data.get("premium_expire"),
-            "plan": plan_name,
-            "playlist_limit": playlist_limit,
-            "favorites": user_doc.get("favorites", []),
-            "playlists": user_doc.get("playlists", [])
-        }
-        return web.json_response(resp, headers=self.cors_headers)
+            # Support for "Admin" tag if they are owner
+            if is_owner:
+                 plan_name = "Admin / Owner"
+
+            playlist_limit = 100 if (is_prem or is_owner) else 20
+            
+            resp = {
+                "id": uid,
+                "premium": is_prem,
+                "is_owner": is_owner,
+                "expire": user_data.get("premium_expire") if user_data else None,
+                "plan": plan_name,
+                "playlist_limit": playlist_limit,
+                "favorites": user_doc.get("favorites", []) if user_doc else [],
+                "playlists": user_doc.get("playlists", []) if user_doc else []
+            }
+            return web.json_response(resp, headers=self.cors_headers)
+        except Exception as e:
+            return web.json_response({'error': str(e)}, headers=self.cors_headers)
 
     async def get_search(self, request):
         q = request.query.get('q') or request.query.get('query')
@@ -187,15 +197,18 @@ class DashboardSystem:
         uid = request.query.get('user_id')
         if not uid: return web.json_response({"found": False}, headers=self.cors_headers)
         try:
+            target_uid = int(uid)
+            # Efficiently search all guilds for the user's voice state
             for g in self.bot.guilds:
-                m = g.get_member(int(uid))
-                if m and m.voice and m.voice.channel:
-                    return web.json_response({
-                        "found": True,
-                        "guild_id": str(g.id),
-                        "guild_name": g.name,
-                        "channel_id": str(m.voice.channel.id)
-                    }, headers=self.cors_headers)
+                if target_uid in g._voice_states:
+                    vs = g._voice_states[target_uid]
+                    if vs.channel_id:
+                        return web.json_response({
+                            "found": True,
+                            "guild_id": str(g.id),
+                            "guild_name": g.name,
+                            "channel_id": str(vs.channel_id)
+                        }, headers=self.cors_headers)
         except: pass
         return web.json_response({"found": False}, headers=self.cors_headers)
 
