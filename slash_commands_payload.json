@@ -276,184 +276,6 @@
         "type": 1
     },
     {
-        "name": "join",
-        "description": "Joins your voice channel / เข้าร่วมช่องเสียงของคุณ",
-        "type": 1,
-        "options": [
-            {
-                "name": "channel",
-                "description": "Voice channel to join / ช่องเสียงที่ต้องการให้บอทเข้า",
-                "type": 7,
-                "required": false
-            }
-        ]
-    },
-    {
-        "name": "leave",
-        "description": "Disconnect the bot from voice channel / ตัดการเชื่อมต่อบอทจากช่องเสียง",
-        "type": 1
-    },
-    {
-        "name": "play",
-        "description": "Play a song from any source / เล่นเพลงจากแหล่งต่างๆ",
-        "type": 1,
-        "options": [
-            {
-                "name": "search",
-                "description": "Song name or link to play / ชื่อเพลงหรือลิงก์ youtube",
-                "type": 3,
-                "required": true
-            }
-        ]
-    },
-    {
-        "name": "nowplaying",
-        "description": "Show the currently playing song / แสดงเพลงที่กำลังเล่นอยู่",
-        "type": 1
-    },
-    {
-        "name": "volume",
-        "description": "Set music volume (1-100) / ปรับระดับเสียงเพลง (1-100)",
-        "type": 1,
-        "options": [
-            {
-                "name": "volume",
-                "description": "…",
-                "type": 4,
-                "required": false
-            }
-        ]
-    },
-    {
-        "name": "pause",
-        "description": "Pause or Resume the music / หยุดชั่วคราว หรือ เล่นเพลงต่อ",
-        "type": 1
-    },
-    {
-        "name": "skip",
-        "description": "Skip to next song / ข้ามไปเพลงถัดไป",
-        "type": 1,
-        "options": [
-            {
-                "name": "index",
-                "description": "Index of song to skip to (optional) / ลำดับเพลงที่ต้องการข้ามไป (ไม่จำเป็น)",
-                "type": 4,
-                "required": false
-            }
-        ]
-    },
-    {
-        "name": "skipto",
-        "description": "Skip to a specific song in the queue / ข้ามไปเพลงที่ระบุลำดับ",
-        "type": 1,
-        "options": [
-            {
-                "name": "index",
-                "description": "Index of the song to skip to / ลำดับเพลงที่ต้องการข้ามไป",
-                "type": 4,
-                "required": true
-            }
-        ]
-    },
-    {
-        "name": "clear",
-        "description": "Clear all songs in the queue / ล้างคิวเพลงทั้งหมด",
-        "type": 1
-    },
-    {
-        "name": "stop",
-        "description": "Stop music and disconnect / หยุดเพลงและออกจากช่องเสียง",
-        "type": 1
-    },
-    {
-        "name": "seek",
-        "description": "Seek to a specific time in the song / เลื่อนไปยังช่วงเวลาที่ต้องการ",
-        "type": 1,
-        "options": [
-            {
-                "name": "position",
-                "description": "Time position (e.g. 1:20) / ตำแหน่งเวลา (เช่น 1:20)",
-                "type": 3,
-                "required": true
-            }
-        ]
-    },
-    {
-        "name": "queue",
-        "description": "Show current music queue / แสดงคิวเพลงปัจจุบัน",
-        "type": 1
-    },
-    {
-        "name": "fix",
-        "description": "Fix voice issues by changing region / แก้ไขปัญหาเสียงด้วยการเปลี่ยน Region",
-        "type": 1
-    },
-    {
-        "name": "remove",
-        "description": "Remove a song from the queue / ลบเพลงออกจากคิว",
-        "type": 1,
-        "options": [
-            {
-                "name": "index",
-                "description": "Index of the song to remove / ลำดับเพลงที่ต้องการลบ",
-                "type": 4,
-                "required": true
-            }
-        ]
-    },
-    {
-        "name": "shuffle",
-        "description": "Shuffle the queue / สุ่มลำดับเพลงในคิว",
-        "type": 1
-    },
-    {
-        "name": "lyrics",
-        "description": "Get lyrics for the current or specified song / ดูเนื้อร้องเพลง",
-        "type": 1,
-        "options": [
-            {
-                "name": "query",
-                "description": "Song to search lyrics for (optional) / ชื่อเพลงที่ต้องการค้นหาเนื้อร้อง",
-                "type": 3,
-                "required": false
-            }
-        ]
-    },
-    {
-        "name": "grab",
-        "description": "Save current song to your DM / ส่งข้อมูลเพลงเข้า DM",
-        "type": 1
-    },
-    {
-        "name": "removedupes",
-        "description": "Remove duplicate songs from the queue / ลบเพลงซ้ำในคิว",
-        "type": 1
-    },
-    {
-        "name": "move",
-        "description": "Move a song to a different position in the queue / ย้ายตำแหน่งเพลง",
-        "type": 1,
-        "options": [
-            {
-                "name": "from_index",
-                "description": "Index of the song to move / ลำดับเพลงที่ต้องการย้าย",
-                "type": 4,
-                "required": true
-            },
-            {
-                "name": "to_index",
-                "description": "New position / ตำแหน่งใหม่",
-                "type": 4,
-                "required": true
-            }
-        ]
-    },
-    {
-        "name": "history",
-        "description": "Show recently played songs / แสดงประวัติเพลงที่เล่นไปแล้ว",
-        "type": 1
-    },
-    {
         "name": "own",
         "description": "Owner-only management commands / คำสั่งจัดการสำหรับเจ้าของบอท",
         "type": 1,
@@ -589,7 +411,7 @@
                 "type": 1,
                 "options": [
                     {
-                        "name": "type",
+                        "name": "status_type",
                         "description": "Type: playing, listening... / ประเภทสถานะ",
                         "type": 3,
                         "required": true,
@@ -916,8 +738,98 @@
         ]
     },
     {
-        "name": "play",
-        "description": "",
-        "type": 3
+        "name": "playlist",
+        "description": "จัดการเพลย์ลิสต์ของคุณ (Manage your playlists)",
+        "type": 1,
+        "options": [
+            {
+                "name": "create",
+                "description": "สร้างเพลย์ลิสต์ใหม่ (Create a new playlist)",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "name",
+                        "description": "ชื่อเพลย์ลิสต์",
+                        "type": 3,
+                        "required": true
+                    },
+                    {
+                        "name": "description",
+                        "description": "คำอธิบายสั้นๆ",
+                        "type": 3,
+                        "required": false
+                    }
+                ]
+            },
+            {
+                "name": "save",
+                "description": "บันทึกคิวปัจจุบันลงเพลย์ลิสต์ (Save current queue to playlist)",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "name",
+                        "description": "ชื่อเพลย์ลิสต์ที่จะบันทึก",
+                        "type": 3,
+                        "required": false
+                    },
+                    {
+                        "name": "description",
+                        "description": "คำอธิบาย",
+                        "type": 3,
+                        "required": false
+                    }
+                ]
+            },
+            {
+                "name": "add",
+                "description": "เพิ่มเพลงเข้าเพลย์ลิสต์ (Add track(s) to playlist)",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "name",
+                        "description": "ชื่อเพลย์ลิสต์",
+                        "type": 3,
+                        "required": true
+                    },
+                    {
+                        "name": "query",
+                        "description": "ลิงก์เพลง หรือ ชื่อเพลง",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "list",
+                "description": "ดูรายการเพลย์ลิสต์ทั้งหมด (List all your playlists)",
+                "type": 1
+            },
+            {
+                "name": "delete",
+                "description": "ลบเพลย์ลิสต์ (Delete a playlist)",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "name",
+                        "description": "ชื่อเพลย์ลิสต์ที่ต้องการลบ",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "name": "load",
+                "description": "โหลดเพลย์ลิสต์มาเล่น (Load and play a playlist)",
+                "type": 1,
+                "options": [
+                    {
+                        "name": "name",
+                        "description": "ชื่อเพลย์ลิสต์",
+                        "type": 3,
+                        "required": true
+                    }
+                ]
+            }
+        ]
     }
 ]
