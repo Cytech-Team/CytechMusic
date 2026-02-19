@@ -141,7 +141,9 @@ class Cyori(commands.Bot):
                              "title": getattr(t, 'title', 'Unknown'),
                              "author": getattr(t, 'author', 'Unknown'),
                              "uri": getattr(t, 'uri', ''),
-                             "encoded": getattr(t, 'track_id', '')
+                             "encoded": getattr(t, 'track_id', '') or getattr(t, 'id', ''),
+                             "duration": getattr(t, 'length', getattr(t, 'duration', 0)),
+                             "thumbnail": t.thumbnail if getattr(t, 'thumbnail', None) and "null" not in t.thumbnail else "logo-circle.png"
                          })
                 except: pass
 
@@ -149,13 +151,13 @@ class Cyori(commands.Bot):
                     "playing": True, # Activity Flag
                     "paused": p.is_paused if hasattr(p, 'is_paused') else False,
                     "pos": p.position if hasattr(p, 'position') else 0,
-                    "len": p.current.length if hasattr(p.current, 'length') else 0,
+                    "duration": p.current.length if hasattr(p.current, 'length') else 0,
                     "is_stream": getattr(p.current, 'is_stream', False),
                     "title": getattr(p.current, 'title', 'Unknown Track'),
                     "author": getattr(p.current, 'author', 'Unknown Artist'),
                     "uri": getattr(p.current, 'uri', ''),
                     "encoded": getattr(p.current, 'track_id', ''),
-                    "thumb": p.current.thumbnail if getattr(p.current, 'thumbnail', None) and "null" not in p.current.thumbnail else "logo-circle.png",
+                    "thumbnail": p.current.thumbnail if getattr(p.current, 'thumbnail', None) and "null" not in p.current.thumbnail else "logo-circle.png",
                     "vol": p.volume if hasattr(p, 'volume') else 100,
                     "loop_mode": loop_mode,
                     "queue": queue_tracks

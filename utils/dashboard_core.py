@@ -470,8 +470,19 @@ class DashboardSystem:
             elif act == 'pause':
                 await p.set_pause(not p.is_paused)
                 await p.update_controller(force=True)
-            elif act == 'skip': await p.stop()
-            elif act == 'stop': await p.teardown()
+            elif act == 'skip': 
+                # Handle Loop Track mode: must turn off loop to skip
+                from cytechlink.enums import LoopType
+                if hasattr(p.queue, '_repeat') and p.queue._repeat.mode == LoopType.track:
+                    p.queue._repeat.set_mode(LoopType.off)
+                elif hasattr(p.queue, 'mode') and str(p.queue.mode).endswith('track'):
+                    p.queue.mode = 'off'
+
+                await p.stop()
+                await self.bot.broadcast_guild(gid)
+            elif act == 'stop': 
+                await p.teardown()
+                await self.bot.broadcast_guild(gid)
             elif act == 'volume':
                 await p.set_volume(max(0, min(int(val), 100)))
                 await p.update_controller(force=True)
@@ -486,11 +497,26 @@ class DashboardSystem:
                 else: p.queue._repeat.set_mode(LoopType.off)
                 await p.update_controller(force=True)
             elif act == 'skipto':
+                # Handle Loop Track mode: must turn off loop to jump
+                from cytechlink.enums import LoopType
+                if hasattr(p.queue, '_repeat') and p.queue._repeat.mode == LoopType.track:
+                    p.queue._repeat.set_mode(LoopType.off)
+                elif hasattr(p.queue, 'mode') and str(p.queue.mode).endswith('track'):
+                    p.queue.mode = 'off'
+
                 p.queue.skipto(int(val) + 1)
                 await p.stop()
+                await self.bot.broadcast_guild(gid)
             elif act == 'remove':
                 p.queue.remove(int(val) + 1)
                 await p.update_controller(force=True)
+                await self.bot.broadcast_guild(gid)
+            elif act == 'shuffle':
+                p.queue.shuffle()
+                await self.bot.broadcast_guild(gid)
+            elif act == 'clear':
+                p.queue.clear()
+                await self.bot.broadcast_guild(gid)
             elif act == 'favorite':
                 if uid:
                     from bot import collection_myasync

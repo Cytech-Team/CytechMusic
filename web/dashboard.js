@@ -448,10 +448,10 @@ function initRealtime(guildId) {
                         is_playing: d.playing,
                         paused: d.paused,
                         position: d.pos,
-                        duration: d.len,
+                        duration: d.duration,
                         title: d.title || 'Nothing Playing',
                         author: d.author || '-',
-                        thumbnail: d.thumb,
+                        thumbnail: d.thumbnail,
                         encoded: d.encoded || '',
                         uri: d.uri || '',
                         volume: d.vol || 100,
@@ -496,10 +496,10 @@ async function fetchStatus() {
             is_playing: d.playing,
             paused: d.paused,
             position: d.pos,
-            duration: d.len,
+            duration: d.duration,
             title: d.title || 'Nothing Playing',
             author: d.author || '-',
-            thumbnail: d.thumb,
+            thumbnail: d.thumbnail,
             encoded: d.encoded || '',
             uri: d.uri || '',
             volume: d.vol || 100,
@@ -1010,7 +1010,7 @@ function renderQueue(queue) {
         const safeTitle = (track.title || "Unknown").replace(/'/g, "\\'");
 
         // Format duration
-        const duration = formatTime(track.length); // Use helper function
+        const duration = formatTime(track.duration); // Use helper function
 
         return `
         <div class="queue-item">
@@ -1018,10 +1018,11 @@ function renderQueue(queue) {
                 <img src="${track.thumbnail || 'logo-circle.png'}" onerror="this.src='logo-circle.png'">
             </div>
             <div class="qi-info">
-                <div class="qi-title" onclick="playTrack('${track.encoded}', '${track.uri}')">${track.title}</div>
+                <div class="qi-title" onclick="sendControl('skipto', ${index})">${track.title}</div>
                 <div class="qi-artist">${track.author} • ${duration}</div>
             </div>
             <div class="qi-actions">
+                <button class="btn-glass btn-sm" onclick="sendControl('skipto', ${index})" title="Play Now"><i class="fas fa-play"></i></button>
                 <button class="btn-glass btn-sm" onclick="sendControl('remove', ${index})" title="Remove"><i class="fas fa-trash"></i></button>
             </div>
         </div>
