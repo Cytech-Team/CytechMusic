@@ -310,24 +310,49 @@ class LyricsManager:
         self.platforms = {name: cls() for name, cls in LYRICS_PLATFORMS.items()}
 
     async def get_lyrics(self, title: str, artist: str = "") -> Optional[dict[str, str]]:
-        # Clean title for better search
-        # Remove extra tags like [Official Video], (feat. ...), etc.
-        clean_title = re.sub(r"[\(\[].*?[\)\]]", "", title).strip()
+        # Function to clean text
+        def clean_text(text):
+            # Remove content in brackets/parentheses like (feat.) [Official]
+            text = re.sub(r"[\(\[].*?[\)\]]", "", text)
+            # Remove non-alphanumeric chars usually incorrectly parsed
+            text = re.sub(r"[^\w\s\-\']", "", text)
+            return text.strip()
+
+        clean_title = clean_text(title)
+        clean_artist = clean_text(artist)
+
+        search_queries = []
+        if clean_artist:
+            search_queries.append((clean_title, clean_artist))
+        # If artist scraping fails, sometimes title contains everything
+        search_queries.append((f"{artist} {title}".strip(), ""))
         
-        # Priority order: lrclib (usually has sync lyrics too), musixmatch, azlyrics, lyrist, genius
-        for name in ["lrclib", "musixmatch", "azlyrics", "lyrist", "genius"]:
+        # Also try raw if cleaning was too aggressive
+        if title != clean_title:
+            search_queries.append((title, artist))
+
+        print(f"[Lyrics] Searching for: {search_queries[0]}")
+
+        # Priority order: lrclib, musixmatch, lyrist, genius, azlyrics
+        # Adjusted priority: lrclib is best for sync, lyrist is fast, others are backups
+        platforms_list = ["lrclib", "lyrist", "musixmatch", "genius", "azlyrics"]
+
+        for name in platforms_list:
             platform = self.platforms.get(name)
             if not platform: continue
             
-            # If Genius, skip if no token
             if name == "genius" and not platform.genius:
                 continue
-                
-            try:
-                lyrics = await platform.get_lyrics(clean_title, artist)
-                if lyrics:
-                    return lyrics
-            except Exception as e:
-                print(f"Error fetching lyrics from {name}: {e}")
-                continue
+
+            for t, a in search_queries:
+                try:
+                    # Don't spam requests too fast if we are retrying
+                    lyrics = await platform.get_lyrics(t, a)
+                    if lyrics:
+                        print(f"[Lyrics] Found on {name}")
+                        return lyrics
+                except Exception as e:
+                    print(f"[Lyrics] Error fetching from {name}: {e}")
+                    continue
+                    
         return None
