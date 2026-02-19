@@ -1192,6 +1192,7 @@ async function renderCollection() {
 
         userPlaylists = data.playlists || [];
         userFavorites = data.favorites || [];
+        window.userFavorites = userFavorites; // Sync window reference
         const limit = data.playlist_limit || 20;
 
         // Sync local cache for script.js
@@ -1342,8 +1343,21 @@ async function deletePlaylist(idx) {
 }
 
 async function removeFavorite(uri) {
+    if (!currentUserId) return;
     try {
+        // Optimistic Remove
+        if (window.userFavorites) {
+            window.userFavorites = window.userFavorites.filter(f => f.uri !== uri);
+            updateFavoriteButton();
+        }
+
         await smartFetch('/api/playlist', { method: 'POST', body: JSON.stringify({ user_id: currentUserId, action: 'remove_favorite', uri }) });
+
+        // Secondary control to ensure bot state is updated if it was the currently playing song
+        if (window.currentTrack && window.currentTrack.uri === uri) {
+            await sendControl('favorite', window.currentTrack);
+        }
+
         renderCollection();
     } catch (e) { console.error(e); }
 }

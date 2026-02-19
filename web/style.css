@@ -3001,3 +3001,71 @@ input[type="range"].slider::-ms-fill-upper {
 .lyrics-content-box::-webkit-scrollbar-track {
     background: transparent;
 }
+
+/* --- QUEUE SYSTEM --- */
+.queue-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.queue-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 12px;
+    transition: all 0.3s var(--ease-smooth);
+}
+
+.queue-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateX(5px);
+    border-color: var(--gold-primary-faded);
+}
+
+.qi-thumb {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+}
+
+.qi-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.qi-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.qi-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+
+.qi-title:hover {
+    color: var(--gold-primary);
+}
+
+.qi-artist {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.qi-actions {
+    display: flex;
+    gap: 8px;
+}

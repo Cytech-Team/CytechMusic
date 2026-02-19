@@ -522,40 +522,56 @@ class DashboardSystem:
                     else: 
                         return
 
-                    if not song_data.get('uri') and not song_data.get('encoded'): return
+                    if not song_data.get('uri') and not song_data.get('encoded') and not song_data.get('identifier'): return
 
                     # Fetch current favorites to check existence
                     user_doc = await collection_myasync.find_one({"user_id": str(uid)}) or {}
                     favorites = user_doc.get("favorites", [])
                     
-                    # Robust check: Match by URI or Track ID (encoded) or Title+Author
+                    # Robust check: Match by URI or Track ID (encoded) or Identifier or Title+Author
                     exists_index = -1
+                    target_uri = song_data.get('uri')
+                    target_encoded = song_data.get('encoded')
+                    target_id = song_data.get('identifier')
+                    target_title = song_data.get('title')
+                    target_author = song_data.get('author')
+
                     for i, fav in enumerate(favorites):
                         # Match URI
-                        if fav.get('uri') and fav.get('uri') == song_data['uri']:
+                        if target_uri and fav.get('uri') == target_uri:
                             exists_index = i
                             break
                         # Match Encoded
-                        if fav.get('encoded') and fav.get('encoded') == song_data['encoded']:
+                        if target_encoded and fav.get('encoded') == target_encoded:
                             exists_index = i
                             break
                         # Match Identifier
-                        if fav.get('identifier') and fav.get('identifier') == song_data.get('identifier'):
+                        if target_id and fav.get('identifier') == target_id:
+                            exists_index = i
+                            break
+                        # Match Title + Author (Fallback for different providers)
+                        if target_title == fav.get('title') and target_author == fav.get('author'):
                             exists_index = i
                             break
                     
                     if exists_index > -1:
-                        # Toggle Remove
+                        # Toggle Remove: Pull based on any available unique field
                         target_fav = favorites[exists_index]
-                        await collection_myasync.update_one(
-                            {"user_id": str(uid)}, 
-                            {"$pull": {"favorites": {"uri": target_fav.get('uri') if target_fav.get('uri') else None, "encoded": target_fav.get('encoded')}}}
-                        )
-                        # Backup pull by specific fields if simple pull fails
-                        if target_fav.get('uri'):
-                             await collection_myasync.update_one(
+                        pull_target = {}
+                        if target_fav.get('uri'): pull_target['uri'] = target_fav['uri']
+                        elif target_fav.get('encoded'): pull_target['encoded'] = target_fav['encoded']
+                        elif target_fav.get('identifier'): pull_target['identifier'] = target_fav['identifier']
+                        
+                        if pull_target:
+                            await collection_myasync.update_one(
                                 {"user_id": str(uid)}, 
-                                {"$pull": {"favorites": {"uri": target_fav['uri']}}}
+                                {"$pull": {"favorites": pull_target}}
+                            )
+                        else:
+                            # Edge case: If no unique field, pull exactly (less reliable but fallback)
+                            await collection_myasync.update_one(
+                                {"user_id": str(uid)}, 
+                                {"$pull": {"favorites": target_fav}}
                             )
                     else:
                         # Add
@@ -564,9 +580,11 @@ class DashboardSystem:
                             {"$addToSet": {"favorites": song_data}}, 
                             upsert=True
                         )
-            
-            # Broadcast update
-            await asyncio.sleep(0.05)
+                    
+            # Broadcast update immediately
+            await self.bot.broadcast_guild(gid)
+            # Second broadcast after a small delay to ensure DB sync for all clients
+            await asyncio.sleep(0.5)
             await self.bot.broadcast_guild(gid)
         except: pass
 
