@@ -134,33 +134,33 @@ class DashboardSystem:
 
     async def get_user_info(self, request):
         uid = request.query.get('user_id')
-        if not uid: return web.json_response({'error': 'no_user'}, headers=self.cors_headers)
-        
-        from bot import collection_myasync
-        # Merge general user data (premium) and user_doc (playlists/favs)
-        data_all = await collection_myasync.find_one({"users": {"$exists": True}}) or {}
-        user_data = data_all.get("users", {}).get(str(uid), {})
-        
-        user_doc = await collection_myasync.find_one({"user_id": str(uid)}) or {}
+        if not uid: 
+            return web.json_response({'error': 'no_user'}, headers=self.cors_headers)
         
         try:
             target_uid = int(uid)
+            from bot import collection_myasync
+            
+            # Fetch Data with Defaults
+            data_all = await collection_myasync.find_one({"users": {"$exists": True}}) or {}
+            user_data = data_all.get("users", {}).get(str(uid), {})
+            
+            user_doc = await collection_myasync.find_one({"user_id": str(uid)}) or {}
+            
+            # Premium Logic
             is_prem = await self.bot.is_premium(target_uid)
             from utils.config import OWNER_IDS
             is_owner = target_uid in OWNER_IDS
             
-            # Default fallback if DB is missing or slow
-            plan_name = user_data.get("premium_plan", "Free Member") if user_data else "Free Member"
+            plan_name = user_data.get("premium_plan", "Free Member")
+            expire_date = user_data.get("premium_expire")
             
             if is_owner:
-                plan_name = "Premium Lifetime (Admin)"
+                plan_name = "Admin / Owner"
                 is_prem = True
+                expire_date = "Lifetime"
             elif is_prem and plan_name == "Free Member":
                 plan_name = "Premium Member"
-
-            # Support for "Admin" tag if they are owner
-            if is_owner:
-                 plan_name = "Admin / Owner"
 
             playlist_limit = 100 if (is_prem or is_owner) else 20
             
@@ -168,7 +168,7 @@ class DashboardSystem:
                 "id": uid,
                 "premium": is_prem,
                 "is_owner": is_owner,
-                "expire": user_data.get("premium_expire") if (user_data and user_data.get("premium_expire")) else ("Lifetime" if is_owner else None),
+                "expire": expire_date,
                 "plan": plan_name,
                 "playlist_limit": playlist_limit,
                 "favorites": user_doc.get("favorites", []) if user_doc else [],
@@ -176,7 +176,15 @@ class DashboardSystem:
             }
             return web.json_response(resp, headers=self.cors_headers)
         except Exception as e:
-            return web.json_response({'error': str(e)}, headers=self.cors_headers)
+            print(f"[Dashboard] Get User Info Error for {uid}: {e}")
+            # Return basic info even if error occurs, to prevent frontend crash
+            return web.json_response({
+                "id": uid,
+                "premium": False, 
+                "plan": "Error Loading",
+                "favorites": [],
+                "playlists": []
+            }, headers=self.cors_headers)
 
     async def get_search(self, request):
         q = request.query.get('q') or request.query.get('query')
@@ -228,21 +236,24 @@ class DashboardSystem:
 
     async def get_find_voice(self, request):
         uid = request.query.get('user_id')
-        if not uid: return web.json_response({"found": False}, headers=self.cors_headers)
+        if not uid: 
+            return web.json_response({"found": False}, headers=self.cors_headers)
+        
         try:
             target_uid = int(uid)
-            # Efficiently search all guilds for the user's voice state
-            for g in self.bot.guilds:
-                if target_uid in g._voice_states:
-                    vs = g._voice_states[target_uid]
-                    if vs.channel_id:
-                        return web.json_response({
-                            "found": True,
-                            "guild_id": str(g.id),
-                            "guild_name": g.name,
-                            "channel_id": str(vs.channel_id)
-                        }, headers=self.cors_headers)
-        except: pass
+            # Iterate over guilds to find where the user has a voice state
+            for guild in self.bot.guilds:
+                member = guild.get_member(target_uid)
+                if member and member.voice and member.voice.channel:
+                    return web.json_response({
+                        "found": True,
+                        "guild_id": str(guild.id),
+                        "guild_name": guild.name,
+                        "channel_id": str(member.voice.channel.id)
+                    }, headers=self.cors_headers)
+        except Exception as e:
+            print(f"[Dashboard] Find Voice Error: {e}")
+            
         return web.json_response({"found": False}, headers=self.cors_headers)
 
     async def get_recommended(self, request):
