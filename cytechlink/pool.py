@@ -374,7 +374,8 @@ class Node:
         if not is_url and not re.match(r"(?:ytm?|sc)search:.", query):
             query = f"{search_type}:{query}"
 
-        if SPOTIFY_URL_REGEX.match(query):
+        if match := SPOTIFY_URL_REGEX.search(query):
+            query = match.group(0) # Use the exact URL found
             try:
                 if not self.spotify_client:
                     raise InvalidSpotifyClientAuthorization(
