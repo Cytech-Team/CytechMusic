@@ -27,6 +27,7 @@ STRIPE_API_KEY = os.getenv("STRIPE_API_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 STRIPE_PROXY_URL = os.getenv("STRIPE_PROXY_URL") # Optional: Proxy URL for Stripe Webhooks (HTTPS)
 DOMAIN_URL = os.getenv("DOMAIN_URL", "http://localhost:3000") # Public URL of the bot
+ERROR_LOG_WEBHOOK = os.getenv("ERROR_LOG_WEBHOOK", None) # Optional: Discord Webhook for error logging
 
 WEB_PORT = int(os.getenv("WEB_PORT", 3000))
 

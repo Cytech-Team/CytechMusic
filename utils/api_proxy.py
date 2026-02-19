@@ -4,6 +4,7 @@ from aiohttp import web
 import json
 import traceback
 import asyncio
+import datetime
 
 class APIProxyManager:
     """
@@ -55,9 +56,44 @@ class APIProxyManager:
             else:
                 return self.error_response(f"Unknown action: {action}", status=400)
         except Exception as e:
-            print(f"[API Proxy] Error processing '{action}': {e}")
+            error_msg = f"Error processing '{action}': {str(e)}"
+            print(f"[API Proxy] {error_msg}")
             traceback.print_exc()
+            
+            # Send to Webhook
+            asyncio.create_task(self.send_error_webhook(action, str(e), traceback.format_exc()))
+            
             return self.error_response("Internal Server Error", status=500)
+
+    async def send_error_webhook(self, action, error_text, detailed_trace):
+        """Sends error details to a configured Discord Webhook."""
+        # You should put your actual Webhook URL in config.py or .env
+        from utils.config import ERROR_LOG_WEBHOOK 
+        
+        if not ERROR_LOG_WEBHOOK: return
+
+        embed = {
+            "title": "🚨 API Proxy Error",
+            "color": 16711680, # Red
+            "fields": [
+                {"name": "Action", "value": f"`{action}`", "inline": True},
+                {"name": "Error", "value": f"```{error_text[:1000]}```", "inline": False}
+            ],
+            "footer": {"text": "CytechX System Monitor"},
+            "timestamp": datetime.datetime.utcnow().isoformat()
+        }
+        
+        # If traceback is not too long, add it
+        if len(detailed_trace) < 800:
+             embed["description"] = f"Traceback:\n```py\n{detailed_trace}```"
+
+        payload = {"embeds": [embed]}
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                await session.post(ERROR_LOG_WEBHOOK, json=payload)
+        except Exception as we:
+            print(f"Failed to send webhook: {we}")
 
     # --- HANDLERS ---
 
