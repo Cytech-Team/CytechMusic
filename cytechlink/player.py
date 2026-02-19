@@ -1373,7 +1373,14 @@ class Player(VoiceProtocol):
                         print(f"Error resending controller in {self.guild.name} ({self.guild.id}): {e}")
                         self.controller = None
             
-            # --- OLD RECREATION LOGIC REMOVED TO PREVENT CONFLICT WITH /NP --- 
+            # ───────────────────────────────
+            # 5. Broadcast to Dashboard
+            # ───────────────────────────────
+            try:
+                # Embedded Dashboard Broadcast (CytechX Core)
+                if hasattr(self.bot, "broadcast_guild"):
+                    self.bot.loop.create_task(self.bot.broadcast_guild(self.guild.id))
+            except: pass
 
         except Exception as e:
             print(f"Error in update controller for {self.guild.name} ({self.guild.id}):", e)
@@ -1620,8 +1627,13 @@ class Player(VoiceProtocol):
             except (discord.HTTPException, discord.NotFound):
                 pass
 
+        # ----- DASHBOARD DISCONNECT -----
+        if hasattr(self.bot, "broadcast_guild"):
+            self.bot.loop.create_task(self.bot.broadcast_guild(self.guild.id))
+
         # ----- FINAL DESTROY -----
         await safe_call(self.destroy)
+        self.bot.loop.create_task(self.bot.broadcast_guild(self.guild.id)) # Final broadcast to clear UI
 
     async def get_tracks(
         self,
@@ -1768,16 +1780,17 @@ class Player(VoiceProtocol):
         await self._node.send(method=0, guild_id=self._guild.id, data={"paused": pause})
         self._paused = pause
         # If user manually handles pause/resume, clear auto_paused flag
-        if not auto:
-            self.auto_paused = False
-        else:
-            self.auto_paused = pause
+        self.auto_paused = pause if auto else False
+        if hasattr(self.bot, "broadcast_guild"):
+            self.bot.loop.create_task(self.bot.broadcast_guild(self.guild.id))
         return self._paused
 
     async def set_volume(self, volume: int, requester: Member = None) -> int:
         """Sets the volume of the player as an integer. Lavalink accepts values from 0 to 500."""
         await self._node.send(method=0, guild_id=self._guild.id, data={"volume": volume})
         self._volume = volume
+        if hasattr(self.bot, "broadcast_guild"):
+            self.bot.loop.create_task(self.bot.broadcast_guild(self.guild.id))
         return self._volume
 
     async def shuffle(self, queue_type: str, requester: Member = None) -> None:
@@ -1788,6 +1801,8 @@ class Player(VoiceProtocol):
         shuffle(replacement)
         self.queue.replace(queue_type, replacement)
         self.shuffle_votes.clear()
+        if hasattr(self.bot, "broadcast_guild"):
+            self.bot.loop.create_task(self.bot.broadcast_guild(self.guild.id))
 
     async def set_repeat(self, mode: str = None) -> str:
         if not mode:
@@ -1802,6 +1817,9 @@ class Player(VoiceProtocol):
 
         if not is_found:
             raise CytechlinkException("Invalid repeat mode.")
+
+        if hasattr(self.bot, "broadcast_guild"):
+            self.bot.loop.create_task(self.bot.broadcast_guild(self.guild.id))
 
         return mode
     

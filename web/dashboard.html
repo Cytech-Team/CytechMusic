@@ -112,20 +112,19 @@
     </div>
 
     <!-- 2. DASHBOARD MAIN AREA -->
-    <main class="container" id="dashboard-container" style="display: none; padding-top: 120px;">
-        <div class="dashboard-grid">
-
+    <main class="dashboard-main" id="dashboard-container" style="display: none; padding-top: 100px;">
+        <div class="container dash-grid">
             <!-- SIDEBAR -->
             <aside class="sidebar">
-                <div class="user-profile-mini"
-                    style="text-align: center; padding-bottom: 20px; border-bottom: 1px solid var(--glass-border);">
-                    <img id="user-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="User"
-                        style="width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--gold-primary); margin-bottom: 10px;">
-                    <h3 id="user-name" style="margin-bottom: 5px;">Guest</h3>
-                    <p id="user-discriminator" style="color: var(--text-muted); font-size: 0.9rem;">#0000</p>
+                <div class="user-profile-mini">
+                    <img id="user-avatar" src="logo-circle.png" alt="Avatar" class="avatar-img">
+                    <div class="user-info-text">
+                        <h4 id="user-name">Loading...</h4>
+                        <span id="user-badge" class="badge-premium">Free Member</span>
+                    </div>
                 </div>
 
-                <ul class="sidebar-menu" style="margin-top: 20px; list-style: none; padding: 0;">
+                <ul class="sidebar-links">
                     <li>
                         <a href="#" class="sidebar-btn active" onclick="switchTab('player', this)">
                             <i class="fas fa-play-circle"></i> <span class="lang-text" data-en="Player"
@@ -134,7 +133,7 @@
                     </li>
                     <li>
                         <a href="#" class="sidebar-btn" onclick="switchTab('queue', this)">
-                            <i class="fas fa-list-ol"></i> <span class="lang-text" data-en="Queue"
+                            <i class="fas fa-list-ul"></i> <span class="lang-text" data-en="Queue"
                                 data-th="คิวเพลง">Queue</span>
                         </a>
                     </li>
@@ -142,6 +141,12 @@
                         <a href="#" class="sidebar-btn" onclick="switchTab('favorites', this)">
                             <i class="fas fa-heart"></i> <span class="lang-text" data-en="Collection"
                                 data-th="คอลเลกชัน">Collection</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-btn" onclick="switchTab('quests', this)">
+                            <i class="fas fa-tasks"></i> <span class="lang-text" data-en="Quests"
+                                data-th="ภารกิจ">Quests</span>
                         </a>
                     </li>
                     <li>
@@ -284,6 +289,60 @@
                                 <input type="range" min="0" max="100" value="100" class="volume-slider"
                                     style="position: relative; width: 80px;" oninput="control('volume', this.value)">
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: QUESTS -->
+                <div id="tab-quests" class="dash-tab-content" style="display: none;">
+                    <div class="quest-system-container">
+                        <!-- User Rank Card -->
+                        <div class="card glass-effect"
+                            style="margin-bottom: 30px; padding: 30px; display: flex; align-items: center; gap: 30px; border: 1px solid var(--gold-primary-faded);">
+                            <div class="rank-avatar-wrapper" style="position: relative;">
+                                <img id="quest-user-avatar" src="logo-circle.png"
+                                    style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--gold-primary); box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);">
+                                <div id="quest-user-level"
+                                    style="position: absolute; bottom: -5px; right: -5px; background: var(--gold-metallic); color: #000; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; border: 2px solid #000;">
+                                    1</div>
+                            </div>
+                            <div style="flex: 1;">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
+                                    <div>
+                                        <h2 id="quest-user-name"
+                                            style="margin: 0; font-size: 1.8rem; color: var(--gold-primary);">User</h2>
+                                        <p style="margin: 5px 0 0; color: var(--text-muted); font-size: 0.9rem;">Next
+                                            rank at <span id="quest-xp-next">1000</span> XP</p>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div
+                                            style="font-size: 0.8rem; color: var(--gold-dim); letter-spacing: 1px; font-weight: 700;">
+                                            TOTAL POINTS</div>
+                                        <div id="quest-total-points"
+                                            style="font-size: 1.5rem; font-weight: 800; color: #fff;">0</div>
+                                    </div>
+                                </div>
+                                <div class="progress-bar" style="height: 12px; background: rgba(255,255,255,0.05);">
+                                    <div id="quest-xp-bar" class="progress-fill" style="width: 30%;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3 class="text-gradient"
+                                style="font-size: 1.4rem; display: flex; align-items: center; gap: 12px; margin: 0;">
+                                <i class="fas fa-calendar-check"></i>
+                                <span class="lang-text" data-en="Daily Quests" data-th="ภารกิจรายวัน">Daily
+                                    Quests</span>
+                            </h3>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">Resets every 24h</div>
+                        </div>
+
+                        <div id="quest-list" class="quest-list"
+                            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+                            <!-- Quests here -->
                         </div>
                     </div>
                 </div>
@@ -481,43 +540,6 @@
 
     <script src="script.js"></script>
     <script src="dashboard.js"></script>
-    <script>
-        // Simple Tab Switcher for Dashboard
-        function switchTab(tabName, btn) {
-            // Hide all tabs
-            document.querySelectorAll('.dash-tab-content').forEach(el => el.style.display = 'none');
-            // Show target tab
-            document.getElementById('tab-' + tabName).style.display = 'block';
-
-            // Update buttons
-            document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
-            if (btn) btn.classList.add('active');
-        }
-
-        // Integration to update stats in sidebar
-        async function updateDashStats() {
-            if (document.hidden) return; // Save requests
-
-            try {
-                // Call the global fetch function if available
-                if (window.fetchGlobalStats) {
-                    await window.fetchGlobalStats();
-                    const s = document.getElementById('stat-servers');
-                    const u = document.getElementById('stat-users');
-
-                    if (s) document.getElementById('dash-server-count').textContent = s.textContent;
-                    if (u) document.getElementById('dash-user-count').textContent = u.textContent;
-                }
-            } catch (e) {
-                console.log(e);
-            }
-        }
-
-        // Init
-        document.addEventListener('DOMContentLoaded', () => {
-            setInterval(updateDashStats, 60000); // 1 minute is enough for global stats
-        });
-    </script>
 </body>
 
 </html>

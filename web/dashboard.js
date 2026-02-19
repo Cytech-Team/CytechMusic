@@ -58,6 +58,11 @@ let playerState = {
 // ==========================================
 
 function control(action, value = null) {
+    if (!selectedGuildId) {
+        showNotification("No Channel", "ไม่ระบุช่อง", "Please join a voice channel first to control the player.", "กรุณาเข้าห้องเสียงก่อนเพื่อควบคุมเครื่องเล่นนะครับ", "error");
+        return;
+    }
+
     // OPTIMISTIC UPDATE: Update UI immediately explicitly
     if (action === 'playpause') {
         const playIcon = document.getElementById('play-icon');
@@ -151,19 +156,30 @@ function updateProgressUI(currentMs, totalMs) {
     const progressBar = document.getElementById('progress-fill');
     const timeCurrent = document.getElementById('current-time');
     const timeTotal = document.getElementById('total-duration');
+    const isStream = window.currentTrack && window.currentTrack.is_stream;
 
     let percent = 0;
-    if (totalMs > 0) {
-        percent = Math.min((currentMs / totalMs) * 100, 100);
+    if (isStream) {
+        percent = 100; // Full bar for streams
+        if (timeCurrent) timeCurrent.textContent = formatTime(currentMs);
+        if (timeTotal) timeTotal.textContent = "LIVE";
+    } else {
+        if (totalMs > 0) {
+            percent = Math.min((currentMs / totalMs) * 100, 100);
+        }
+        if (timeCurrent) timeCurrent.textContent = formatTime(currentMs);
+        if (timeTotal) timeTotal.textContent = formatTime(totalMs);
     }
 
-    if (progressBar) progressBar.style.width = `${percent}%`;
-    if (timeCurrent) timeCurrent.textContent = formatTime(currentMs);
-    if (timeTotal) timeTotal.textContent = formatTime(totalMs);
+    if (progressBar) {
+        progressBar.style.width = `${percent}%`;
+        if (isStream) progressBar.classList.add('stream-progress');
+        else progressBar.classList.remove('stream-progress');
+    }
 }
 
 function formatTime(ms) {
-    if (ms === Infinity || ms >= 36000000) return "LIVE";
+    if (ms >= 360000000) return "LIVE"; // 100 hours+ or infinity
     if (!ms || isNaN(ms) || ms < 0) return "0:00";
 
     const totalSeconds = Math.floor(ms / 1000);
@@ -216,192 +232,25 @@ function onUserLoggedIn(user) {
 }
 
 function switchTab(tabId, btn) {
+    // 1. Hide all tabs
     const tabs = document.querySelectorAll('.dash-tab-content');
-    tabs.forEach(t => {
-        t.style.opacity = '0';
-        setTimeout(() => {
-            t.style.display = 'none';
-        }, 200);
-    });
+    tabs.forEach(t => t.style.display = 'none');
 
+    // 2. Show target tab
     const target = document.getElementById(`tab-${tabId}`);
     if (target) {
-        setTimeout(() => {
-            target.style.display = 'block';
-            setTimeout(() => target.style.opacity = '1', 50);
-        }, 210);
+        target.style.display = tabId === 'player' ? 'block' : 'block'; // Ensure block display
+        if (tabId === 'quests') fetchQuests();
+        if (tabId === 'favorites') renderCollection();
     }
 
+    // 3. Update sidebar buttons
     const btns = document.querySelectorAll('.sidebar-btn');
     btns.forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
-
-    if (tabId === 'favorites') renderCollection();
 }
 
-// ==========================================
-// 7. COLLECTION / PLAYLISTS (Enhanced)
-// ==========================================
-
-function renderCollection() {
-    renderFavorites();
-    renderCustomPlaylists();
-    updatePlaylistLimits();
-}
-
-function renderFavorites() {
-    const list = document.getElementById('favorites-list');
-    if (!list) return;
-
-    let favs = [];
-    if (window.userPremium && window.userPremium.favorites) {
-        favs = window.userPremium.favorites;
-    }
-
-    if (!favs || favs.length === 0) {
-        list.innerHTML = `
-            <div class="queue-empty" style="text-align: center; padding: 20px; color: var(--text-muted); background: rgba(0,0,0,0.1); border-radius: 12px;">
-                <p>No favorites yet.</p>
-            </div>`;
-        return;
-    }
-
-    list.innerHTML = favs.map((track) => {
-        const safeTitle = (track.title || "Unknown").replace(/'/g, "\\'");
-        const safeUri = (track.uri || "").replace(/'/g, "\\'");
-        const encoded = track.encoded || "";
-
-        return `
-        <div class="queue-item" onclick="playFavorite('${encoded}', '${safeUri}')" style="cursor: pointer; padding: 8px 12px; margin-bottom: 5px;">
-            <div class="result-icon" style="color:#ff5555; width:24px; font-size: 0.8rem;"><i class="fas fa-heart"></i></div>
-            <div class="queue-details">
-                <span class="queue-title" style="font-size: 0.9rem;">${track.title}</span>
-                <span class="queue-artist" style="font-size: 0.8rem;">${track.author || '-'}</span>
-            </div>
-            <div class="queue-action">
-                <i class="fas fa-play-circle" style="color: var(--gold-primary);"></i>
-            </div>
-        </div>
-        `;
-    }).join('');
-}
-
-function renderCustomPlaylists() {
-    const container = document.getElementById('custom-playlists-list');
-    if (!container) return;
-
-    const playlists = (window.userPremium && window.userPremium.playlists) ? window.userPremium.playlists : [];
-
-    if (playlists.length === 0) {
-        container.innerHTML = `
-            <div style="grid-column: 1/-1; text-align: center; padding: 30px; background: rgba(255,255,255,0.02); border-radius: 15px; border: 1px dashed rgba(255,255,255,0.1);">
-                <i class="fas fa-folder-plus" style="font-size: 2rem; opacity: 0.2; margin-bottom: 10px;"></i>
-                <p style="color: var(--text-muted);">No playlists created.</p>
-            </div>`;
-        return;
-    }
-
-    container.innerHTML = playlists.map((pl, idx) => `
-        <div class="playlist-card glass-effect" style="padding: 15px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; position: relative;">
-            <div style="font-size: 1.5rem; margin-bottom: 10px; color: var(--gold-primary);"><i class="fas fa-music"></i></div>
-            <h5 style="margin: 0; font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${pl.name}</h5>
-            <p style="font-size: 0.75rem; color: var(--text-muted); margin: 5px 0 10px 0;">${pl.tracks ? pl.tracks.length : 0} Tracks</p>
-            
-            <div style="display: flex; gap: 8px;">
-                <button class="btn btn-primary" style="flex: 1; padding: 5px; font-size: 0.75rem;" onclick="playPlaylist(${idx})">Play</button>
-                <button class="btn-glass" style="width: 30px; height: 30px; padding: 0; color: #ff4444;" onclick="deletePlaylist(${idx})"><i class="fas fa-trash"></i></button>
-            </div>
-        </div>
-    `).join('');
-}
-
-function updatePlaylistLimits() {
-    const info = document.getElementById('playlist-limit-info');
-    if (!info || !window.userPremium || !window.userPremium.limits) return;
-
-    const { used, total } = window.userPremium.limits;
-    info.textContent = `Playlists: ${used}/${total}`;
-    if (used >= total) info.style.color = '#ffaa00';
-}
-
-// --- Playlist Management Logic ---
-
-function createNewPlaylistPrompt() {
-    document.getElementById('playlist-modal').style.display = 'flex';
-    document.getElementById('new-playlist-name').focus();
-}
-
-async function confirmCreatePlaylist() {
-    const nameInput = document.getElementById('new-playlist-name');
-    const name = nameInput.value.trim();
-    if (!name) return;
-
-    document.getElementById('playlist-modal').style.display = 'none';
-    nameInput.value = '';
-
-    try {
-        const res = await smartFetch('/api/playlist', {
-            method: 'POST',
-            body: JSON.stringify({
-                user_id: currentUserId,
-                action: 'create',
-                name: name
-            })
-        });
-        const data = await res.json();
-        if (data.status === 'ok') {
-            showNotification("Success", "สำเร็จ", "Playlist created successfully.", "สร้างเพลย์ลิสต์เรียบร้อยแล้ว", "success");
-            // Re-fetch user data to get updated list
-            if (typeof window.fetchPremiumStatus === 'function') await window.fetchPremiumStatus();
-            renderCollection();
-        } else {
-            showNotification("Error", "ข้อผิดพลาด", data.error, data.error);
-        }
-    } catch (e) {
-        console.error("Create Playlist Error:", e);
-    }
-}
-
-async function deletePlaylist(index) {
-    if (!confirm("Are you sure you want to delete this playlist?")) return;
-
-    try {
-        await smartFetch('/api/playlist', {
-            method: 'POST',
-            body: JSON.stringify({
-                user_id: currentUserId,
-                action: 'delete',
-                index: index
-            })
-        });
-        if (typeof window.fetchPremiumStatus === 'function') await window.fetchPremiumStatus();
-        renderCollection();
-    } catch (e) { console.error(e); }
-}
-
-async function playPlaylist(index) {
-    if (!selectedGuildId) {
-        alert("Please join a voice channel first!");
-        return;
-    }
-    const pl = window.userPremium.playlists[index];
-    if (!pl || !pl.tracks || pl.tracks.length === 0) return;
-
-    showNotification("Playlist Playing", "กำลังเล่นเพลย์ลิสต์", `Added ${pl.tracks.length} tracks to queue.`, `เพิ่ม ${pl.tracks.length} เพลงลงคิวแล้ว`, "success");
-
-    // Start playing first track, then add others
-    for (let i = 0; i < pl.tracks.length; i++) {
-        const t = pl.tracks[i];
-        await sendControl('play', JSON.stringify({
-            encoded: t.encoded,
-            uri: t.uri,
-            source: 'playlist'
-        }));
-        // Small delay between batch play to avoid spam
-        await new Promise(r => setTimeout(r, 200));
-    }
-}
-
+// 7. COLLECTION / PLAYLISTS (Consolidated at end)
 // ==========================================
 // 8. RECOMMENDED CLIPS
 // ==========================================
@@ -583,10 +432,14 @@ function initRealtime(guildId) {
                         author: d.author || '-',
                         thumbnail: d.thumb,
                         volume: d.vol || 100,
-                        queue: [] // WS doesn't send full queue yet
+                        is_stream: d.is_stream || false,
+                        loop_mode: d.loop_mode || "off",
+                        queue: d.queue || []
                     });
                 }
-            } catch (x) { }
+            } catch (x) {
+                console.error("[Realtime] Message Error:", x);
+            }
         };
 
         wsConnection.onclose = () => {
@@ -796,9 +649,13 @@ function updatePlayerUI(data) {
         uri: data.uri || data.web_url,
         thumbnail: data.thumbnail,
         length: data.duration,
-        is_stream: data.is_stream,
+        is_stream: data.is_stream || false,
         encoded: data.encoded
     };
+
+    // Toggle Live Badge
+    const liveBadge = document.querySelector('.live-badge');
+    if (liveBadge) liveBadge.style.display = data.is_stream ? 'block' : 'none';
 
     // Update Meta
     if (title) title.textContent = data.title || "Unknown Title";
@@ -829,7 +686,7 @@ function updatePlayerUI(data) {
     playerState.position = data.position || 0;
     playerState.duration = data.duration || 1;
     playerState.paused = data.paused;
-    playerState.lastUpdate = Date.now();
+    playerState.lastUpdate = performance.now(); // MUST use performance.now() to match timer
 
     updateProgressUI(playerState.position, playerState.duration);
 
@@ -1098,19 +955,23 @@ async function confirmAddTrackToPlaylist(plIdx) {
 // 6. INITIALIZATION & EVENTS
 // ==========================================
 
+async function playTrack(encoded, uri) {
+    if (!selectedGuildId) return showNotification("No Channel", "ไม่ระบุช่อง", "Please join a voice channel first.", "กรุณาเข้าห้องเสียงก่อนนะครับ", "error");
+    await sendControl('play', JSON.stringify({ encoded, uri, source: 'dashboard' }));
+}
+
 function attachSeekListener() {
     const bar = document.getElementById('progress-bar');
     if (bar && !bar.hasAttribute('data-listening')) {
         bar.addEventListener('click', seekTrack);
         bar.setAttribute('data-listening', 'true');
-        // console.log("[Dashboard] Seek listener attached.");
     }
 }
 
 // Ensure listener is attached after UI updates
 const originalUpdatePlayerUI = updatePlayerUI;
 updatePlayerUI = function (data) {
-    originalUpdatePlayerUI(data);
+    if (typeof originalUpdatePlayerUI === 'function') originalUpdatePlayerUI(data);
     attachSeekListener();
 };
 
@@ -1179,13 +1040,10 @@ async function addToFavorite() {
     await sendControl('favorite', window.currentTrack);
 
     // Refresh favorites list from backend to sync UI
-    if (typeof fetchPremiumStatus === 'function') {
-        await fetchPremiumStatus();
-    }
+    setTimeout(renderCollection, 1000);
 
     showNotification("Added to Favorites", "เพิ่มแล้ว", "Saved to your collection.", "บันทึกเพลงลงคอลเลคชันแล้ว", "success");
 }
-
 
 function handleQueueAction(action, index) {
     const item = document.getElementById(`q-item-${index}`);
@@ -1194,30 +1052,14 @@ function handleQueueAction(action, index) {
         item.style.pointerEvents = 'none';
         if (action === 'remove') item.style.transform = 'scale(0.95)';
     }
-
-    // Call API with slight delay to show visual feedback
     requestAnimationFrame(() => sendControl(action, index));
 }
 
-// CSS Injection for hover effect
-const style = document.createElement('style');
-style.innerHTML = `
-.queue-item:hover .play-now-badge { opacity: 0.6 !important; }
-.queue-item:active { transform: scale(0.98); }
-`;
-document.head.appendChild(style);
-
-
+// 7. COLLECTION SYSTEM
 // ==========================================
-// 7. COLLECTION SYSTEM (Folders, Playlists, Saving)
-// ==========================================
-
 let userPlaylists = [];
 let userFavorites = [];
 
-/**
- * Render complete Collection UI (Folders)
- */
 async function renderCollection() {
     const listFav = document.getElementById('favorites-list');
     const listCustom = document.getElementById('custom-playlists-list');
@@ -1235,41 +1077,37 @@ async function renderCollection() {
 
         if (limitInfo) limitInfo.textContent = `Playlists: ${userPlaylists.length} / ${limit}`;
 
-        // 1. Render Favorites
         if (listFav) {
             listFav.innerHTML = userFavorites.length === 0
                 ? `<div class="queue-empty" style="text-align:center; padding:20px; color:var(--text-muted);">No favorites yet</div>`
-                : userFavorites.map((track, idx) => `
-                    <div class="queue-item">
-                        <div class="qi-thumb-wrapper">
-                            <img src="${track.thumbnail || 'logo-circle.png'}" class="qi-thumb">
-                            <div class="qi-overlay" onclick="sendControl('play', JSON.stringify({encoded: '${track.encoded}', uri: '${track.uri}', source: 'favorites'}))"><i class="fas fa-play"></i></div>
+                : userFavorites.map((track) => `
+                    <div class="queue-item" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(255,255,255,0.05); margin-bottom: 5px; border-radius: 12px;">
+                        <img src="${track.thumbnail || 'logo-circle.png'}" style="width:40px; height:40px; border-radius:8px; object-fit: cover;">
+                        <div style="flex:1; overflow:hidden;">
+                            <div style="font-weight:500; font-size:0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${track.title}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted);">${track.author}</div>
                         </div>
-                        <div class="qi-info">
-                            <div class="qi-title">${track.title}</div>
-                            <div class="qi-author">${track.author}</div>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn-glass" onclick="playTrack('${track.encoded}', '${track.uri}')" style="width:30px; height:30px; padding:0;"><i class="fas fa-play" style="font-size:0.7rem;"></i></button>
+                            <button class="btn-glass" onclick="removeFavorite('${track.uri}')" style="width:30px; height:30px; padding:0; color:#ff4d4d;"><i class="fas fa-trash" style="font-size:0.7rem;"></i></button>
                         </div>
-                        <button class="qi-remove" onclick="removeFavorite('${track.uri}')" title="Remove"><i class="fas fa-heart-broken"></i></button>
                     </div>
                 `).join('');
         }
 
-        // 2. Render Playlists (Folder View)
         if (listCustom) {
             listCustom.innerHTML = '';
 
-            // "Save Queue" Card
+            // Save Queue Card
             const saveCard = document.createElement('div');
             saveCard.className = 'card folder-card';
-            saveCard.style.border = '2px dashed var(--glass-border)';
-            saveCard.style.background = 'rgba(212, 175, 55, 0.05)';
-            saveCard.style.cursor = 'pointer';
+            saveCard.style.cssText = 'border: 2px dashed var(--glass-border); background: rgba(212, 175, 55, 0.05); cursor: pointer;';
             saveCard.onclick = saveQueuePrompt;
             saveCard.innerHTML = `
                 <div style="text-align:center; padding: 25px 10px;">
                     <i class="fas fa-file-export" style="font-size:2.2rem; color:var(--gold-dim); margin-bottom:12px;"></i>
                     <div style="font-weight:700; font-size:1rem; color:var(--gold-primary);">Save Queue</div>
-                    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:5px;">Save current queue as playlist</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:5px;">Save queue as playlist</div>
                 </div>
             `;
             listCustom.appendChild(saveCard);
@@ -1281,14 +1119,13 @@ async function renderCollection() {
                 el.innerHTML = `
                     <div class="folder-thumb-wrapper" onclick="viewPlaylist(${idx})">
                         <img src="${thumb}" class="folder-thumb">
-                        <div class="folder-badge"><i class="fas fa-compact-disc fa-spin-slow"></i> ${pl.count || 0} tracks</div>
+                        <div class="folder-badge"><i class="fas fa-compact-disc fa-spin-slow"></i> ${pl.tracks ? pl.tracks.length : 0} tracks</div>
                         <div class="folder-play-overlay" onclick="event.stopPropagation(); playPlaylist(${idx})"><i class="fas fa-play-circle"></i></div>
                     </div>
                     <div class="folder-info">
                         <div class="folder-name">${pl.name}</div>
-                        <div class="folder-date">Saved on: ${new Date(pl.created_at * 1000).toLocaleDateString()}</div>
                         <div class="folder-actions">
-                            <button class="btn-folder" onclick="viewPlaylist(${idx})" title="View Tracks"><i class="fas fa-list"></i></button>
+                            <button class="btn-folder" onclick="viewPlaylist(${idx})" title="View"><i class="fas fa-list"></i></button>
                             <button class="btn-folder" onclick="deletePlaylist(${idx})" title="Delete" style="color:#ff6666;"><i class="fas fa-trash-alt"></i></button>
                         </div>
                     </div>
@@ -1301,34 +1138,24 @@ async function renderCollection() {
     }
 }
 
-function saveQueuePrompt() {
-    if (!selectedGuildId) return showNotification("Alert", "แจ้งเตือน", "Please select a server first!", "กรุณาเลือกเซิร์ฟเวอร์ก่อน!", "error");
-    const name = prompt("ชื่อเพลย์ลิสต์:", `Queue ${new Date().toLocaleDateString()}`);
-    if (!name) return;
-    const desc = prompt("คำอธิบาย (Description):", `คิวเพลงที่บันทึกจาก ${selectedGuildId}`);
-    saveQueueToPlaylist(name, desc);
-}
-
 async function saveQueueToPlaylist(name, description) {
+    if (!selectedGuildId) return;
     try {
         const resp = await smartFetch('/api/playlist', {
             method: 'POST',
-            body: JSON.stringify({
-                user_id: currentUserId,
-                guild_id: selectedGuildId,
-                action: 'save_queue',
-                name: name,
-                description: description
-            })
+            body: JSON.stringify({ user_id: currentUserId, guild_id: selectedGuildId, action: 'save_queue', name, description })
         });
         const data = await resp.json();
         if (data.status === 'ok') {
-            showNotification("Success", "บันทึกแล้ว", data.message, data.message, "success");
+            showNotification("Success", "สำเร็จ", "Queue saved to playlist.", "บันทึกคิวเป็นเพลย์ลิสต์แล้ว", "success");
             renderCollection();
-        } else {
-            showNotification("Error", "ผิดพลาด", data.error, data.error, "error");
         }
     } catch (e) { console.error(e); }
+}
+
+function saveQueuePrompt() {
+    const name = prompt("Playlist Name:", `Queue ${new Date().toLocaleDateString()}`);
+    if (name) saveQueueToPlaylist(name, "");
 }
 
 function viewPlaylist(idx) {
@@ -1338,58 +1165,210 @@ function viewPlaylist(idx) {
     if (!modal) return;
     const title = modal.querySelector('.modal-header h3');
     const list = document.getElementById('modal-results-list');
-    title.textContent = `Folder: ${pl.name}`;
+    title.textContent = `Playlist: ${pl.name}`;
     list.innerHTML = (pl.tracks || []).map(t => `
-        <div class="search-result-item">
-            <img src="${t.thumbnail || 'logo-circle.png'}" class="qi-thumb" style="width:50px; height:50px; border-radius:8px;">
-            <div class="qi-info" style="flex:1; margin-left:15px; overflow:hidden;">
-                <div class="qi-title" style="font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${t.title}</div>
-                <div class="qi-artist" style="font-size:0.8rem; color:var(--text-muted);">${t.author}</div>
+        <div class="search-result-item" style="display: flex; align-items: center; gap: 15px; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.03); margin-bottom: 5px;">
+            <img src="${t.thumbnail || 'logo-circle.png'}" style="width:50px; height:50px; border-radius:8px; object-fit: cover;">
+            <div style="flex:1; overflow:hidden;">
+                <div style="font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${t.title}</div>
+                <div style="font-size:0.8rem; color:var(--text-muted);">${t.author}</div>
             </div>
-            <button class="btn btn-gold-outline" onclick="sendControl('play', JSON.stringify({encoded: '${t.encoded}', uri: '${t.uri}', source: 'playlist'}))"><i class="fas fa-play"></i></button>
+            <button class="btn btn-gold" style="width: 38px; height: 38px; padding: 0; border-radius: 50%;" onclick="playTrack('${t.encoded}', '${t.uri}')"><i class="fas fa-play"></i></button>
         </div>
-    `).join('') || '<p style="text-align:center; padding:40px; color:var(--text-muted);">Playlist is empty</p>';
+    `).join('') || '<p style="text-align:center; padding:40px; color:var(--text-muted);">Empty Playlist</p>';
     modal.style.display = 'flex';
 }
 
 async function playPlaylist(idx) {
-    if (!selectedGuildId) return showNotification("Alert", "แจ้งเตือน", "Please select a server first!", "กรุณาเลือกเซิร์ฟเวอร์ก่อน!", "error");
+    if (!selectedGuildId) return;
     try {
         const resp = await smartFetch('/api/playlist', {
             method: 'POST',
-            body: JSON.stringify({
-                user_id: currentUserId,
-                guild_id: selectedGuildId,
-                action: 'play_playlist',
-                playlist_index: idx
-            })
+            body: JSON.stringify({ user_id: currentUserId, guild_id: selectedGuildId, action: 'play_playlist', playlist_index: idx })
         });
         const data = await resp.json();
         if (data.status === 'ok') {
-            showNotification("Loaded", "โหลดแล้ว", data.message, data.message, "success");
+            showNotification("Loading", "กำลังโหลด", "Playlist added to queue.", "เพิ่มเพลย์ลิสต์ลงคิวแล้ว", "success");
             switchTab('player', document.querySelector('.sidebar-btn'));
         }
     } catch (e) { console.error(e); }
 }
 
 async function deletePlaylist(idx) {
-    if (!confirm("Confirm delete?")) return;
+    if (!confirm("Delete this playlist?")) return;
     try {
-        await smartFetch('/api/playlist', {
-            method: 'POST',
-            body: JSON.stringify({ user_id: currentUserId, action: 'delete', index: idx })
-        });
+        await smartFetch('/api/playlist', { method: 'POST', body: JSON.stringify({ user_id: currentUserId, action: 'delete', index: idx }) });
         renderCollection();
     } catch (e) { console.error(e); }
 }
 
-// Initialization hooks
-window.addEventListener('load', () => { setTimeout(renderCollection, 1000); });
-// Also refresh when switching to Collection tab
-const oldSwitchTab = window.switchTab;
-window.switchTab = function (n, b) {
-    if (n === 'favorites') renderCollection();
-    if (typeof oldSwitchTab === 'function') oldSwitchTab(n, b);
+async function removeFavorite(uri) {
+    try {
+        await smartFetch('/api/playlist', { method: 'POST', body: JSON.stringify({ user_id: currentUserId, action: 'remove_favorite', uri }) });
+        renderCollection();
+    } catch (e) { console.error(e); }
+}
+
+// Integration to update stats in sidebar
+async function updateDashStats() {
+    if (document.hidden) return;
+    try {
+        if (window.fetchGlobalStats) {
+            await window.fetchGlobalStats();
+            const s = document.getElementById('stat-servers');
+            const u = document.getElementById('stat-users');
+            if (s) document.getElementById('dash-server-count').textContent = s.textContent;
+            if (u) document.getElementById('dash-user-count').textContent = u.textContent;
+        }
+    } catch (e) { }
+}
+
+// Global initialization
+document.addEventListener('DOMContentLoaded', () => {
+    setInterval(updateDashStats, 60000);
+    setTimeout(renderCollection, 1000);
+});
+
+// CSS Injection
+const styleSheet = document.createElement('style');
+styleSheet.innerHTML = `
+.folder-card { transition: 0.3s; }
+.folder-card:active { transform: scale(0.98); }
+.qi-thumb { transition: 0.3s; }
+.queue-item:hover { background: rgba(255,255,255,0.08) !important; }
+`;
+document.head.appendChild(styleSheet);
+
+
+
+// ==========================================
+// 8. QUEST SYSTEM
+// ==========================================
+async function fetchQuests() {
+    if (!currentUserId) return;
+
+    try {
+        const resp = await smartFetch(`/api/quests?user_id=${currentUserId}`);
+        const data = await resp.json();
+
+        if (data.error) return;
+
+        updateQuestRankCard(data);
+        renderQuestList(data.quests);
+    } catch (e) {
+        console.error("Quest Fetch Error:", e);
+    }
+}
+
+function updateQuestRankCard(data) {
+    const avatar = document.getElementById('quest-user-avatar');
+    const name = document.getElementById('quest-user-name');
+    const level = document.getElementById('quest-user-level');
+    const points = document.getElementById('quest-total-points');
+    const xpNext = document.getElementById('quest-xp-next');
+    const xpBar = document.getElementById('quest-xp-bar');
+
+    if (avatar && window.userProfile) avatar.src = window.userProfile.avatar || "logo-circle.png";
+    if (name && window.userProfile) name.textContent = window.userProfile.username || "User";
+    if (level) level.textContent = data.level || 1;
+    if (points) points.textContent = data.points.toLocaleString();
+    if (xpNext) xpNext.textContent = data.xp_next;
+
+    if (xpBar) {
+        const progress = Math.min(((data.points % 1000) / 1000) * 100, 100);
+        xpBar.style.width = `${progress}%`;
+    }
+}
+
+function renderQuestList(quests) {
+    const list = document.getElementById('quest-list');
+    if (!list) return;
+
+    const langBtn = document.getElementById('curr-lang');
+    const lang = langBtn ? langBtn.textContent.trim().toUpperCase() : 'EN';
+
+    list.innerHTML = quests.map(q => {
+        const title = lang === 'TH' ? q.title_th : q.title_en;
+        const desc = lang === 'TH' ? q.desc_th : q.desc_en;
+        const progressPercent = Math.min((q.progress / q.target) * 100, 100);
+        const isFinished = q.progress >= q.target;
+        const isClaimed = q.claimed;
+
+        let statusHtml = '';
+        if (isClaimed) {
+            statusHtml = `<span style="color: #4CAF50; font-weight: 700;"><i class="fas fa-check-double"></i> CLAIMED</span>`;
+        } else if (isFinished) {
+            statusHtml = `<button class="btn btn-gold" onclick="claimQuest('${q.id}')" style="padding: 5px 15px; font-size: 0.8rem;">CLAIM +${q.reward}</button>`;
+        } else {
+            statusHtml = `<span style="color: var(--text-muted); font-size: 0.8rem;">${q.progress} / ${q.target}</span>`;
+        }
+
+        return `
+        <div class="card glass-effect quest-item-card" style="padding: 20px; border: 1px solid ${isFinished ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)'}; position: relative; overflow: hidden;">
+            ${isFinished && !isClaimed ? '<div class="quest-glow"></div>' : ''}
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                <div style="flex:1;">
+                    <h4 style="margin: 0; color: ${isFinished ? 'var(--gold-primary)' : '#fff'}; font-size: 1.1rem;">${title}</h4>
+                    <p style="margin: 5px 0 0; font-size: 0.85rem; color: var(--text-muted);">${desc}</p>
+                </div>
+                <div style="background: rgba(212, 175, 55, 0.1); color: var(--gold-primary); padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; border: 1px solid var(--gold-primary-faded); margin-left: 10px;">
+                    +${q.reward}
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <div class="progress-bar" style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px;">
+                    <div class="progress-fill" style="width: ${progressPercent}%; background: ${isFinished ? 'var(--gold-metallic)' : 'var(--gold-primary)'}; border-radius: 3px;"></div>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 0.75rem; color: var(--gold-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                    ${q.type === 'daily' ? 'Daily' : 'Achievement'}
+                </div>
+                <div id="quest-status-${q.id}">
+                    ${statusHtml}
+                </div>
+            </div>
+        </div>
+        `;
+    }).join('');
+}
+
+async function claimQuest(quest_id) {
+    if (!currentUserId) return;
+
+    // UI Feedback
+    const statusDiv = document.getElementById(`quest-status-${quest_id}`);
+    if (statusDiv) statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    try {
+        const resp = await smartFetch('/api/quest_claim', {
+            method: 'POST',
+            body: JSON.stringify({
+                user_id: currentUserId,
+                quest_id: quest_id
+            })
+        });
+        const data = await resp.json();
+
+        if (data.status === 'ok') {
+            showNotification("Reward Claimed!", "รับรางวัลแล้ว!", `You earned ${data.reward} points!`, `คุณได้รับ ${data.reward} พอยท์!`, "success");
+        }
+    } catch (e) {
+        console.error("Claim Error:", e);
+    } finally {
+        fetchQuests();
+    }
+}
+
+window.onUserLoggedIn = (profile) => {
+    currentUserId = profile.id;
+    console.log(`[Dashboard] Logged in as: ${profile.username} (${currentUserId})`);
+
+    // Auto-connect to voice if possible
+    setTimeout(() => startAutoConnect(currentUserId), 2000);
+
+    // Initial data sync
+    renderCollection();
 };
-
-

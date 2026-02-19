@@ -1,28 +1,28 @@
 ﻿/* =========================================
-   CYORI PREMIUM ENGINE - BLACK & GOLD EDITION
+   CYORI PREMIUM ENGINE - LUXURY PINK/PURPLE EDITION
    v4.1.0 - The Ultimate Luxury Experience (Mobile Fixing)
    ========================================= */
 
 :root {
-    /* --- CORE PALETTE --- */
-    --gold-primary: #FFD700;
-    --gold-dim: #C5A001;
-    --gold-light: #FFE55C;
+    /* --- CORE PALETTE: LUXURY GOLD & BLACK --- */
+    --gold-primary: #D4AF37;
+    --gold-dim: #996515;
+    --gold-light: #F9E27E;
     --gold-metallic: linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C);
 
     --bg-deep: #050505;
     --bg-canva: #0a0a0a;
-    --bg-card: rgba(18, 18, 18, 0.85);
+    --bg-card: rgba(18, 18, 18, 0.95);
 
     --text-main: #FFFFFF;
     --text-muted: #A0A0A0;
-    --text-gold: #FFD700;
+    --text-gold: #D4AF37;
 
     /* --- GLASSMORPHISM --- */
     --glass-bg: rgba(20, 20, 20, 0.65);
-    --glass-border: rgba(255, 215, 0, 0.15);
+    --glass-border: rgba(212, 175, 55, 0.15);
     --glass-shine: rgba(255, 255, 255, 0.05);
-    --gold-primary-faded: rgba(255, 215, 0, 0.3);
+    --gold-primary-faded: rgba(212, 175, 55, 0.3);
     --button-primary: var(--gold-metallic);
 
     /* --- ANIMATIONS --- */
@@ -37,8 +37,32 @@
 
 .search-box-wrapper:focus-within {
     border-color: var(--gold-primary) !important;
-    box-shadow: 0 8px 30px rgba(255, 215, 0, 0.15) !important;
+    box-shadow: 0 0 30px var(--gold-primary) !important;
     transform: translateY(-2px);
+}
+
+.mesh-grid {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 200%;
+    background-image:
+        radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.03) 1px, transparent 1px);
+    background-size: 80px 80px;
+    z-index: -2;
+    pointer-events: none;
+    animation: mesh-float 60s linear infinite;
+}
+
+@keyframes mesh-float {
+    from {
+        transform: translate(-25%, -25%) rotate(0deg);
+    }
+
+    to {
+        transform: translate(-25%, -25%) rotate(5deg);
+    }
 }
 
 #btn-random-bar i,
@@ -66,8 +90,91 @@ body {
     color: var(--text-main);
     overflow-x: hidden;
     background-image:
-        radial-gradient(circle at 15% 50%, rgba(255, 215, 0, 0.03) 0%, transparent 25%),
-        radial-gradient(circle at 85% 30%, rgba(255, 215, 0, 0.03) 0%, transparent 25%);
+        radial-gradient(circle at 15% 50%, rgba(212, 175, 55, 0.08) 0%, transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(212, 175, 55, 0.05) 0%, transparent 25%);
+}
+
+.now-playing-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--glass-border);
+    border-radius: 32px;
+    padding: 40px;
+    text-align: center;
+    backdrop-filter: blur(30px);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6),
+        inset 0 0 40px rgba(212, 175, 55, 0.05),
+        0 0 20px rgba(212, 175, 55, 0.05);
+    transition: all 0.5s var(--ease-smooth);
+}
+
+.now-playing-art {
+    max-width: 520px;
+    width: 100%;
+    height: auto;
+    border-radius: 24px;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+    transition: all 0.6s var(--ease-smooth);
+    filter: drop-shadow(0 0 15px var(--gold-primary));
+}
+
+.now-playing-panel:hover .now-playing-art {
+    transform: scale(1.03) translateY(-10px);
+    filter: drop-shadow(0 0 35px var(--gold-primary));
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.9);
+}
+
+.progress-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--gold-metallic);
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.3s linear;
+    box-shadow: 0 0 15px var(--gold-primary);
+}
+
+.control-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s var(--ease-smooth);
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.control-btn:hover {
+    color: var(--gold-primary);
+    background: rgba(255, 128, 191, 0.1);
+    transform: scale(1.1);
+}
+
+.control-btn.play-btn {
+    background: var(--gold-metallic);
+    color: white;
+    width: 85px;
+    height: 85px;
+    font-size: 2.2rem;
+    box-shadow: 0 10px 30px var(--gold-primary);
+}
+
+.control-btn.play-btn:hover {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 15px 40px var(--gold-primary);
 }
 
 /* --- SCROLLBAR --- */
@@ -158,24 +265,61 @@ h6 {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--glass-border);
     color: var(--text-main);
+    backdrop-filter: blur(5px);
 }
 
 .btn-glass:hover {
-    background: rgba(255, 215, 0, 0.1);
+    background: var(--gold-primary);
     border-color: var(--gold-primary);
     color: var(--gold-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px var(--gold-primary);
 }
 
 .btn-gold {
     background: var(--gold-metallic);
-    color: #000;
+    color: #fff;
     border: none;
-    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
+    box-shadow: 0 4px 15px var(--gold-primary);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .btn-gold:hover {
     transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+    box-shadow: 0 8px 25px var(--gold-primary);
+}
+
+/* --- DASHBOARD ELEMENTS --- */
+.progress-fill.stream-progress {
+    background: linear-gradient(90deg, #ff4c4c, #ff0000);
+    box-shadow: 0 0 20px #ff0000;
+}
+
+.sidebar-btn {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 20px;
+    border-radius: 16px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.3s var(--ease-smooth);
+    margin-bottom: 8px;
+    border: 1px solid transparent;
+}
+
+.sidebar-btn:hover,
+.sidebar-btn.active {
+    background: rgba(255, 128, 191, 0.1);
+    color: var(--gold-primary);
+    border-color: var(--glass-border);
+    transform: translateX(5px);
+}
+
+.sidebar-btn i {
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
 }
 
 /* --- COMPONENTS: CONTAINERS --- */
@@ -298,7 +442,7 @@ header .container {
     transition: all 0.3s var(--ease-smooth);
     transform: translateX(-50%);
     border-radius: 2px;
-    box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+    box-shadow: 0 0 12px var(--gold-primary);
 }
 
 .nav-link:hover::after,
@@ -1813,6 +1957,7 @@ input[type=range]::-moz-range-track {
         gap: 10px;
     }
 
+
     /* Active State */
     .nav-links.active {
         right: 0;
@@ -1838,6 +1983,7 @@ input[type=range]::-moz-range-track {
     }
 
     /* Overlay */
+
     /* Handled above with higher visibility logic */
 
     /* Responsive Content Adjustments */
@@ -2601,6 +2747,69 @@ input[type="range"].slider::-ms-fill-upper {
 .search-result-item:hover .result-action {
     opacity: 1;
     transform: scale(1.2);
+}
+
+/* --- QUEST SYSTEM PREMIUM STYLES --- */
+.quest-item-card {
+    transition: all 0.4s var(--ease-smooth);
+}
+
+.quest-item-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--gold-primary) !important;
+    background: rgba(212, 175, 55, 0.05) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.1);
+}
+
+.quest-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, transparent, rgba(212, 175, 55, 0.05), transparent);
+    animation: quest-sweep 3s infinite linear;
+    pointer-events: none;
+}
+
+@keyframes quest-sweep {
+    0% {
+        transform: translateX(-100%) skewX(-20deg);
+    }
+
+    100% {
+        transform: translateX(200%) skewX(-20deg);
+    }
+}
+
+.rank-avatar-wrapper::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    border: 2px solid var(--gold-primary-faded);
+    border-radius: 50%;
+    opacity: 0.5;
+    animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.95);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 0.2;
+    }
+
+    100% {
+        transform: scale(0.95);
+        opacity: 0.5;
+    }
 }
 
 /* Scrollbar for Modal Body */

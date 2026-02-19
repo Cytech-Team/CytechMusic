@@ -3,11 +3,14 @@ import sys
 import time
 import asyncio
 import aiohttp
-from aiohttp import web
+from aiohttp import web, WSMsgType
+import weakref
+import collections
 import discord
 import pymongo
 import pathlib
 import traceback
+import json
 from discord.ext import commands, tasks
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -68,6 +71,57 @@ class Cyori(commands.Bot):
         self._processed_events = set() # Cache for de-duplication
         self.error_log_channel_id = getattr(ui_config, "LOG_CHANNEL_ID", 0)
         self.error_webhook_url = getattr(ui_config, "LOG_WEBHOOK_URL", None)
+        
+        # Dashboard Core
+        self.sockets_by_guild = {}
+        self.all_sockets = weakref.WeakSet()
+        self.branding_cache = {}
+        self.cors_headers = {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+
+    async def broadcast_guild(self, guild_id: int):
+        """Broadcasts the current player state to all connected dashboard websockets for a guild."""
+        clients = self.sockets_by_guild.get(guild_id, [])
+        if not clients: 
+            return
+            
+        state = await self.build_dashboard_state(guild_id)
+        payload = {'op': 'state', 'data': state}
+        
+        for ws in clients[:]:
+            try:
+                if not ws.closed:
+                    await ws.send_json(payload)
+                else:
+                    clients.remove(ws)
+            except:
+                try: clients.remove(ws)
+                except: pass
+
+    async def build_dashboard_state(self, guild_id: int):
+        """Constructs a JSON-serializable state object for the dashboard."""
+        g = self.get_guild(guild_id)
+        p = g.voice_client if g else None
+        d = {"playing": False, "paused": False, "pos": 0, "len": 0}
+        
+        if p and p.is_playing and p.current:
+            d.update({
+                "playing": True, "paused": p.is_paused, 
+                "pos": p.position, "len": p.current.length,
+                "is_stream": getattr(p.current, 'is_stream', False),
+                "title": p.current.title, "author": p.current.author,
+                "thumb": p.current.thumbnail if p.current and p.current.thumbnail and "null" not in p.current.thumbnail else "logo-circle.png",
+                "vol": p.volume,
+                "loop_mode": p.queue._repeat.mode.name.capitalize() if hasattr(p.queue, '_repeat') else "Off",
+                "queue": [
+                    {"title": t.title, "author": t.author, "uri": t.uri, "encoded": t.track_id} 
+                    for t in list(p.queue.tracks())[:20]
+                ]
+            })
+        return d
 
     async def log_error(self, error, ctx=None, event_name=None):
         """Sends error logs to a designated Discord channel or Webhook."""
@@ -118,9 +172,20 @@ class Cyori(commands.Bot):
             await self.log_error(error, event_name=event_method)
         await super().on_error(event_method, *args, **kwargs)
 
+    async def on_cytechlink_track_start(self, player, track):
+        """Broadcast state when a track starts."""
+        await self.broadcast_guild(player.guild.id)
+
+    async def on_cytechlink_track_end(self, player, track, reason):
+        """Broadcast state when a track ends."""
+        await self.broadcast_guild(player.guild.id)
+
     async def on_cytechlink_track_exception(self, player, track, exception):
         """Dispatched when a track error occurs."""
         error_msg = f"Track Exception: {track.title} ({track.uri})\nException: {exception.get('message', 'No message')}"
+        
+        # Broadcast Error to Dashboard if possible (Optional future enhancement)
+        await self.broadcast_guild(player.guild.id)
         
         embed = discord.Embed(title="🎵 Music Player Error", color=discord.Color.orange())
         embed.add_field(name="Track", value=f"[{track.title}]({track.uri})", inline=False)
@@ -167,6 +232,9 @@ class Cyori(commands.Bot):
             return True
 
         self.tree.interaction_check = global_interaction_check
+        
+        # Initialize Dashboard
+        await self.setup_dashboard()
 
         # Global check for Prefix Commands
         @self.check
@@ -180,6 +248,13 @@ class Cyori(commands.Bot):
                     return False
             return True
 
+
+    async def setup_dashboard(self):
+        """Initializes the embedded Dashboard System."""
+        if self.web_app:
+            from utils.dashboard_core import DashboardSystem
+            self.dashboard = DashboardSystem(self)
+            await self.dashboard.setup_routes(self.web_app)
 
     async def close(self):
         if self.session and not self.session.closed:
