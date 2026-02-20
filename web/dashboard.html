@@ -179,8 +179,9 @@
             <section class="player-main">
 
                 <!-- Search and Controls Block -->
-                <div class="search-bar" style="margin-bottom: 30px; display: flex; gap: 15px; width: 100%;">
-                    <div class="search-input-wrapper" style="position: relative; flex: 1;">
+                <div class="search-bar"
+                    style="margin-bottom: 30px; display: flex; flex-wrap: wrap; gap: 15px; width: 100%;">
+                    <div class="search-input-wrapper" style="position: relative; flex: 1; min-width: 250px;">
                         <i class="fas fa-search"
                             style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
                         <input type="text" id="song-input" class="form-control"
@@ -188,11 +189,11 @@
                             style="padding-left: 45px; height: 50px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255, 215, 0, 0.2);"
                             onkeydown="if(event.key === 'Enter') performSearch()">
                     </div>
-                    <button class="btn btn-primary" onclick="performSearch()" style="padding: 0 25px;"><i
-                            class="fas fa-play"></i> <span class="lang-text" data-en="Play"
-                            data-th="เล่น">Play</span></button>
-                    <button class="btn btn-secondary" onclick="playRandom()" title="Play Random Song"><i
-                            class="fas fa-dice"></i></button>
+                    <button class="btn btn-primary" onclick="performSearch()"
+                        style="padding: 0 25px; flex-shrink: 0;"><i class="fas fa-play"></i> <span class="lang-text"
+                            data-en="Play" data-th="เล่น">Play</span></button>
+                    <button class="btn btn-secondary" onclick="playRandom()" title="Play Random Song"
+                        style="flex-shrink: 0;"><i class="fas fa-dice"></i></button>
                 </div>
 
                 <!-- TAB: PLAYER (YouTube Layout) -->
@@ -207,7 +208,7 @@
                                 <img id="np-art"
                                     src="https://cdn.discordapp.com/banners/1469606905948405833/3b84c3a7799d846229b2b5b2921ed270.png?size=1024"
                                     alt="Album Art" class="now-playing-art"
-                                    style="width: 100%; height: 100%; object-fit: cover; filter: brightness(0.9);">
+                                    style="width: 100%; height: 100%; object-fit: contain; filter: brightness(0.9); padding: 20px;">
                                 <div class="live-badge"
                                     style="position: absolute; bottom: 15px; left: 15px; background: red; color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; display: none; box-shadow: 0 0 10px red;">
                                     LIVE</div>
@@ -264,8 +265,11 @@
                                             title="Shuffle" style="width: 40px; height: 40px; border-radius: 50%;"><i
                                                 class="fas fa-random"></i></button>
                                         <button class="btn-glass" onclick="control('loop')" id="btn-loop" title="Loop"
-                                            style="width: 40px; height: 40px; border-radius: 50%;"><i
-                                                class="fas fa-redo"></i></button>
+                                            style="padding: 0 15px; height: 40px; border-radius: 20px; display: flex; align-items: center; gap: 8px;">
+                                            <i class="fas fa-redo"></i> <span id="loop-text"
+                                                style="font-size: 0.9rem; font-weight: 500;" class="lang-text"
+                                                data-en="Off" data-th="ปิด">Off</span>
+                                        </button>
                                         <button class="btn-glass" onclick="addToFavorite()" id="btn-favorite"
                                             title="Add to Favorites"
                                             style="padding: 0 15px; height: 40px; border-radius: 20px; display: flex; align-items: center; gap: 8px;">

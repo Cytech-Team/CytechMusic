@@ -3173,6 +3173,28 @@ input[type="range"].slider::-ms-fill-upper {
     }
 }
 
+/* Mobile responsive for search bar and controls */
+@media (max-width: 600px) {
+
+    /* Controls secondary wraps nicely */
+    .yt-controls-row {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .yt-controls-row .controls {
+        justify-content: center;
+    }
+
+    .yt-controls-row .controls-secondary {
+        justify-content: center;
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+}
+
 /* =========================================
    PREMIUM REDESIGN V5 (AESTHETIC UPGRADE)
    ========================================= */

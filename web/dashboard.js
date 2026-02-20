@@ -693,7 +693,17 @@ function updatePlayerUI(data) {
         if (title) title.textContent = "No music playing";
         if (artist) artist.textContent = "Ready to play";
         // Use branding thumbnail if provided by API, else logo
-        if (img) img.src = data.thumbnail || "logo-circle.png";
+        if (img) {
+            img.src = data.thumbnail || "logo-circle.png";
+            // If it's the banner URL, contain it to avoid ugly crop
+            if (img.src.includes('banners') || img.src.includes('logo-circle')) {
+                img.style.objectFit = 'contain';
+                img.style.padding = '20px';
+            } else {
+                img.style.objectFit = 'cover';
+                img.style.padding = '0';
+            }
+        }
         if (playIcon) playIcon.className = 'fas fa-play';
         updateProgressUI(0, 0); // Reset to 0:00 / 0:00
         playerState.paused = true;
@@ -734,6 +744,8 @@ function updatePlayerUI(data) {
     if (artist) artist.textContent = data.author || "Unknown Artist";
     if (img && data.thumbnail) {
         img.src = data.thumbnail.includes('null') ? "logo-circle.png" : data.thumbnail;
+        img.style.objectFit = 'cover'; // Restore normal cover for standard music thumbs
+        img.style.padding = '0';
     }
 
     // Update Icons
@@ -745,12 +757,31 @@ function updatePlayerUI(data) {
 
     if (btnLoop) {
         const loopMode = (data.loop_mode || "off").toLowerCase();
+        const loopTextEl = document.getElementById('loop-text');
         if (loopMode !== "off") {
             btnLoop.classList.add('active');
             btnLoop.querySelector('i').className = (loopMode === 'track' || loopMode === 'song') ? 'fas fa-redo-alt' : 'fas fa-redo';
+            // Update displayed text
+            if (loopTextEl) {
+                if (loopMode === 'track' || loopMode === 'song') {
+                    loopTextEl.textContent = loopTextEl.dataset.en === 'Off' ? 'Track' : 'Track'; // fallback
+                    // Use language-specific text if needed
+                    if (loopTextEl.dataset.en) loopTextEl.dataset.en = 'Track';
+                    if (loopTextEl.dataset.th) loopTextEl.dataset.th = 'เพลง';
+                } else {
+                    loopTextEl.textContent = 'Queue';
+                    if (loopTextEl.dataset.en) loopTextEl.dataset.en = 'Queue';
+                    if (loopTextEl.dataset.th) loopTextEl.dataset.th = 'คิว';
+                }
+            }
         } else {
             btnLoop.classList.remove('active');
             btnLoop.querySelector('i').className = 'fas fa-redo';
+            if (loopTextEl) {
+                loopTextEl.textContent = 'Off';
+                if (loopTextEl.dataset.en) loopTextEl.dataset.en = 'Off';
+                if (loopTextEl.dataset.th) loopTextEl.dataset.th = 'ปิด';
+            }
         }
     }
 
