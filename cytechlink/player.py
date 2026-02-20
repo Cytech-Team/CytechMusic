@@ -20,7 +20,7 @@ from discord import (
     Message,
     Interaction
 )
-from bot import Cyori, collection_myasync, collection_myclient
+from bot import Cyori
 from discord.ext import commands
 from . import events
 from .enums import SearchType, LoopType
@@ -33,713 +33,11 @@ from .queue import Queue, FairQueue
 from .formatter import encode, decode
 from random import shuffle, choice
 from utils.config import WARNING_SOUND_URL_TH, WARNING_SOUND_URL_EN, OWNER_IDS
-
-loop_emoji = {"Off": "🚫", "Track": "<:repeatonce:1416275503840624670>", "Queue": "<:repeat:1416274830851965012>"}
-
-def create_progress_bar(position: int, total: int, length: int = 15, is_live: bool = False) -> str:
-    if is_live:
-        # Specialized bar for Live Streams (Solid Red-ish Look)
-        # Using specific emojis if available, or just a solid line
-        return "🔴" + "━" * (length - 1)
-
-    if total == 0:
-        return "<:bar_left:1416278000000>🔘" + "▬" * (length-1) + "<:bar_right:1416278000000>"
-    
-    # Cap position at total
-    position = min(position, total)
-    
-    progress = int((position / total) * length)
-    progress = max(0, min(progress, length)) # Clamp
-    
-    # Using a more elegant look if possible (or standard with better spacing)
-    bar = "━" * progress + "🔘" + "━" * (length - progress)
-    return bar
-
-async def safe_get_guild_data(guild_id: str):
-    """Return guild_data dict guaranteed to exist in DB (and ensure DB upsert)."""
-    try:
-        data = await collection_myasync.find_one({}) or {"guilds": {}}
-    except Exception as e:
-        print(f"DB read error: {e}")
-        data = {"guilds": {}}
-
-    if "guilds" not in data or not isinstance(data["guilds"], dict):
-        data["guilds"] = {}
-
-    if guild_id not in data["guilds"]:
-        data["guilds"][guild_id] = {
-            "autoplay": False,
-            "24/7": False,
-            "channel_id": None,
-            "queue_embed_id": None,
-            "play_embed_id": None,
-            "dj_role": None,
-            "dj_mode": False,
-            "vote_mode": False
-        }
-        try:
-            await collection_myasync.update_one({}, {"$set": data}, upsert=True)
-        except Exception as e:
-            print(f"DB upsert error: {e}")
-
-    return data["guilds"][guild_id]
-    
-async def safe_delete(msg):
-    if not msg or not msg.guild:
-        return None
-    guild_data: dict = await safe_get_guild_data(str(msg.guild.id))
-    if guild_data:
-        if guild_data.get("play_embed_id") == msg.id or guild_data.get("queue_embed_id") == msg.id:
-            return None
-
-    try:
-        return await msg.delete()
-    except:
-        return None
-
-async def safe_call(func):
-    try:
-        return await func()
-    except:
-        return None
-
-async def safe_fetch_message(bot: Cyori, channel_id: int, message_id: int):
-    """Fetch channel and message safely, return (channel, message) or (None, None)"""
-    try:
-        channel = bot.get_channel(channel_id) or await bot.fetch_channel(channel_id)
-        if not channel:
-            return None, None
-        message = await channel.fetch_message(message_id)
-        return channel, message
-    except Exception as e:
-        # print minimal info for debugging
-        print(f"safe_fetch_message failed: channel_id={channel_id} message_id={message_id} -> {e}")
-        return None, None
-
-def safe_text(value: str):
-    """Try to ensure string is printable; keep as-is if not possible."""
-    if value is None:
-        return ""
-    try:
-        return value.encode('utf-16', 'surrogatepass').decode('utf-16')
-    except Exception:
-        return str(value)
-
-def loop_mode_to_str(mode):
-    if mode is None:
-        return "Off"
-    try:
-        if mode is LoopType.track:
-            return "Track"
-        if mode is LoopType.queue:
-            return "Queue"
-    except Exception:
-        pass
-    return "Off"
-
-def loop_emoji_safe(mode_str):
-    try:
-        return loop_emoji.get(mode_str, "")
-    except Exception:
-        return ""
-
-async def save_data_247(guild_id, key):
-    guild_id_str = str(guild_id)
-    await collection_myasync.update_one(
-        {}, 
-        {"$set": {f"guilds.{guild_id_str}.24/7": key}}, 
-        upsert=True
-    )
-
-async def save_data_autoplay(guild_id, key):
-    guild_id_str = str(guild_id)
-    await collection_myasync.update_one(
-        {}, 
-        {"$set": {f"guilds.{guild_id_str}.autoplay": key}}, 
-        upsert=True
-    )
-
-class Tracks(discord.ui.Select):
-    def __init__(self, player, author):
-        self.player: Player = player
-        self.author: discord.Member = author
-        
-        options = []
-        for index, tracks in enumerate(self.player.queue.tracks(), start=1):
-            track: Track = Track(
-                track_id=tracks.track_id,
-                info=decode(tracks.track_id),
-                requester=tracks.requester
-            )
-            if index > 10:
-                break
-            try:
-                options.append(discord.SelectOption(label=f"{index}. {track.title[:40].encode('utf-16', 'surrogatepass').decode('utf-16')}", description=f"{track.author[:30].encode('utf-16', 'surrogatepass').decode('utf-16')} · " + ("Live" if track.is_stream else track.formatted_length)))
-            except:
-                options.append(discord.SelectOption(label=f"{index}. {track.title[:40]}", description=f"{track.author[:30]} · " + ("Live" if track.is_stream else track.formatted_length)))
-
-        try:
-            guild_id = str(self.player.guild.id)
-            data = collection_myclient.find_one({}) or {}
-            if "guilds" in data and guild_id in data["guilds"]:
-                lang = data["guilds"][guild_id].get("lang", "en")
-            else:
-                lang = "en"
-        except:
-             lang = "en"
-
-        super().__init__(
-            placeholder=self.player.bot.i18n.get("select_skip_placeholder", lang),
-            min_values=1, max_values=1,
-            options=options,
-        )
-        
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        await interaction.response.defer(thinking=True, ephemeral=True)
-        if interaction.user != self.author:
-            if not self.player:
-                return await interaction.followup.send("No player has found on this server.", ephemeral=True)
-            if not await self.player.is_privileged(interaction.user):
-                await interaction.followup.send(content="You don't have permission to press this button.", ephemeral=True)
-                return False
-        return True
-
-    async def callback(self, interaction: discord.Interaction):
-        if not self.player:
-            return await interaction.followup.send("No player has found on this server.", ephemeral=True)
-        lang = await self.player.bot.get_lang(interaction.guild.id)
-        # Using 0-based index (label is 1-based, e.g. "1. Song")
-        try:
-            index = int(self.values[0].split(". ")[0])
-            if index < 1: index = 1
-            self.player.queue.skipto(index)
-            await self.player.stop()
-            await interaction.followup.send(content=self.player.bot.i18n.get("msg_skip_to", lang, title=self.values[0]), ephemeral=True)
-        except Exception as e:
-            await interaction.followup.send(content=f"Error skipping: {e}", ephemeral=True)
-
-class VolumeModal(discord.ui.Modal, title="🔊 Volume Control"):
-    volume = discord.ui.TextInput(
-        label="Enter volume (0-100)",
-        placeholder="Example: 75",
-        required=True,
-        max_length=3
-    )
-
-    async def on_submit(self, interaction: discord.Interaction):
-        try:
-            vol = int(self.volume.value)
-            if vol < 0 or vol > 100:
-                await interaction.response.send_message("❌ Please enter a number between 0 and 150.", ephemeral=True)
-                self.result = None
-            else:
-                self.result = vol
-                await interaction.response.defer(ephemeral=True)
-        except ValueError:
-            await interaction.response.send_message("❌ Invalid input. Please enter a number.", ephemeral=True)
-            self.result = None
-        finally:
-            self.stop()
-
-class MusicControls(discord.ui.View):
-    def __init__(self, player, author) -> None:
-        super().__init__(timeout=None)
-        self.player: Player = player
-        self.author: discord.Member = author
-        if not player.queue.is_empty:
-            self.add_item(Tracks(self.player, self.author))
-        self._current_embed = None
-        self.update_all_labels()
-
-    def update_all_labels(self):
-        # UI Language helper
-        try:
-            guild_id = str(self.player.guild.id)
-            # Sync DB access for label update
-            data = collection_myclient.find_one({}) or {}
-            lang = data.get("guilds", {}).get(guild_id, {}).get("lang", "en")
-        except: lang = "en"
-
-        for item in self.children:
-            item: discord.ui.Button = item
-            if item.custom_id == "play_pause_button":
-                item.emoji = "<:play:1416273270692515940>" if self.player.is_paused else "<:pause:1416275225179459594>"
-                item.style = discord.ButtonStyle.blurple if self.player.is_paused else discord.ButtonStyle.gray
-            elif item.custom_id == "loop_button":
-                loop_mode = self.player.queue._repeat.mode
-                if loop_mode is LoopType.off:
-                    item.emoji = "<:repeat:1416274830851965012>"
-                    item.label = self.player.bot.i18n.get("loop_mode_queue", lang)
-                    item.style = discord.ButtonStyle.blurple
-                elif loop_mode is LoopType.queue:
-                    item.emoji = "<:repeatonce:1416275503840624670>"
-                    item.label = self.player.bot.i18n.get("loop_mode_track", lang)
-                    item.style = discord.ButtonStyle.blurple
-                else:
-                    item.emoji = "<:repeat:1416274830851965012>"
-                    item.label = self.player.bot.i18n.get("loop_disable", lang)
-                    item.style = discord.ButtonStyle.gray
-            elif item.custom_id == "volume_button":
-                item.label = self.player.bot.i18n.get("vol_level", lang, volume=self.player.volume)
-            elif item.custom_id == "autoplay_button":
-                item.style = discord.ButtonStyle.blurple if self.player.autoplay else discord.ButtonStyle.gray
-            elif item.custom_id == "playforever_button":
-                item.style = discord.ButtonStyle.blurple if self.player.mode247 else discord.ButtonStyle.gray
-            elif item.custom_id == "random_button":
-                item.label = self.player.bot.i18n.get("btn_random", lang)
-
-    async def update_label(self, message: discord.Message):
-        """Unified update: Update button internal labels then trigger Player controller logic."""
-        self.update_all_labels()
-        # Trigger Player.update_controller with force=True to bypass rate limit for user interaction
-        await self.player.update_controller(force=True)
-
-
-    async def on_interaction(self, interaction: discord.Interaction):
-        await super().on_interaction(interaction)
-        await self.update_label(interaction.message)
-    
-    async def check_vote(self, user_id: int) -> bool:
-        try:
-            # 1. Premium Check (Priority)
-            is_premium = False
-            if hasattr(self.player.bot, "is_premium"):
-                is_premium = await self.player.bot.is_premium(user_id)
-            
-            if is_premium:
-                return True
-
-            # 2. Vote Check
-            has_voted = await self.player.bot.check_vote(user_id, self.player.guild.id)
-            return has_voted
-        except Exception as e:
-            print(f"Error checking vote: {e}")
-            return False
-        
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-
-        custom_id = interaction.data.get("custom_id")
-        if custom_id != 'volume_button':
-            if not interaction.response.is_done():
-                try:
-                    await interaction.response.defer(thinking=True, ephemeral=True)
-                except:
-                    pass
-
-        # ถ้าไม่มี player
-        if not self.player:
-            await interaction.followup.send("❌ | No player has been found on this server.", ephemeral=True)
-            return False
-
-        # ถ้าไม่ใช่เจ้าของเพลง
-        if interaction.user != self.author:
-             # Allow interaction if vote mode is ON or Privileged (Logic handled in individual callbacks now)
-             pass
-             # if not await self.player.is_privileged(interaction.user):
-             #    await interaction.followup.send("🚫 | You don't have permission to press this button.", ephemeral=True)
-             #    return False
-
-        return True
-    
-    # === Buttons ===
-    @discord.ui.button(emoji="<:stop:1416272736552226908>", custom_id='stop_button', style=discord.ButtonStyle.red)
-    async def stop_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-        lang = await self.player.bot.get_lang(interaction.guild.id)
-        
-        # Check privileges first
-        if await self.player.is_privileged(interaction.user):
-            await self.player.teardown()
-            await interaction.followup.send(self.player.bot.i18n.get("msg_stop", lang), ephemeral=True)
-            return
-
-        # Vote check
-        guild_data = await safe_get_guild_data(str(interaction.guild.id))
-        vote_mode = guild_data.get("vote_mode", False)
-        
-        if not vote_mode:
-             # If vote mode is OFF but user is NOT privileged (passed is_privileged check above)
-             # They are allowed if DJ Mode is OFF (is_privileged handles that logic). 
-             # Wait, is_privileged returns True if DJ Mode is OFF. 
-             # So if we are here, it means is_privileged returned False.
-             # Which means DJ Mode is ON and they are not DJ.
-             return await interaction.followup.send(self.player.bot.i18n.get("dj_required", lang), ephemeral=True)
-
-        # Vote Logic
-        if interaction.user.id in self.player.stop_votes:
-            return await interaction.followup.send(self.player.bot.i18n.get("vote_already", lang), ephemeral=True)
-            
-        self.player.stop_votes.add(interaction.user.id)
-        required = self.player.required(leave=True)
-        current_votes = len(self.player.stop_votes)
-        
-        if current_votes >= required:
-            await self.player.teardown()
-            await interaction.followup.send(self.player.bot.i18n.get("msg_stop", lang), ephemeral=True)
-        else:
-            await interaction.followup.send(self.player.bot.i18n.get("vote_detected", lang, current=current_votes, required=required), ephemeral=True)
-
-    @discord.ui.button(emoji="<:previous:1416273087783243806>", custom_id='back_button', style=discord.ButtonStyle.gray)
-    async def back_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-        lang = await self.player.bot.get_lang(interaction.guild.id)
-        if self.player.queue.history == 0:
-            return await interaction.followup.send(self.player.bot.i18n.get("msg_no_history", lang), ephemeral=True)
-
-        # Check privileges
-        if await self.player.is_privileged(interaction.user):
-            current = self.player.current
-            self.player.queue.backto(2)
-            await self.player.stop()
-            await interaction.followup.send(self.player.bot.i18n.get("msg_back_to", lang, title=current), ephemeral=True)
-            return
-
-        # Vote check
-        guild_data = await safe_get_guild_data(str(interaction.guild.id))
-        vote_mode = guild_data.get("vote_mode", False)
-        
-        if not vote_mode:
-             return await interaction.followup.send(self.player.bot.i18n.get("dj_required", lang), ephemeral=True)
-
-        # Vote Logic
-        if interaction.user.id in self.player.previous_votes:
-            return await interaction.followup.send(self.player.bot.i18n.get("vote_already", lang), ephemeral=True)
-            
-        self.player.previous_votes.add(interaction.user.id)
-        required = self.player.required()
-        current_votes = len(self.player.previous_votes)
-        
-        if current_votes >= required:
-            current = self.player.current
-            self.player.queue.backto(2)
-            await self.player.stop()
-            await interaction.followup.send(self.player.bot.i18n.get("msg_back_to", lang, title=current), ephemeral=True)
-        else:
-            await interaction.followup.send(self.player.bot.i18n.get("vote_detected", lang, current=current_votes, required=required), ephemeral=True)
-
-    @discord.ui.button(emoji="<:pause:1416275225179459594>", custom_id='play_pause_button', style=discord.ButtonStyle.gray)
-    async def play_pause_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-        lang = await self.player.bot.get_lang(interaction.guild.id)
-        
-        if not await self.player.is_privileged(interaction.user):
-            return await interaction.followup.send(self.player.bot.i18n.get("dj_required", lang), ephemeral=True)
-        
-        if self.player.is_paused:
-            await self.player.set_pause(False, self.author)
-            await interaction.followup.send(self.player.bot.i18n.get("msg_resume", lang), ephemeral=True)
-            await self.update_label(interaction.message)
-        else:
-            await self.player.set_pause(True, self.author)
-            await interaction.followup.send(self.player.bot.i18n.get("msg_pause", lang), ephemeral=True)
-            await self.update_label(interaction.message)
-
-    @discord.ui.button(emoji="<:next:1416273434865959045>", custom_id='skip_button', style=discord.ButtonStyle.gray)
-    async def skip_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-        lang = await self.player.bot.get_lang(interaction.guild.id)
-
-        # Check privileges
-        if await self.player.is_privileged(interaction.user):
-            await self.player.stop()
-            await interaction.followup.send(self.player.bot.i18n.get("skipped", lang, author=interaction.user), ephemeral=True)
-            return
-
-        # Vote check
-        guild_data = await safe_get_guild_data(str(interaction.guild.id))
-        vote_mode = guild_data.get("vote_mode", False)
-        
-        if not vote_mode:
-            return await interaction.followup.send(self.player.bot.i18n.get("dj_required", lang), ephemeral=True)
-
-        if interaction.user.id in self.player.skip_votes:
-             return await interaction.followup.send(self.player.bot.i18n.get("vote_already", lang), ephemeral=True)
-
-        self.player.skip_votes.add(interaction.user.id)
-        required = self.player.required()
-        current_votes = len(self.player.skip_votes)
-
-        if current_votes >= required:
-             await self.player.stop()
-             await interaction.followup.send(self.player.bot.i18n.get("skipped", lang, author=interaction.user), ephemeral=True)
-        else:
-             await interaction.followup.send(self.player.bot.i18n.get("vote_detected", lang, current=current_votes, required=required), ephemeral=True)
-
-    @discord.ui.button(emoji="<:shuffle:1416273559923462277>", custom_id='shuffle_button', style=discord.ButtonStyle.gray)
-    async def shuffle_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-        lang = await self.player.bot.get_lang(interaction.guild.id)
-        
-        if not await self.player.is_privileged(interaction.user):
-             return await interaction.followup.send(self.player.bot.i18n.get("dj_required", lang), ephemeral=True)
-             
-        queue: list[Track] = self.player.queue.tracks()
-        if not queue:
-            return await interaction.followup.send(self.player.bot.i18n.get("msg_shuffle_error", lang), ephemeral=True)
-        await self.player.shuffle("queue", requester=interaction.user)
-        await interaction.followup.send(self.player.bot.i18n.get("msg_shuffled", lang), ephemeral=True)
-
-    @discord.ui.button(
-        emoji="<:volume:1416274145762607238>",
-        label="Level: 100%",
-        custom_id='volume_button',
-        style=discord.ButtonStyle.gray
-    )
-    async def volume_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-        lang = await self.player.bot.get_lang(interaction.guild.id)
-        
-        if not await self.player.is_privileged(interaction.user):
-             return await interaction.response.send_message(self.player.bot.i18n.get("dj_required", lang), ephemeral=True)
-
-        modal = VolumeModal()
-        await interaction.response.send_modal(modal)
-        await modal.wait()  # รอจน modal.stop() ถูกเรียก
-
-        if not hasattr(modal, "result") or modal.result is None:
-            return  # ผู้ใช้กดยกเลิกหรือกรอกผิด
-
-        volume = modal.result
-        await self.player.set_volume(volume, interaction.user)
-
-        # ส่งข้อความแจ้งผล
-        lang = await self.player.bot.get_lang(interaction.guild.id)
-        if volume == 0:
-            await interaction.followup.send(self.player.bot.i18n.get("msg_muted", lang), ephemeral=True)
-        else:
-            await interaction.followup.send(self.player.bot.i18n.get("msg_vol_set_c", lang, volume=self.player.volume), ephemeral=True)
-
-        await self.update_label(interaction.message)
-
-    @discord.ui.button(emoji="<:repeat:1416274830851965012>", label="Disable", custom_id='loop_button', style=discord.ButtonStyle.gray)
-    async def loop_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-        lang = await self.player.bot.get_lang(interaction.guild.id)
-        
-        if not await self.player.is_privileged(interaction.user):
-             return await interaction.followup.send(self.player.bot.i18n.get("dj_required", lang), ephemeral=True)
-
-        loop_mode = self.player.queue._repeat.mode
-        if loop_mode is LoopType.track:
-            await self.player.set_repeat("off")
-            await self.update_label(interaction.message)
-            return await interaction.followup.send(f"🚫 | {self.player.bot.i18n.get('loop_mode_label', lang)}: {self.player.bot.i18n.get('loop_disable', lang)}", ephemeral=True)
-        elif loop_mode is LoopType.off:
-            await self.player.set_repeat("queue")
-            await self.update_label(interaction.message)
-            return await interaction.followup.send(f"🔁 | {self.player.bot.i18n.get('loop_mode_label', lang)}: {self.player.bot.i18n.get('loop_mode_queue', lang)}", ephemeral=True)
-        else:
-            await self.player.set_repeat("track")
-            await self.update_label(interaction.message)
-            return await interaction.followup.send(f"🔂 | {self.player.bot.i18n.get('loop_mode_label', lang)}: {self.player.bot.i18n.get('loop_mode_track', lang)}", ephemeral=True)
-
-    @discord.ui.button(emoji="<:playlist:1416274601851359395>", label="Autoplay", custom_id='autoplay_button', style=discord.ButtonStyle.gray)
-    async def autoplay_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # 1. Check Privilege (Strict: DJ/Admin Only because it changes playback flow)
-        if not await self.player.is_privileged(interaction.user, strict=True):
-            return await interaction.followup.send(self.player.bot.i18n.get("dj_required", await self.player.bot.get_lang(interaction.guild.id)), ephemeral=True)
-
-        # 2. Check Requirement (Vote or Premium)
-        can_use = await self.check_vote(interaction.user.id)
-        
-        if can_use:
-            data = await collection_myasync.find_one({}) or {"guilds": {}}          
-            guild_id = str(interaction.guild.id)
-            guild_data: dict = data["guilds"].get(guild_id, {})
-            key = guild_data.get("autoplay", False)
-
-            key = not key
-            await save_data_autoplay(interaction.guild.id, key)
-            self.player.autoplay = key
-            await self.update_label(interaction.message)
-            
-            lang = await self.player.bot.get_lang(interaction.guild.id)
-            state = self.player.bot.i18n.get("enabled" if key else "disabled", lang)
-            await interaction.followup.send(self.player.bot.i18n.get("msg_autoplay_bool", lang, state=state), ephemeral=True)
-
-            if not self.player.is_playing:
-                await self.player.do_next()
-        else:
-            view = discord.ui.View()
-            view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="Vote", url="https://top.gg/bot/1469606905948405833"))
-            view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="Premium", url="https://discord.gg/cytech"))
-            await interaction.followup.send(embed=discord.Embed(title='Premium / Vote Required', description='You must vote on Top.gg OR be a Premium user to use Autoplay.', color=0xFFD700), view=view, ephemeral=True)
-
-    @discord.ui.button(label="⌛ 24/7", custom_id='playforever_button', style=discord.ButtonStyle.gray)
-    async def playforever_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # 1. Check Privilege
-        if not await self.player.is_privileged(interaction.user, strict=True):
-             return await interaction.followup.send(self.player.bot.i18n.get("dj_required", await self.player.bot.get_lang(interaction.guild.id)), ephemeral=True)
-
-        # 2. Check Requirement (Vote or Premium)
-        can_use = await self.check_vote(interaction.user.id)
-        
-        if can_use:
-            data = await collection_myasync.find_one({}) or {"guilds": {}}          
-            guild_id = str(interaction.guild.id)
-            guild_data: dict = data["guilds"].get(guild_id, {})
-            key = guild_data.get("24/7", False)
-
-            key = not key
-            await save_data_247(interaction.guild.id, key)
-            self.player.mode247 = key
-            await self.update_label(interaction.message)
-            
-            lang = await self.player.bot.get_lang(interaction.guild.id)
-            state = self.player.bot.i18n.get("enabled" if key else "disabled", lang)
-            await interaction.followup.send(self.player.bot.i18n.get("msg_247_bool", lang, state=state), ephemeral=True)
-        else:
-            view = discord.ui.View()
-            view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="Vote", url="https://top.gg/bot/1469606905948405833"))
-            view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="Premium", url="https://discord.gg/cytech"))
-            await interaction.followup.send(embed=discord.Embed(title='Premium / Vote Required', description='You must vote on Top.gg OR be a Premium user to use 24/7 Mode.', color=0xFFD700), view=view, ephemeral=True)
-        
-    @discord.ui.button(emoji="❤️", label="Save", custom_id='fav_button', style=discord.ButtonStyle.secondary, row=1)
-    async def fav_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not self.player.current:
-            return await interaction.followup.send("❌ Nothing is playing.", ephemeral=True)
-            
-        track = self.player.current
-        # Compact Track Data
-        song_data = {
-            "title": track.title,
-            "uri": track.uri,
-            "author": track.author,
-            "identifier": track.identifier,
-            "thumbnail": track.thumbnail,
-            "length": track.length,
-            "added_at": int(time.time())
-        }
-        
-        user_id = str(interaction.user.id)
-        
-        try:
-            await collection_myasync.update_one(
-                {"user_id": user_id},
-                {"$addToSet": {"favorites": song_data}},
-                upsert=True
-            )
-            
-            # lang = await self.player.bot.get_lang(interaction.guild.id)
-            await interaction.followup.send(f"❤️ **Saved to Collection:**\n[{track.title}]({track.uri})", ephemeral=True)
-        except Exception as e:
-            print(f"Fav Error: {e}")
-            await interaction.followup.send("❌ Failed to save track.", ephemeral=True)
-
-    @discord.ui.button(emoji="🎲", label="Random", custom_id='random_button', style=discord.ButtonStyle.gray, row=2)
-    async def random_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-        lang = await self.player.bot.get_lang(interaction.guild.id)
-        
-        # 1. VC Check
-        if not interaction.user.voice or not interaction.user.voice.channel:
-             return await interaction.followup.send(self.player.bot.i18n.get("error_voice_required", lang), ephemeral=True)
-             
-        # 2. Check privileges
-        if not await self.player.is_privileged(interaction.user):
-             return await interaction.followup.send(self.player.bot.i18n.get("dj_required", lang), ephemeral=True)
-
-        import random
-        search_query = "ytmsearch:Trending Music Thailand" if lang == "th" else "ytmsearch:Trending Global Hits"
-        
-        # UI Feedback
-        await interaction.followup.send(self.player.bot.i18n.get("msg_random_searching", lang), ephemeral=True)
-        
-        try:
-            load_res = await self.player.node.get_tracks(search_query, requester=interaction.user)
-            tracks = load_res if isinstance(load_res, list) else getattr(load_res, 'tracks', [])
-            
-            if tracks:
-                track = random.choice(tracks[:15]) # Pick from top 15
-                await self.player.add_track(track)
-                await interaction.followup.send(self.player.bot.i18n.get("msg_random_selection", lang, title=track.title, uri=track.uri), ephemeral=True)
-                
-                if not self.player.is_playing:
-                    await self.player.do_next()
-                else:
-                    await self.player.update_controller(force=True)
-            else:
-                await interaction.followup.send(self.player.bot.i18n.get("msg_random_not_found", lang), ephemeral=True)
-        except Exception as e:
-            await interaction.followup.send(self.player.bot.i18n.get("msg_random_failed", lang, e=e), ephemeral=True)
-
-class JukeboxIdleView(discord.ui.View):
-    def __init__(self, player, bot=None, lang=None) -> None:
-        super().__init__(timeout=None)
-        self.player = player
-        self.bot = bot
-        self.lang = lang
-        self.update_all_labels()
-
-    def update_all_labels(self):
-        try:
-            bot = self.bot
-            lang = self.lang
-            
-            if self.player:
-                guild_id = str(self.player.guild.id)
-                data = collection_myclient.find_one({}) or {}
-                lang = lang or data.get("guilds", {}).get(guild_id, {}).get("lang", "en")
-                bot = bot or self.player.bot
-            
-            if not lang: lang = "th"
-        except: 
-            lang = "th"
-            bot = bot
-
-        for item in self.children:
-            item: discord.ui.Button = item
-            if item.custom_id == "idle_random_button":
-                if bot:
-                    item.label = bot.i18n.get("btn_random", lang)
-                else:
-                    item.label = "สุ่มเพลง" if lang == "th" else "Random"
-
-    @discord.ui.button(emoji="🎲", label="Random", custom_id='idle_random_button', style=discord.ButtonStyle.gray)
-    async def idle_random_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not interaction.response.is_done():
-            try:
-                await interaction.response.defer(thinking=True, ephemeral=True)
-            except: pass
-            
-        bot = self.player.bot if self.player else interaction.client
-        lang = await bot.get_lang(interaction.guild.id)
-        
-        # 1. VC Check
-        if not interaction.user.voice or not interaction.user.voice.channel:
-             return await interaction.followup.send(bot.i18n.get("error_voice_required", lang), ephemeral=True)
-             
-        # 2. Player Check / Auto Connect
-        player = self.player
-        if not player:
-            player = interaction.guild.voice_client
-            if not player:
-                try:
-                    player = await connect_channel(interaction)
-                    self.player = player
-                except Exception as e:
-                    return await interaction.followup.send(f"❌ Failed to join voice: {e}", ephemeral=True)
-        
-        # 3. Check privileges
-        if not await player.is_privileged(interaction.user):
-             return await interaction.followup.send(bot.i18n.get("dj_required", lang), ephemeral=True)
-
-        import random
-        search_query = "ytmsearch:Trending Music Thailand" if lang == "th" else "ytmsearch:Trending Global Hits"
-        
-        # UI Feedback
-        await interaction.followup.send(bot.i18n.get("msg_random_searching", lang), ephemeral=True)
-        
-        try:
-            node = player.node
-            load_res = await node.get_tracks(search_query, requester=interaction.user)
-            tracks = load_res if isinstance(load_res, list) else getattr(load_res, 'tracks', [])
-            
-            if tracks:
-                track = random.choice(tracks[:15]) # Pick from top 15
-                await player.add_track(track)
-                await interaction.followup.send(bot.i18n.get("msg_random_selection", lang, title=track.title, uri=track.uri), ephemeral=True)
-                
-                if not player.is_playing:
-                    await player.do_next()
-                else:
-                    await player.update_controller(force=True)
-            else:
-                await interaction.followup.send(bot.i18n.get("msg_random_not_found", lang), ephemeral=True)
-        except Exception as e:
-            await interaction.followup.send(bot.i18n.get("msg_random_failed", lang, e=e), ephemeral=True)
+from utils.music_ui import (
+    safe_get_guild_data, safe_delete, safe_fetch_message, 
+    safe_text, loop_mode_to_str, loop_emoji_safe, 
+    MusicControls, JukeboxIdleView
+)
 
 async def connect_channel(ctx: Union[commands.Context, Interaction], channel: VoiceChannel = None):
     try:
@@ -849,11 +147,7 @@ class Player(VoiceProtocol):
         
         try:
             guild_id_str = str(self.guild.id)
-            await collection_myasync.update_one(
-                 {"guild_id": guild_id_str},
-                 {"$set": {"saved_queue": queue_data, "updated_at": time.time()}},
-                 upsert=True
-            )
+            await self.bot.db_manager.update_guild(guild_id_str, {"saved_queue": queue_data, "updated_at": time.time()})
         except Exception as e:
             print(f"[Player] Save Queue Error: {e}")
 
@@ -863,7 +157,7 @@ class Player(VoiceProtocol):
              await asyncio.sleep(2) # Wait for connection stabilization
              if not self.guild: return
              
-             data = await collection_myasync.find_one({"guild_id": str(self.guild.id)})
+             data = await self.bot.db_manager.get_guild(self.guild.id)
              if data and "saved_queue" in data:
                  saved = data["saved_queue"]
                  if not saved: return
@@ -1273,10 +567,7 @@ class Player(VoiceProtocol):
                         except discord.NotFound:
                              # Message deleted manually, send new one
                             new_msg = await channel.send(embed=embed, view=view)
-                            await collection_myasync.update_one(
-                                {"guilds." + str(self.guild.id): {"$exists": True}},
-                                {"$set": {f"guilds.{self.guild.id}.play_embed_id": new_msg.id}}
-                            )
+                            await self.bot.db_manager.update_guild(self.guild.id, {"play_embed_id": new_msg.id})
                         except (discord.HTTPException, discord.Forbidden):
                             # Rate limited or other issue, try creating new one if really broken
                             # But per request, mainly relying on fetch. 
@@ -1322,10 +613,7 @@ class Player(VoiceProtocol):
                         except discord.NotFound:
                              # Message deleted manually, send new one
                             new_q_msg = await channel.send(embed=queue_embed)
-                            await collection_myasync.update_one(
-                                {"guilds." + str(self.guild.id): {"$exists": True}},
-                                {"$set": {f"guilds.{self.guild.id}.queue_embed_id": new_q_msg.id}}
-                            )
+                            await self.bot.db_manager.update_guild(self.guild.id, {"queue_embed_id": new_q_msg.id})
                         except: pass
                 except: pass  
             # ───────────────────────────────
@@ -1412,25 +700,7 @@ class Player(VoiceProtocol):
             # Save Queue State
             asyncio.create_task(self.save_queue())
 
-            # ensure guild data present
-            data = await collection_myasync.find_one({}) or {"guilds": {}}
-            if "guilds" not in data:
-                data["guilds"] = {}
-            guild_id = str(self.guild.id)
-            if guild_id not in data["guilds"]:
-                data["guilds"][guild_id] = {
-                    "autoplay": False,
-                    "24/7": False,
-                    "channel_id": None,
-                    "queue_embed_id": None,
-                    "play_embed_id": None
-                }
-                try:
-                    await collection_myasync.update_one({}, {"$set": data}, upsert=True)
-                except Exception as e:
-                    print(f"DB upsert error in do_next: {e}")
-
-            guild_data = data["guilds"][guild_id]
+            guild_data = await self.bot.db_manager.get_guild(self.guild.id)
             autoplay = bool(guild_data.get("autoplay", False))
             mode_24_7 = bool(guild_data.get("24/7", False))
 
@@ -1529,23 +799,19 @@ class Player(VoiceProtocol):
 
             # update user history safely
             try:
-                hist_data = await collection_myasync.find_one({}) or {"history": {}}
-                if "history" not in hist_data:
-                    hist_data["history"] = {}
                 uid = str(track.requester.id) if getattr(track, "requester", None) else None
                 if uid:
-                    if uid not in hist_data["history"]:
-                        hist_data["history"][uid] = {"recently_played": []}
-                    user_history: dict = hist_data["history"][uid]["recently_played"]
+                    user_doc = await self.bot.db_manager.get_user(uid)
+                    user_history = user_doc.get("recently_played", [])
+                    
                     identifiers = {song.get("identifier") for song in user_history if isinstance(song, dict)}
                     if getattr(track, "identifier", None) not in identifiers:
-                        if len(user_history) >= 5:
+                        if len(user_history) >= 25: # Keep up to 25
                             user_history.pop(0)
                         user_history.append({"identifier": getattr(track, "identifier", None), "title": getattr(track, "title", None)})
-                    try:
-                        await collection_myasync.update_one({}, {"$set": hist_data}, upsert=True)
-                    except Exception as e:
-                        print(f"Failed to update history DB: {e}")
+                    
+                    # Store back to db
+                    await self.bot.db_manager.update_user(uid, {"recently_played": user_history})
             except Exception as e:
                 print(f"Error updating user history: {e}")
 
@@ -1569,12 +835,8 @@ class Player(VoiceProtocol):
             traceback.print_exc()
 
     async def teardown(self):
-        self.is_closing = True
-            
-        data = await collection_myasync.find_one({}) or {"guilds": {}}
-
         guild_id = str(self.guild.id)
-        guild_data: dict = data["guilds"].get(guild_id)
+        guild_data = await self.bot.db_manager.get_guild(guild_id)
         
         # Fetch lang
         lang = await self.bot.get_lang(self.guild.id)

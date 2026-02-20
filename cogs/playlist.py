@@ -4,7 +4,7 @@ from discord.ext import commands
 import time
 import datetime
 import cytechlink
-from bot import Cyori, collection_myasync
+from bot import Cyori
 from utils import config as ui_config
 
 class Playlist(commands.Cog):
@@ -36,7 +36,7 @@ class Playlist(commands.Cog):
         is_premium = await self.bot.is_premium(ctx.author.id)
         limit = 100 if is_premium else 20
         
-        user_doc = await collection_myasync.find_one({"user_id": user_id}) or {"playlists": []}
+        user_doc = await self.bot.db_manager.get_user_doc(user_id)
         playlists = user_doc.get("playlists", [])
 
         if len(playlists) >= limit:
@@ -52,11 +52,7 @@ class Playlist(commands.Cog):
             "created_at": int(time.time()),
             "count": 0
         }
-        await collection_myasync.update_one(
-            {"user_id": user_id},
-            {"$push": {"playlists": new_pl}},
-            upsert=True
-        )
+        await self.bot.db_manager.update_user_doc(user_id, {"$push": {"playlists": new_pl}})
         await ctx.send(f"✅ สร้างเพลย์ลิสต์ **{name}** เรียบร้อยแล้ว!", ephemeral=True)
 
     @playlist.command(name="save")
@@ -67,7 +63,7 @@ class Playlist(commands.Cog):
         is_premium = await self.bot.is_premium(ctx.author.id)
         limit = 100 if is_premium else 20
 
-        user_doc = await collection_myasync.find_one({"user_id": user_id}) or {"playlists": []}
+        user_doc = await self.bot.db_manager.get_user_doc(user_id)
         playlists = user_doc.get("playlists", [])
 
         if len(playlists) >= limit:
@@ -94,11 +90,7 @@ class Playlist(commands.Cog):
             "count": len(tracks)
         }
         
-        await collection_myasync.update_one(
-            {"user_id": user_id},
-            {"$push": {"playlists": new_pl}},
-            upsert=True
-        )
+        await self.bot.db_manager.update_user_doc(user_id, {"$push": {"playlists": new_pl}})
         msg = f"✅ บันทึกคิวปัจจุบันลงเพลย์ลิสต์ **{pl_name}** แล้ว! ({len(tracks)} เพลง)"
         if isinstance(ctx, discord.Interaction):
             await ctx.followup.send(msg)
@@ -110,7 +102,7 @@ class Playlist(commands.Cog):
     async def add(self, ctx: commands.Context, name: str, query: str):
         """เพิ่มเพลงเข้าเพลย์ลิสต์ (Add track(s) to playlist)"""
         user_id = str(ctx.author.id)
-        user_doc = await collection_myasync.find_one({"user_id": user_id}) or {"playlists": []}
+        user_doc = await self.bot.db_manager.get_user_doc(user_id)
         playlists = user_doc.get("playlists", [])
 
         idx = next((i for i, pl in enumerate(playlists) if pl['name'].lower() == name.lower()), -1)
@@ -135,10 +127,7 @@ class Playlist(commands.Cog):
         playlists[idx]['tracks'].extend(added_tracks)
         playlists[idx]['count'] = len(playlists[idx]['tracks'])
 
-        await collection_myasync.update_one(
-            {"user_id": user_id},
-            {"$set": {"playlists": playlists}}
-        )
+        await self.bot.db_manager.update_user_doc(user_id, {"$set": {"playlists": playlists}})
         msg = f"✅ เพิ่ม {len(added_tracks)} เพลงลงใน **{name}** เรียบร้อย!"
         if isinstance(ctx, discord.Interaction):
             await ctx.followup.send(msg)
@@ -152,7 +141,7 @@ class Playlist(commands.Cog):
         is_premium = await self.bot.is_premium(ctx.author.id)
         limit = 100 if is_premium else 20
         
-        user_doc = await collection_myasync.find_one({"user_id": user_id}) or {"playlists": []}
+        user_doc = await self.bot.db_manager.get_user_doc(user_id)
         playlists = user_doc.get("playlists", [])
 
         if not playlists:
@@ -174,17 +163,14 @@ class Playlist(commands.Cog):
     async def delete(self, ctx: commands.Context, name: str):
         """ลบเพลย์ลิสต์ (Delete a playlist)"""
         user_id = str(ctx.author.id)
-        user_doc = await collection_myasync.find_one({"user_id": user_id}) or {"playlists": []}
+        user_doc = await self.bot.db_manager.get_user_doc(user_id)
         playlists = user_doc.get("playlists", [])
 
         new_playlists = [pl for pl in playlists if pl['name'].lower() != name.lower()]
         if len(new_playlists) == len(playlists):
             return await ctx.send(f"❌ ไม่พบเพลย์ลิสต์ชื่อ **{name}**", ephemeral=True)
 
-        await collection_myasync.update_one(
-            {"user_id": user_id},
-            {"$set": {"playlists": new_playlists}}
-        )
+        await self.bot.db_manager.update_user_doc(user_id, {"$set": {"playlists": new_playlists}})
         await ctx.send(f"🗑️ ลบเพลย์ลิสต์ **{name}** เรียบร้อยแล้ว", ephemeral=True)
 
     @playlist.command(name="load")
@@ -192,8 +178,8 @@ class Playlist(commands.Cog):
     async def load(self, ctx: commands.Context, name: str):
         """โหลดเพลย์ลิสต์มาเล่น (Load and play a playlist)"""
         user_id = str(ctx.author.id)
-        user_doc = await collection_myasync.find_one({"user_id": user_id})
-        playlists = user_doc.get("playlists", []) if user_doc else []
+        user_doc = await self.bot.db_manager.get_user_doc(user_id)
+        playlists = user_doc.get("playlists", [])
 
         pl = next((p for p in playlists if p['name'].lower() == name.lower()), None)
         if not pl:

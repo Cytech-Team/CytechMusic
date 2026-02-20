@@ -128,9 +128,7 @@ class DashboardSystem:
 
     async def get_guild_settings(self, request):
         gid = request.query.get('guild_id')
-        from bot import collection_myasync
-        data = await collection_myasync.find_one({}) or {}
-        guild_data = data.get("guilds", {}).get(str(gid), {})
+        guild_data = await self.bot.db_manager.get_guild(gid)
         return web.json_response(guild_data, headers=self.cors_headers)
 
     async def post_guild_settings(self, request):
@@ -138,8 +136,7 @@ class DashboardSystem:
         gid = payload.get('guild_id')
         settings = payload.get('settings', {})
         
-        from bot import collection_myasync
-        await collection_myasync.update_one({}, {"$set": {f"guilds.{gid}": settings}}, upsert=True)
+        await self.bot.db_manager.update_guild(gid, settings)
         # Update embed
         await self.bot.update_guild_embed(settings, guild_id=gid)
         return web.json_response({'status': 'ok'}, headers=self.cors_headers)
@@ -151,13 +148,10 @@ class DashboardSystem:
         
         try:
             target_uid = int(uid)
-            from bot import collection_myasync
             
             # Fetch Data with Defaults
-            data_all = await collection_myasync.find_one({"users": {"$exists": True}}) or {}
-            user_data = data_all.get("users", {}).get(str(uid), {})
-            
-            user_doc = await collection_myasync.find_one({"user_id": str(uid)}) or {}
+            user_data = await self.bot.db_manager.get_user(uid)
+            user_doc = await self.bot.db_manager.get_user_doc(uid)
             
             # Premium Logic
             is_prem = await self.bot.is_premium(target_uid)
@@ -357,9 +351,7 @@ class DashboardSystem:
                  already_playing = p.is_playing
                  if not p.controller:
                      try:
-                         from bot import collection_myasync
-                         _db = await collection_myasync.find_one({}) or {}
-                         _gd = _db.get("guilds", {}).get(str(gid), {})
+                         _gd = await self.bot.db_manager.get_guild(gid)
                          ch_id  = _gd.get("channel_id")
                          emb_id = _gd.get("play_embed_id")
                          if ch_id and emb_id:
@@ -400,9 +392,7 @@ class DashboardSystem:
                                      except Exception:
                                          pass
                                  # fallback → setup channel
-                                 from bot import collection_myasync
-                                 _d2 = await collection_myasync.find_one({}) or {}
-                                 _g2 = _d2.get("guilds", {}).get(str(gid), {})
+                                 _g2 = await self.bot.db_manager.get_guild(gid)
                                  _c  = self.bot.get_channel(int(_g2["channel_id"])) if _g2.get("channel_id") else None
                                  if _c:
                                      await _c.send(embed=emb, delete_after=12)
@@ -441,9 +431,7 @@ class DashboardSystem:
                                          target_ch = None
 
                                  # 2️⃣ Fallback → setup channel (ส่งเป็น controller ที่นั่นแทน)
-                                 from bot import collection_myasync
-                                 _d2 = await collection_myasync.find_one({}) or {}
-                                 _g2 = _d2.get("guilds", {}).get(str(gid), {})
+                                 _g2 = await self.bot.db_manager.get_guild(gid)
                                  _ch_id2 = _g2.get("channel_id")
                                  _emb_id2 = _g2.get("play_embed_id")
                                  if _ch_id2:
@@ -519,7 +507,6 @@ class DashboardSystem:
                 await self.bot.broadcast_guild(gid)
             elif act == 'favorite':
                 if uid:
-                    from bot import collection_myasync
                     import time
                     
                     if isinstance(val, dict):
@@ -551,7 +538,7 @@ class DashboardSystem:
                     if not song_data.get('uri') and not song_data.get('encoded') and not song_data.get('identifier'): return
 
                     # Fetch current favorites to check existence
-                    user_doc = await collection_myasync.find_one({"user_id": str(uid)}) or {}
+                    user_doc = await self.bot.db_manager.get_user_doc(uid)
                     favorites = user_doc.get("favorites", [])
                     
                     # Robust check: Match by URI or Track ID (encoded) or Identifier or Title+Author
@@ -589,23 +576,13 @@ class DashboardSystem:
                         elif target_fav.get('identifier'): pull_target['identifier'] = target_fav['identifier']
                         
                         if pull_target:
-                            await collection_myasync.update_one(
-                                {"user_id": str(uid)}, 
-                                {"$pull": {"favorites": pull_target}}
-                            )
+                            await self.bot.db_manager.update_user_doc(uid, {"$pull": {"favorites": pull_target}})
                         else:
                             # Edge case: If no unique field, pull exactly (less reliable but fallback)
-                            await collection_myasync.update_one(
-                                {"user_id": str(uid)}, 
-                                {"$pull": {"favorites": target_fav}}
-                            )
+                            await self.bot.db_manager.update_user_doc(uid, {"$pull": {"favorites": target_fav}})
                     else:
                         # Add
-                        await collection_myasync.update_one(
-                            {"user_id": str(uid)}, 
-                            {"$addToSet": {"favorites": song_data}}, 
-                            upsert=True
-                        )
+                        await self.bot.db_manager.update_user_doc(uid, {"$addToSet": {"favorites": song_data}})
                     
             # Broadcast update immediately
             await self.bot.broadcast_guild(gid)
@@ -621,22 +598,21 @@ class DashboardSystem:
         action = payload.get('action')
         if not uid: return web.json_response({'error': 'no_user'}, headers=self.cors_headers)
         
-        from bot import collection_myasync
-        user_doc = await collection_myasync.find_one({"user_id": str(uid)}) or {"user_id": str(uid), "playlists": [], "favorites": []}
+        user_doc = await self.bot.db_manager.get_user_doc(uid)
         playlists = user_doc.get("playlists", [])
         
         if action == "create":
             name = payload.get('name', 'My Playlist')
             description = payload.get('description', '')
             playlists.append({"name": name, "description": description, "tracks": [], "created_at": int(time.time())})
-            await collection_myasync.update_one({"user_id": str(uid)}, {"$set": {"playlists": playlists}}, upsert=True)
+            await self.bot.db_manager.update_user_doc(uid, {"$set": {"playlists": playlists}})
             return web.json_response({'status': 'ok'}, headers=self.cors_headers)
             
         elif action == "delete":
             idx = int(payload.get('index', -1))
             if 0 <= idx < len(playlists):
                 playlists.pop(idx)
-                await collection_myasync.update_one({"user_id": str(uid)}, {"$set": {"playlists": playlists}}, upsert=True)
+                await self.bot.db_manager.update_user_doc(uid, {"$set": {"playlists": playlists}})
             return web.json_response({'status': 'ok'}, headers=self.cors_headers)
             
         elif action == "add_track":
@@ -644,7 +620,7 @@ class DashboardSystem:
             track = payload.get('track')
             if 0 <= idx < len(playlists) and track:
                 playlists[idx]['tracks'].append(track)
-                await collection_myasync.update_one({"user_id": str(uid)}, {"$set": {"playlists": playlists}}, upsert=True)
+                await self.bot.db_manager.update_user_doc(uid, {"$set": {"playlists": playlists}})
             return web.json_response({'status': 'ok'}, headers=self.cors_headers)
             
         elif action == "save_queue":
@@ -661,7 +637,7 @@ class DashboardSystem:
             
             name = payload.get('name', f"Queue {time.strftime('%Y-%m-%d')}")
             playlists.append({"name": name, "description": "Saved from queue", "tracks": tracks, "created_at": int(time.time())})
-            await collection_myasync.update_one({"user_id": str(uid)}, {"$set": {"playlists": playlists}}, upsert=True)
+            await self.bot.db_manager.update_user_doc(uid, {"$set": {"playlists": playlists}})
             return web.json_response({'status': 'ok'}, headers=self.cors_headers)
             
         elif action == "play_playlist":
@@ -688,7 +664,7 @@ class DashboardSystem:
             uri = payload.get('uri')
             favs = user_doc.get("favorites", [])
             new_favs = [f for f in favs if f.get('uri') != uri]
-            await collection_myasync.update_one({"user_id": str(uid)}, {"$set": {"favorites": new_favs}}, upsert=True)
+            await self.bot.db_manager.update_user_doc(uid, {"$set": {"favorites": new_favs}})
             return web.json_response({'status': 'ok'}, headers=self.cors_headers)
 
         return web.json_response({'error': 'unknown_action'}, headers=self.cors_headers)

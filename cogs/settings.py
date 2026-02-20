@@ -3,7 +3,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from typing import Union
-from bot import Cyori, collection_myasync
+from bot import Cyori
 from utils import config as ui_config
 import cytechlink
 
@@ -46,22 +46,13 @@ class Settings(commands.Cog):
         lang = await self.bot.get_lang(ctx.guild.id)
         
         try:
-            # Preserve Premium Status
-            data = await collection_myasync.find_one({}) or {}
-            is_prem = data.get("guilds", {}).get(str(ctx.guild.id), {}).get("premium", False)
+            guild_data = await self.bot.db_manager.get_guild(ctx.guild.id)
+            is_prem = guild_data.get("premium", False)
 
-            # Unset the guild's data in the single document
-            await collection_myasync.update_one(
-                {},
-                {"$unset": {f"guilds.{ctx.guild.id}": ""}}
-            )
-            
-            # Restore Premium
-            if is_prem:
-                 await collection_myasync.update_one(
-                    {},
-                    {"$set": {f"guilds.{ctx.guild.id}.premium": True}}
-                )
+            # Unset all keys except premium
+            keys_to_remove = [k for k in guild_data.keys() if k != "premium"]
+            if keys_to_remove:
+                await self.bot.db_manager.unset_guild(ctx.guild.id, keys_to_remove)
 
             # Use i18n or fallback
             msg = self.bot.i18n.get("reset_success", lang)
@@ -82,9 +73,8 @@ class Settings(commands.Cog):
         lang = await self.bot.get_lang(ctx.guild.id)
 
         try:
-            guild_id = ctx.guild.id
-            data = await collection_myasync.find_one({}) or {}
-            old_channel_id = data.get("guilds", {}).get(str(guild_id), {}).get("channel_id")
+            guild_data = await self.bot.db_manager.get_guild(ctx.guild.id)
+            old_channel_id = guild_data.get("channel_id")
             
             channel = ctx.guild.get_channel(old_channel_id) if old_channel_id else None
 
@@ -101,7 +91,7 @@ class Settings(commands.Cog):
                     topic=self.bot.i18n.get("join_voice_chat_title", lang)
                 )
 
-            g_data = data.get("guilds", {}).get(str(guild_id), {})
+            g_data = guild_data
 
             queue_embed = discord.Embed(title=self.bot.i18n.get("no_queue", lang), color=ui_config.EMBED_COLOR)
             play_embed = self.bot.none_play_embed(lang, g_data)
@@ -112,7 +102,7 @@ class Settings(commands.Cog):
             q_msg = await channel.send(embed=queue_embed)
             p_msg = await channel.send(embed=play_embed, view=view)
 
-            await save_data_setup(guild_id, q_msg.id, p_msg.id, channel.id)
+            await save_data_setup(self.bot, ctx.guild.id, q_msg.id, p_msg.id, channel.id)
             await ctx.send(self.bot.i18n.get("setup_complete", lang, channel=channel.mention), ephemeral=False)
 
             await self._update_controller_if_playing(guild_id)
@@ -132,7 +122,7 @@ class Settings(commands.Cog):
             return await ctx.send(self.bot.i18n.get("prefix_too_long", lang), ephemeral=True)
 
         await ctx.defer()
-        await save_data_prefix(ctx.guild.id, prefix)
+        await save_data_prefix(self.bot, ctx.guild.id, prefix)
         await ctx.send(self.bot.i18n.get("prefix_changed", lang, prefix=prefix), ephemeral=False)
 
     # ===================================================================
@@ -153,7 +143,7 @@ class Settings(commands.Cog):
                 pass
         # Hybrid command passes 'choice' value as str, not object
         
-        await save_data_language(ctx.guild.id, lang)
+        await save_data_language(self.bot, ctx.guild.id, lang)
         
         # Helper map for display
         names = {"en": "English", "th": "Thai"}
@@ -162,14 +152,9 @@ class Settings(commands.Cog):
         # Use lang_name to avoid format conflict
         resp = self.bot.i18n.get("lang_set", lang, lang_name=display)
         
-        # 1. Update the setup channel UI immediately if it exists
         try:
-             data = await collection_myasync.find_one({}) or {}
-             if "guilds" in data and str(ctx.guild.id) in data["guilds"]:
-                 g_data = data["guilds"][str(ctx.guild.id)]
-                 # Force reload lang in g_data since we just saved it but didn't refetch
-                 g_data["lang"] = lang 
-                 await self.bot.update_guild_embed(g_data, guild_id=ctx.guild.id)
+             g_data = await self.bot.db_manager.get_guild(ctx.guild.id)
+             await self.bot.update_guild_embed(g_data, guild_id=ctx.guild.id)
         except Exception as e:
             print(f"Update UI error: {e}")
 
@@ -206,9 +191,10 @@ class Settings(commands.Cog):
             
             return await ctx.send(embed=embed, view=view, ephemeral=True)
 
-        current = (await collection_myasync.find_one({}) or {}).get("guilds", {}).get(str(ctx.guild.id), {}).get("24/7", False)
+        guild_data = await self.bot.db_manager.get_guild(ctx.guild.id)
+        current = guild_data.get("24/7", False)
         new_state = not current
-        await save_data_247(ctx.guild.id, new_state)
+        await save_data_247(self.bot, ctx.guild.id, new_state)
 
         player = ctx.guild.voice_client
         if player and hasattr(player, "mode247"):
@@ -244,7 +230,7 @@ class Settings(commands.Cog):
             return await ctx.send(self.bot.i18n.get("dj_required", lang), ephemeral=True)
 
         new_state = not getattr(player, "autoplay", False)
-        await save_data_autoplay(ctx.guild.id, new_state)
+        await save_data_autoplay(self.bot, ctx.guild.id, new_state)
         player.autoplay = new_state
 
         state_key = "enabled" if new_state else "disabled"
@@ -265,7 +251,7 @@ class Settings(commands.Cog):
     async def dj_role(self, ctx: commands.Context, role: discord.Role):
         await ctx.defer()
         lang = await self.bot.get_lang(ctx.guild.id)
-        await save_data_dj_role(ctx.guild.id, role.id)
+        await save_data_dj_role(self.bot, ctx.guild.id, role.id)
         # Assuming simple response for now or add to i18n later if requested
         await ctx.send(f"✅ Set DJ role to {role.mention}")
 
@@ -273,10 +259,10 @@ class Settings(commands.Cog):
     async def dj_mode(self, ctx: commands.Context):
         await ctx.defer()
         lang = await self.bot.get_lang(ctx.guild.id)
-        data = await collection_myasync.find_one({}) or {}
-        current = data.get("guilds", {}).get(str(ctx.guild.id), {}).get("dj_mode", False)
+        guild_data = await self.bot.db_manager.get_guild(ctx.guild.id)
+        current = guild_data.get("dj_mode", False)
         new_state = not current
-        await save_data_dj_mode(ctx.guild.id, new_state)
+        await save_data_dj_mode(self.bot, ctx.guild.id, new_state)
         state_text = "Enabled (Only DJ/Admin can control)" if new_state else "Disabled (Everyone in VC can control)"
         await ctx.send(f"✅ DJ Mode is now **{state_text}**")
 
@@ -284,10 +270,10 @@ class Settings(commands.Cog):
     async def vote_mode(self, ctx: commands.Context):
         await ctx.defer()
         lang = await self.bot.get_lang(ctx.guild.id)
-        data = await collection_myasync.find_one({}) or {}
-        current = data.get("guilds", {}).get(str(ctx.guild.id), {}).get("vote_mode", False)
+        guild_data = await self.bot.db_manager.get_guild(ctx.guild.id)
+        current = guild_data.get("vote_mode", False)
         new_state = not current
-        await save_data_vote_mode(ctx.guild.id, new_state)
+        await save_data_vote_mode(self.bot, ctx.guild.id, new_state)
         state_text = "Enabled" if new_state else "Disabled"
         await ctx.send(f"✅ Vote Mode is now **{state_text}**") 
 
@@ -301,8 +287,7 @@ class Settings(commands.Cog):
         lang = await self.bot.get_lang(ctx.guild.id)
         
         try:
-            data = await collection_myasync.find_one({}) or {}
-            guild_data = data.get("guilds", {}).get(str(ctx.guild.id), {})
+            guild_data = await self.bot.db_manager.get_guild(ctx.guild.id)
             
             prefix = guild_data.get("prefix", ui_config.DEFAULT_PREFIX)
             language = guild_data.get("lang", "en")
@@ -392,9 +377,8 @@ class Settings(commands.Cog):
         lang = await self.bot.get_lang(ctx.guild.id)
         
         try:
-            guild_id = ctx.guild.id
-            data = await collection_myasync.find_one({}) or {}
-            old_channel_id = data.get("guilds", {}).get(str(guild_id), {}).get("channel_id")
+            guild_data = await self.bot.db_manager.get_guild(ctx.guild.id)
+            old_channel_id = guild_data.get("channel_id")
             
             channel = ctx.guild.get_channel(old_channel_id) if old_channel_id else None
 
@@ -411,7 +395,7 @@ class Settings(commands.Cog):
                     topic=self.bot.i18n.get("join_voice_chat_title", lang)
                 )
 
-            g_data = data.get("guilds", {}).get(str(guild_id), {})
+            g_data = guild_data
 
             queue_embed = discord.Embed(title=self.bot.i18n.get("no_queue", lang), color=ui_config.EMBED_COLOR)
             play_embed = self.bot.none_play_embed(lang, g_data)
@@ -422,7 +406,7 @@ class Settings(commands.Cog):
             q_msg = await channel.send(embed=queue_embed)
             p_msg = await channel.send(embed=play_embed, view=view)
 
-            await save_data_setup(guild_id, q_msg.id, p_msg.id, channel.id)
+            await save_data_setup(self.bot, ctx.guild.id, q_msg.id, p_msg.id, channel.id)
             await ctx.send(self.bot.i18n.get("setup_complete", lang, channel=channel.mention), ephemeral=False)
             await self._update_controller_if_playing(guild_id)
 
@@ -498,29 +482,29 @@ class Settings(commands.Cog):
         except Exception as e:
             await ctx.send(f"❌ Clean up failed: {e}", ephemeral=True)
 
-async def save_data_setup(guild_id: int, queue_embed_id: int, play_embed_id: int, channel_id: int):
-    await collection_myasync.update_one({}, {"$set": { f"guilds.{guild_id}.queue_embed_id": queue_embed_id, f"guilds.{guild_id}.play_embed_id": play_embed_id, f"guilds.{guild_id}.channel_id": channel_id }}, upsert=True)
+async def save_data_setup(bot, guild_id: int, queue_embed_id: int, play_embed_id: int, channel_id: int):
+    await bot.db_manager.update_guild(guild_id, {"queue_embed_id": queue_embed_id, "play_embed_id": play_embed_id, "channel_id": channel_id})
 
-async def save_data_247(guild_id: int, state: bool):
-    await collection_myasync.update_one({}, {"$set": {f"guilds.{guild_id}.24/7": state}}, upsert=True)
+async def save_data_247(bot, guild_id: int, state: bool):
+    await bot.db_manager.update_guild(guild_id, {"24/7": state})
 
-async def save_data_autoplay(guild_id: int, state: bool):
-    await collection_myasync.update_one({}, {"$set": {f"guilds.{guild_id}.autoplay": state}}, upsert=True)
+async def save_data_autoplay(bot, guild_id: int, state: bool):
+    await bot.db_manager.update_guild(guild_id, {"autoplay": state})
 
-async def save_data_prefix(guild_id: int, prefix: str):
-    await collection_myasync.update_one({}, {"$set": {f"guilds.{guild_id}.prefix": prefix}}, upsert=True)
+async def save_data_prefix(bot, guild_id: int, prefix: str):
+    await bot.db_manager.update_guild(guild_id, {"prefix": prefix})
 
-async def save_data_language(guild_id: int, lang: str):
-    await collection_myasync.update_one({}, {"$set": {f"guilds.{guild_id}.lang": lang}}, upsert=True)
+async def save_data_language(bot, guild_id: int, lang: str):
+    await bot.db_manager.update_guild(guild_id, {"lang": lang})
 
-async def save_data_dj_role(guild_id: int, role_id: int):
-    await collection_myasync.update_one({}, {"$set": {f"guilds.{guild_id}.dj_role": role_id}}, upsert=True)
+async def save_data_dj_role(bot, guild_id: int, role_id: int):
+    await bot.db_manager.update_guild(guild_id, {"dj_role": role_id})
 
-async def save_data_vote_mode(guild_id: int, mode: bool):
-    await collection_myasync.update_one({}, {"$set": {f"guilds.{guild_id}.vote_mode": mode}}, upsert=True)
+async def save_data_vote_mode(bot, guild_id: int, mode: bool):
+    await bot.db_manager.update_guild(guild_id, {"vote_mode": mode})
 
-async def save_data_dj_mode(guild_id: int, mode: bool):
-    await collection_myasync.update_one({}, {"$set": {f"guilds.{guild_id}.dj_mode": mode}}, upsert=True)
+async def save_data_dj_mode(bot, guild_id: int, mode: bool):
+    await bot.db_manager.update_guild(guild_id, {"dj_mode": mode})
 
 async def setup(bot: Cyori):
     await bot.add_cog(Settings(bot))

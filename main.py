@@ -1,7 +1,7 @@
 import logging
 import discord
 from discord.ext import commands
-from bot import Cyori, collection_myasync
+from bot import Cyori
 from utils.config import BOT_TOKEN
 
 logging.basicConfig(level=logging.INFO)
@@ -12,15 +12,10 @@ async def get_prefix(bot, message: discord.Message):
         return commands.when_mentioned_or("cm!")(bot, message)
     
     try:
-        data = await collection_myasync.find_one({}) or {}
-        data = data if data else {"guilds": {}}
+        guild_data = await bot.db_manager.get_guild(message.guild.id)
+        prefix = guild_data.get("prefix", "cm!")
     except:
-        data = {"guilds": {}}
-
-    guild_id = str(message.guild.id)
-    prefix = "cm!"
-    if "guilds" in data and guild_id in data["guilds"]:
-        prefix = data["guilds"][guild_id].get("prefix", "cm!")
+        prefix = "cm!"
         
     return commands.when_mentioned_or(prefix)(bot, message)
 

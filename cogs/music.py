@@ -1,4 +1,3 @@
-
 import math
 import time
 import asyncio
@@ -8,7 +7,7 @@ import cytechlink
 from discord import app_commands
 from typing import Union, Optional
 from discord.ext import commands, tasks
-from bot import Cyori, collection_myasync
+from bot import Cyori
 from utils import config as ui_config
 from utils.lyrics import LyricsManager
 
@@ -281,19 +280,26 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_cytechlink_track_stuck(self, player: cytechlink.Player, track: cytechlink.Track, _):
+        # กันชนชั่วคราว: รอให้ Node จัดการบัฟเฟอร์ก่อน ถ้าค้างเกิน 10 วิ ถึงยอมแพ้และเปลี่ยนเพลง
         await asyncio.sleep(10)
-        player._track_is_stuck = False
-        await player.do_next()
+        # ตรวจสอบว่ามันยังเล่นเพลงนี้อยู่หรือไม่
+        if player.current and player.current.track_id == track.track_id:
+            player._track_is_stuck = False
+            await player.do_next()
 
     @commands.Cog.listener() 
     async def on_cytechlink_track_exception(self, player: cytechlink.Player, track: cytechlink.Track, _): 
-        try:
-            player._track_is_stuck = True
-            lang = await self.bot.get_lang(player.guild.id)
-            await player.context.send(self.bot.i18n.get("error_next_song_10s", lang), delete_after=10)
-        except:
-            pass
-        await player.do_next()
+        # บางครั้ง Exception มาแค่แพ็กเกจเดียวแล้วเล่นต่อได้ เราจะให้เวลามันแก้ตัว 3 วิ
+        await asyncio.sleep(3)
+        if player.current and player.current.track_id == track.track_id:
+            # ถ้า 3 วินาทีผ่านไปยัง Exception และไม่ขยับ (ยังเป็นเพลงเดิม)
+            try:
+                player._track_is_stuck = True
+                lang = await self.bot.get_lang(player.guild.id)
+                await player.context.send(self.bot.i18n.get("error_next_song_10s", lang), delete_after=10)
+            except:
+                pass
+            await player.do_next()
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
@@ -310,8 +316,8 @@ class Music(commands.Cog):
         if len(human_members) == 0:
             # Check 24/7 mode from DB
             try:
-                data = await collection_myasync.find_one({})
-                is_247 = data.get("guilds", {}).get(str(member.guild.id), {}).get("24/7", False) if data else False
+                guild_data = await self.bot.db_manager.get_guild(member.guild.id)
+                is_247 = guild_data.get("24/7", False)
             except:
                 is_247 = False
             
@@ -449,14 +455,12 @@ class Music(commands.Cog):
         if not message.guild: return
         
         try:
-            data = await collection_myasync.find_one({})
-            data = data if data else {"guilds": {}}
+            guild_id = str(message.guild.id)
+            guild_data = await self.bot.db_manager.get_guild(guild_id)
         except:
-             data = {"guilds": {}}
+             guild_data = {}
 
-        guild_id = str(message.guild.id)
-        if "guilds" in data and guild_id in data["guilds"]:
-            guild_data: dict = data["guilds"][guild_id]
+        if guild_data:
             channel_id = guild_data.get("channel_id", None)
             play_embed_id = guild_data.get("play_embed_id", None)
             lang = guild_data.get("lang", "en")
@@ -555,8 +559,8 @@ class Music(commands.Cog):
 
         choices = []
         user_id = str(interaction.user.id)
-        data = await collection_myasync.find_one({}) or {"history": {}}
-        user_history = data.get("history", {}).get(user_id, {}).get("recently_played", [])
+        user_data = await self.bot.db_manager.get_user(user_id)
+        user_history = user_data.get("recently_played", [])
 
         for song in user_history[:25]:
             val = f"https://www.youtube.com/watch?v={song['identifier']}"
@@ -681,8 +685,7 @@ class Music(commands.Cog):
 
 
         # Get persistent setup data
-        data = await collection_myasync.find_one({}) or {"guilds": {}}
-        guild_data = data.get("guilds", {}).get(str(ctx.guild.id), {})
+        guild_data = await self.bot.db_manager.get_guild(ctx.guild.id)
         play_embed_id = guild_data.get("play_embed_id")
 
         # Logic: Always try to delete old one (if exists) and send new one in CURRENT channel

@@ -8,7 +8,7 @@ import platform
 import cytechlink
 from discord import app_commands
 from discord.ext import commands
-from bot import Cyori, collection_myasync
+from bot import Cyori
 from utils import config as ui_config
 
 def sec_to_min(seconds: float):
@@ -150,17 +150,9 @@ class HelpControl(discord.ui.View):
         await self.message.edit(view=self)
         
     async def on_select(self, interaction: discord.Interaction):
-        data = await collection_myasync.find_one({})
-        if data:
-            data = data
-        else:
-            data = {"guilds": {}}          
         guild_id = str(interaction.guild.id)
-        if "guilds" in data and guild_id in data["guilds"]:
-            guild_data: dict = data["guilds"][guild_id]
-            prefix = guild_data.get("prefix", "cm!")
-        else:
-            prefix = "cm!"
+        guild_data = await self.bot.db_manager.get_guild(guild_id)
+        prefix = guild_data.get("prefix", "cm!")
         if interaction.data['values'][0] == "Home":
             await interaction.response.defer()
             from utils.luxury import LuxuryEmbed, luxury_line
@@ -268,17 +260,9 @@ class Info(commands.Cog):
         "Show help info / แสดงวิธีใช้งานและรายชื่อคำสั่ง"
         async with ctx.typing():
             lang = await self.bot.get_lang(ctx.guild.id)
-            data = await collection_myasync.find_one({})
-            if data:
-                data = data
-            else:
-                data = {"guilds": {}}          
             guild_id = str(ctx.guild.id)
-            if "guilds" in data and guild_id in data["guilds"]:
-                guild_data: dict = data["guilds"][guild_id]
-                prefix = guild_data.get("prefix", "cm!")
-            else:
-                prefix = "cm!"
+            guild_data = await self.bot.db_manager.get_guild(guild_id)
+            prefix = guild_data.get("prefix", "cm!")
             embed = discord.Embed(
                 title=self.bot.i18n.get("help_title", lang),
                 description=f"`{commands.when_mentioned_or(prefix)(self.bot, ctx)[2]}help` or `/help`",

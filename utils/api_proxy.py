@@ -186,13 +186,10 @@ class APIProxyManager:
         if not uid:
             return self.error("Missing user_id")
         try:
-            from bot import collection_myasync
-            from utils.config import OWNER_IDS
             target_uid = int(uid)
 
-            data_all = await collection_myasync.find_one({"users": {"$exists": True}}) or {}
-            user_data = data_all.get("users", {}).get(str(uid), {})
-            user_doc  = await collection_myasync.find_one({"user_id": str(uid)}) or {}
+            user_data = await self.bot.db_manager.get_user(uid)
+            user_doc  = await self.bot.db_manager.get_user_doc(uid)
 
             is_prem   = await self.bot.is_premium(target_uid)
             is_owner  = target_uid in OWNER_IDS
@@ -229,9 +226,7 @@ class APIProxyManager:
         if not guild_id:
             return self.error("Missing guild_id")
         try:
-            from bot import collection_myasync
-            data       = await collection_myasync.find_one({}) or {}
-            guild_data = data.get("guilds", {}).get(str(guild_id), {})
+            guild_data = await self.bot.db_manager.get_guild(guild_id)
             roles      = []
             guild      = self.bot.get_guild(int(guild_id))
             if guild:
@@ -317,10 +312,7 @@ class APIProxyManager:
                     if isinstance(settings_raw, str)
                     else settings_raw
                 )
-                from bot import collection_myasync
-                await collection_myasync.update_one(
-                    {}, {"$set": {f"guilds.{guild_id}": settings}}, upsert=True
-                )
+                await self.bot.db_manager.update_guild(guild_id, settings)
                 guild = self.bot.get_guild(int(guild_id)) if guild_id else None
                 if guild:
                     asyncio.create_task(

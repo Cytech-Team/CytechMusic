@@ -57,6 +57,21 @@ let playerState = {
 // 1. CORE WRAPPERS (Instant Polish)
 // ==========================================
 
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return unsafe.toString()
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function escapeJsStr(unsafe) {
+    if (!unsafe) return '';
+    return unsafe.toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+}
+
 function control(action, value = null) {
     if (!selectedGuildId) {
         showNotification("No Channel", "ไม่ระบุช่อง", "Please join a voice channel first to control the player.", "กรุณาเข้าห้องเสียงก่อนเพื่อควบคุมเครื่องเล่นนะครับ", "error");
@@ -316,20 +331,23 @@ function renderRecommendations(tracks) {
     // Show only first 4 or 8 tracks based on preference? User said "ทีละสี่" (show by 4)
     // We will show 4 per row as per the new grid logic in CSS
     list.innerHTML = tracks.map(track => {
-        const safeTitle = (track.title || "").replace(/'/g, "\\'");
-        const safeUri = (track.uri || "").replace(/'/g, "\\'");
+        const safeEncoded = escapeJsStr(track.encoded || "");
+        const safeUri = escapeJsStr(track.uri || "");
+        const safeTitleHtml = escapeHtml(track.title);
+        const safeAuthorHtml = escapeHtml(track.author);
+        const safeThumb = escapeHtml(track.thumbnail);
 
         return `
-        <div class="recommended-card" onclick="playTrack('${track.encoded}', '${safeUri}')">
+        <div class="recommended-card" onclick="playTrack('${safeEncoded}', '${safeUri}')">
             <div class="thumbnail-wrapper">
-                <img src="${track.thumbnail}" onerror="this.src='logo-circle.png'">
+                <img src="${safeThumb}" onerror="this.src='logo-circle.png'">
                 <div class="play-overlay">
                     <i class="fas fa-play" style="font-size: 1.5rem; color: var(--gold-primary);"></i>
                 </div>
             </div>
             <div class="recommendation-info">
-                <h4>${track.title}</h4>
-                <p>${track.author}</p>
+                <h4>${safeTitleHtml}</h4>
+                <p>${safeAuthorHtml}</p>
             </div>
         </div>
         `;
@@ -759,20 +777,25 @@ function renderSearchResultsToModal(tracks) {
         if (uri.includes('youtube') || uri.includes('youtu.be')) icon = '<i class="fab fa-youtube" style="color:#ff0000"></i>';
         else if (uri.includes('spotify')) icon = '<i class="fab fa-spotify" style="color:#1db954"></i>';
 
-        const safeUri = uri.replace(/'/g, "\\'");
+        const safeUriJs = escapeJsStr(uri);
+        const safeEncodedJs = escapeJsStr(track.encoded);
+        const safeTitleJs = escapeJsStr(track.title);
+        const safeTitleHtml = escapeHtml(track.title);
+        const safeAuthorHtml = escapeHtml(track.author);
+
         return `
             <div class="search-result-item" style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.03); margin-bottom: 8px; transition: 0.2s;">
-                <div class="result-icon" onclick="playTrack('${track.encoded}', '${safeUri}')" style="cursor: pointer;">${icon}</div>
-                <div class="result-info" onclick="playTrack('${track.encoded}', '${safeUri}')" style="flex: 1; cursor: pointer;">
-                    <span class="result-title" style="display: block; font-weight: 500;">${track.title}</span>
-                    <span class="result-author" style="font-size: 0.8rem; color: var(--text-muted);">${track.author} • ${formatTime(track.length)}</span>
+                <div class="result-icon" onclick="playTrack('${safeEncodedJs}', '${safeUriJs}')" style="cursor: pointer;">${icon}</div>
+                <div class="result-info" onclick="playTrack('${safeEncodedJs}', '${safeUriJs}')" style="flex: 1; cursor: pointer;">
+                    <span class="result-title" style="display: block; font-weight: 500;">${safeTitleHtml}</span>
+                    <span class="result-author" style="font-size: 0.8rem; color: var(--text-muted);">${safeAuthorHtml} • ${formatTime(track.length)}</span>
                 </div>
                 <div class="result-actions" style="display: flex; gap: 10px;">
-                    <button class="btn-glass" onclick="showAddToPlaylistModal('${track.encoded}', '${safeUri}', '${track.title.replace(/'/g, "\\'")}')" 
+                    <button class="btn-glass" onclick="showAddToPlaylistModal('${safeEncodedJs}', '${safeUriJs}', '${safeTitleJs}')" 
                             style="width: 32px; height: 32px; border-radius: 50%; padding: 0; font-size: 0.8rem;" title="Add to Playlist">
                         <i class="fas fa-plus"></i>
                     </button>
-                    <div onclick="playTrack('${track.encoded}', '${safeUri}')" style="cursor: pointer; color: var(--gold-primary); font-size: 1.2rem;">
+                    <div onclick="playTrack('${safeEncodedJs}', '${safeUriJs}')" style="cursor: pointer; color: var(--gold-primary); font-size: 1.2rem;">
                         <i class="fas fa-play-circle"></i>
                     </div>
                 </div>
@@ -1007,19 +1030,21 @@ function renderQueue(queue) {
     }
 
     list.innerHTML = queue.map((track, index) => {
-        const safeTitle = (track.title || "Unknown").replace(/'/g, "\\'");
+        const safeTitleHtml = escapeHtml(track.title || "Unknown");
+        const safeAuthorHtml = escapeHtml(track.author || "Unknown");
+        const safeThumb = escapeHtml(track.thumbnail || 'logo-circle.png');
 
         // Format duration
-        const duration = formatTime(track.duration); // Use helper function
+        const duration = formatTime(track.duration || track.length);
 
         return `
         <div class="queue-item">
             <div class="qi-thumb">
-                <img src="${track.thumbnail || 'logo-circle.png'}" onerror="this.src='logo-circle.png'">
+                <img src="${safeThumb}" onerror="this.src='logo-circle.png'">
             </div>
             <div class="qi-info">
-                <div class="qi-title" onclick="sendControl('skipto', ${index})">${track.title}</div>
-                <div class="qi-artist">${track.author} • ${duration}</div>
+                <div class="qi-title" onclick="sendControl('skipto', ${index})">${safeTitleHtml}</div>
+                <div class="qi-artist">${safeAuthorHtml} • ${duration}</div>
             </div>
             <div class="qi-actions">
                 <button class="btn-glass btn-sm" onclick="sendControl('skipto', ${index})" title="Play Now"><i class="fas fa-play"></i></button>
@@ -1219,14 +1244,17 @@ async function renderCollection() {
                 : userFavorites.map((track) => {
                     const enc = track.encoded && track.encoded !== 'undefined' && track.encoded !== 'null' ? track.encoded : '';
                     const uri = track.uri || '';
-                    const safeEnc = enc.replace(/'/g, "\\'");
-                    const safeUri = uri.replace(/'/g, "\\'");
+                    const safeEnc = escapeJsStr(enc);
+                    const safeUri = escapeJsStr(uri);
+                    const safeTitle = escapeHtml(track.title);
+                    const safeAuthor = escapeHtml(track.author);
+                    const safeThumb = escapeHtml(track.thumbnail || 'logo-circle.png');
                     return `
                     <div class="queue-item" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(255,255,255,0.05); margin-bottom: 5px; border-radius: 12px;">
-                        <img src="${track.thumbnail || 'logo-circle.png'}" style="width:40px; height:40px; border-radius:8px; object-fit: cover;">
+                        <img src="${safeThumb}" style="width:40px; height:40px; border-radius:8px; object-fit: cover;" onerror="this.src='logo-circle.png'">
                         <div style="flex:1; overflow:hidden;">
-                            <div style="font-weight:500; font-size:0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${track.title}</div>
-                            <div style="font-size:0.75rem; color:var(--text-muted);">${track.author}</div>
+                            <div style="font-weight:500; font-size:0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeTitle}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted);">${safeAuthor}</div>
                         </div>
                         <div style="display: flex; gap: 5px;">
                             <button class="btn-glass" onclick="playTrack('${safeEnc}', '${safeUri}')" style="width:30px; height:30px; padding:0;"><i class="fas fa-play" style="font-size:0.7rem;"></i></button>
@@ -1307,16 +1335,23 @@ function viewPlaylist(idx) {
     const title = modal.querySelector('.modal-header h3');
     const list = document.getElementById('modal-results-list');
     title.textContent = `Playlist: ${pl.name}`;
-    list.innerHTML = (pl.tracks || []).map(t => `
+    list.innerHTML = (pl.tracks || []).map(t => {
+        const safeEnc = escapeJsStr(t.encoded);
+        const safeUri = escapeJsStr(t.uri);
+        const safeTitle = escapeHtml(t.title);
+        const safeAuthor = escapeHtml(t.author);
+        const safeThumb = escapeHtml(t.thumbnail || 'logo-circle.png');
+        return `
         <div class="search-result-item" style="display: flex; align-items: center; gap: 15px; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.03); margin-bottom: 5px;">
-            <img src="${t.thumbnail || 'logo-circle.png'}" style="width:50px; height:50px; border-radius:8px; object-fit: cover;">
+            <img src="${safeThumb}" style="width:50px; height:50px; border-radius:8px; object-fit: cover;" onerror="this.src='logo-circle.png'">
             <div style="flex:1; overflow:hidden;">
-                <div style="font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${t.title}</div>
-                <div style="font-size:0.8rem; color:var(--text-muted);">${t.author}</div>
+                <div style="font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeTitle}</div>
+                <div style="font-size:0.8rem; color:var(--text-muted);">${safeAuthor}</div>
             </div>
-            <button class="btn btn-gold" style="width: 38px; height: 38px; padding: 0; border-radius: 50%;" onclick="playTrack('${t.encoded}', '${t.uri}')"><i class="fas fa-play"></i></button>
+            <button class="btn btn-gold" style="width: 38px; height: 38px; padding: 0; border-radius: 50%;" onclick="playTrack('${safeEnc}', '${safeUri}')"><i class="fas fa-play"></i></button>
         </div>
-    `).join('') || '<p style="text-align:center; padding:40px; color:var(--text-muted);">Empty Playlist</p>';
+        `;
+    }).join('') || '<p style="text-align:center; padding:40px; color:var(--text-muted);">Empty Playlist</p>';
     modal.style.display = 'flex';
 }
 

@@ -10,7 +10,7 @@ import traceback
 from aiohttp import web
 from discord.ext import commands, tasks
 from discord import app_commands
-from bot import Cyori, collection_myasync
+from bot import Cyori
 from utils import config as ui_config
 
 # Stripe Configuration
@@ -63,8 +63,7 @@ class RenewalView(discord.ui.View):
         await interaction.response.defer(ephemeral=True)
         
         # Determine plan to renew
-        data = await collection_myasync.find_one({}) or {}
-        user_data = data.get("users", {}).get(str(self.user_id), {})
+        user_data = await self.bot.db_manager.get_user(self.user_id)
         plan_id = user_data.get("premium_plan_id", "1_month") # Default to 1 month if unknown
         
         try:
@@ -163,26 +162,24 @@ class Premium(commands.Cog):
 
         try:
             user_id = str(user_id)
-            data = await collection_myasync.find_one({}) or {}
-            users = data.get("users", {})
-            user_data = users.get(user_id, {})
+            user_data = await self.bot.db_manager.get_user(user_id)
             current_expire = user_data.get("premium_expire", 0)
             
             if days >= 36500:
-                await collection_myasync.update_one({}, {"$set": {
-                    f"users.{user_id}.premium": True,
-                    f"users.{user_id}.premium_plan": plan_name,
-                    f"users.{user_id}.premium_plan_id": metadata.get('plan_id', 'lifetime')
-                }}, upsert=True)
+                await self.bot.db_manager.update_user(user_id, {
+                    "premium": True,
+                    "premium_plan": plan_name,
+                    "premium_plan_id": metadata.get('plan_id', 'lifetime')
+                })
             else:
                 now = time.time()
                 start_time = max(current_expire, now)
                 new_expire = start_time + (days * 24 * 3600)
-                await collection_myasync.update_one({}, {"$set": {
-                    f"users.{user_id}.premium_expire": new_expire,
-                    f"users.{user_id}.premium_plan": plan_name,
-                    f"users.{user_id}.premium_plan_id": metadata.get('plan_id', '1_month')
-                }}, upsert=True)
+                await self.bot.db_manager.update_user(user_id, {
+                    "premium_expire": new_expire,
+                    "premium_plan": plan_name,
+                    "premium_plan_id": metadata.get('plan_id', '1_month')
+                })
             
             try:
                 user = await self.bot.fetch_user(int(user_id))
@@ -233,7 +230,7 @@ class Premium(commands.Cog):
     @tasks.loop(minutes=5)
     async def check_premium_expiry(self):
         try:
-            data = await collection_myasync.find_one({}) or {}
+            data = await self.bot.db_manager._fetch_root()
             users_data = data.get("users", {})
             now = time.time()
             updates = {}
@@ -265,7 +262,9 @@ class Premium(commands.Cog):
                     except: pass
                     updates[f"users.{uid_str}.premium_expire"] = ""
                     updates[f"users.{uid_str}.premium"] = ""
-            if updates: await collection_myasync.update_one({}, {"$unset": updates})
+            if updates: 
+                await self.bot.db_manager.collection.update_one({}, {"$unset": updates})
+                await self.bot.db_manager.invalidate_cache()
         except: pass
 
     @check_premium_expiry.before_loop
@@ -282,10 +281,8 @@ class Premium(commands.Cog):
             try: await player.update_controller()
             except: pass
         try:
-            data = await collection_myasync.find_one({}) or {}
-            if "guilds" in data and str(guild_id) in data["guilds"]:
-                g_data = data["guilds"][str(guild_id)]
-                await self.bot.update_guild_embed(g_data, guild_id=guild_id)
+            guild_data = await self.bot.db_manager.get_guild(guild_id)
+            await self.bot.update_guild_embed(guild_data, guild_id=guild_id)
         except: pass
 
     # =========================================================================
@@ -340,7 +337,7 @@ class Premium(commands.Cog):
         await ctx.defer()
         lang = await self.bot.get_lang(ctx.guild.id) if ctx.guild else "en"
         key = key.strip().upper()
-        data = await collection_myasync.find_one({}) or {}
+        data = await self.bot.db_manager._fetch_root()
         keys = data.get("premium_keys", {})
         if key not in keys:
             return await ctx.send(self.bot.i18n.get("premium_redeem_invalid", lang), ephemeral=True)
@@ -351,10 +348,11 @@ class Premium(commands.Cog):
         now = time.time()
         new_expire = max(current_expire, now) + (days * 24 * 3600)
         
-        await collection_myasync.update_one({}, {
+        await self.bot.db_manager.collection.update_one({}, {
             "$set": {f"users.{user_id}.premium_expire": new_expire, f"users.{user_id}.premium_plan": f"{days} Days"},
             "$unset": {f"premium_keys.{key}": ""}
         })
+        await self.bot.db_manager.invalidate_cache()
         
         expire_str = datetime.datetime.fromtimestamp(new_expire).strftime("%d/%m/%Y %H:%M")
         await ctx.send(self.bot.i18n.get("premium_redeem_success", lang, days=days, expire=expire_str))
@@ -363,8 +361,7 @@ class Premium(commands.Cog):
     @premium_group.command(name="status", description="Check your premium status / ตรวจสอบพรีเมียมของคุณ")
     async def premium_status(self, ctx: commands.Context, user: discord.User = None):
         user = user or ctx.author
-        data = await collection_myasync.find_one({}) or {}
-        u_info = data.get("users", {}).get(str(user.id), {})
+        u_info = await self.bot.db_manager.get_user(user.id)
         is_lifetime = u_info.get("premium", False)
         expire = u_info.get("premium_expire", 0)
         now = time.time()
@@ -394,7 +391,8 @@ class Premium(commands.Cog):
         for _ in range(count):
             key = f"{secrets.token_hex(2)}-{secrets.token_hex(2)}-{secrets.token_hex(2)}".upper()
             new_keys[f"premium_keys.{key}"] = days; generated.append(key)
-        await collection_myasync.update_one({}, {"$set": new_keys}, upsert=True)
+        await self.bot.db_manager.collection.update_one({}, {"$set": new_keys}, upsert=True)
+        await self.bot.db_manager.invalidate_cache()
         msg = f"Generated {count} keys ({days} days):\n" + "\n".join([f"`{k}`" for k in generated])
         try: await ctx.author.send(msg); await ctx.send("✅ Sent keys to DM.")
         except: await ctx.send(msg)
@@ -402,7 +400,7 @@ class Premium(commands.Cog):
     @premium_group.command(name="stats")
     @commands.is_owner()
     async def premium_stats_cmd(self, ctx: commands.Context):
-        data = await collection_myasync.find_one({}) or {}
+        data = await self.bot.db_manager._fetch_root()
         users = data.get("users", {}); now = time.time(); total = 0; life = 0
         for u in users.values():
             if u.get("premium"): life += 1; total += 1
@@ -417,7 +415,7 @@ class Premium(commands.Cog):
     async def premium_add_cmd(self, ctx: commands.Context, user_id: str):
         try:
             uid = int(user_id)
-            await collection_myasync.update_one({}, {"$set": {f"users.{uid}.premium": True, f"users.{uid}.premium_plan": "Lifetime"}}, upsert=True)
+            await self.bot.db_manager.update_user(uid, {"premium": True, "premium_plan": "Lifetime"})
             await ctx.send(f"✅ Added Lifetime Premium to `{uid}`")
         except: await ctx.send("Invalid ID")
 
@@ -426,7 +424,8 @@ class Premium(commands.Cog):
     async def premium_remove_cmd(self, ctx: commands.Context, user_id: str):
         try:
             uid = int(user_id)
-            await collection_myasync.update_one({}, {"$unset": {f"users.{uid}.premium": "", f"users.{uid}.premium_expire": ""}})
+            await self.bot.db_manager.collection.update_one({}, {"$unset": {f"users.{uid}.premium": "", f"users.{uid}.premium_expire": ""}})
+            await self.bot.db_manager.invalidate_cache()
             await ctx.send(f"❌ Removed Premium from `{uid}`")
         except: await ctx.send("Invalid ID")
 
@@ -442,7 +441,8 @@ class Premium(commands.Cog):
         await ctx.defer()
         guild_id = ctx.guild.id
         if reset:
-            await collection_myasync.update_one({}, {"$unset": {f"guilds.{guild_id}.premium_image": "", f"guilds.{guild_id}.premium_banner": "", f"guilds.{guild_id}.color": ""}})
+            await self.bot.db_manager.collection.update_one({}, {"$unset": {f"guilds.{guild_id}.premium_image": "", f"guilds.{guild_id}.premium_banner": "", f"guilds.{guild_id}.color": ""}})
+            await self.bot.db_manager.invalidate_cache()
             return await ctx.send("✅ Reset customization.")
 
         sets = {}
@@ -454,7 +454,9 @@ class Premium(commands.Cog):
             try: await ctx.guild.me.edit(nick=nickname)
             except: pass
             
-        if sets: await collection_myasync.update_one({}, {"$set": sets}, upsert=True)
+        if sets: 
+            await self.bot.db_manager.collection.update_one({}, {"$set": sets}, upsert=True)
+            await self.bot.db_manager.invalidate_cache()
         await ctx.send("✅ Branding updated.")
         await self._update_controller_if_playing(guild_id)
 
