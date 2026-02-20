@@ -274,6 +274,21 @@ function switchTab(tabId, btn) {
         target.style.display = tabId === 'player' ? 'block' : 'block'; // Ensure block display
         if (tabId === 'favorites') renderCollection();
         if (tabId === 'lyrics') fetchLyrics();
+
+        // Dynamic Player Main Styling for YouTube layout
+        const playerMain = document.querySelector('.player-main');
+        if (playerMain) {
+            if (tabId === 'player') {
+                playerMain.style.background = 'transparent';
+                playerMain.style.border = 'none';
+                playerMain.style.padding = '0';
+                playerMain.style.boxShadow = 'none';
+            } else {
+                playerMain.style.background = 'var(--bg-card)';
+                playerMain.style.border = '1px solid var(--glass-border)';
+                playerMain.style.padding = '40px';
+            }
+        }
     }
 
     // 3. Update sidebar buttons
@@ -328,8 +343,7 @@ function renderRecommendations(tracks) {
     const list = document.getElementById('recommended-list');
     if (!list) return;
 
-    // Show only first 4 or 8 tracks based on preference? User said "ทีละสี่" (show by 4)
-    // We will show 4 per row as per the new grid logic in CSS
+    // Render as a vertical list to match the YouTube sidebar feeling
     list.innerHTML = tracks.map(track => {
         const safeEncoded = escapeJsStr(track.encoded || "");
         const safeUri = escapeJsStr(track.uri || "");
@@ -338,16 +352,16 @@ function renderRecommendations(tracks) {
         const safeThumb = escapeHtml(track.thumbnail);
 
         return `
-        <div class="recommended-card" onclick="playTrack('${safeEncoded}', '${safeUri}')">
-            <div class="thumbnail-wrapper">
-                <img src="${safeThumb}" onerror="this.src='logo-circle.png'">
-                <div class="play-overlay">
-                    <i class="fas fa-play" style="font-size: 1.5rem; color: var(--gold-primary);"></i>
+        <div class="queue-item" onclick="playTrack('${safeEncoded}', '${safeUri}')" style="cursor: pointer; padding: 6px 10px; border: none; border-radius: 12px; background: transparent; display: flex; align-items: center; gap: 12px;">
+            <div class="qi-thumb" style="position: relative; width: 64px; height: 48px; border-radius: 8px; flex-shrink: 0; background: #000; overflow: hidden; border: 1px solid rgba(255,255,255,0.05);">
+                <img src="${safeThumb}" onerror="this.src='logo-circle.png'" style="width: 100%; height: 100%; object-fit: cover;">
+                <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
+                    <i class="fas fa-play" style="font-size: 0.9rem; color: #fff;"></i>
                 </div>
             </div>
-            <div class="recommendation-info">
-                <h4>${safeTitleHtml}</h4>
-                <p>${safeAuthorHtml}</p>
+            <div class="qi-info" style="flex: 1; min-width: 0;">
+                <div class="qi-title" style="font-size: 0.9rem; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; margin-bottom: 4px;" title="${safeTitleHtml}">${safeTitleHtml}</div>
+                <div class="qi-artist" style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${safeAuthorHtml}</div>
             </div>
         </div>
         `;

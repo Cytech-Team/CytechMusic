@@ -1121,16 +1121,16 @@ header .container {
 }
 
 .player-main {
-    background: var(--bg-card);
-    border: 1px solid var(--glass-border);
-    border-radius: 24px;
-    padding: 40px;
+    background: transparent;
+    border: none;
+    padding: 0;
     display: flex;
     flex-direction: column;
     gap: 25px;
     min-width: 0;
     /* Fix grid overflow */
     overflow: hidden;
+    transition: all 0.3s var(--ease-smooth);
 }
 
 .now-playing-panel {
