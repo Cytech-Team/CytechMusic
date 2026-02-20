@@ -377,8 +377,11 @@ async function playFavorite(encoded, uri) {
 function showDashboard() {
     const loginWall = document.getElementById('login-wall');
     const dashboardContainer = document.getElementById('dashboard-container');
+    const ytSearch = document.getElementById('yt-search-container');
+
     if (loginWall) loginWall.style.display = 'none';
     if (dashboardContainer) dashboardContainer.style.display = 'block';
+    if (ytSearch) ytSearch.style.display = 'flex'; // Use flex for the search container
 }
 
 function startAutoConnect(userId) {

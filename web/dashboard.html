@@ -29,53 +29,38 @@
     <div class="bg-gradient"></div>
     <div class="mesh-grid"></div>
 
-    <!-- Header (Standard) -->
-    <header id="header">
-        <div class="container">
-            <a href="index.html" class="brand">
+    <!-- Header (YouTube Vibe) -->
+    <header id="header" style="padding: 10px 0;">
+        <div class="container" style="display: flex; justify-content: space-between; align-items: center; gap: 20px;">
+            <a href="index.html" class="brand" style="flex-shrink: 0;">
                 <img src="logo-circle.png" alt="Cyori" class="brand-logo">
                 <span class="brand-name">Cyori</span>
             </a>
 
-            <nav>
-                <ul class="nav-links">
-                    <li><a href="index.html#hero" class="nav-link lang-text" data-en="Home" data-th="หน้าแรก">Home</a>
-                    </li>
-                    <li><a href="index.html#features" class="nav-link lang-text" data-en="Features"
-                            data-th="ฟีเจอร์">Features</a></li>
-                    <li><a href="commands.html" class="nav-link lang-text" data-en="Commands"
-                            data-th="คำสั่ง">Commands</a></li>
-                    <li><a href="dashboard.html" class="nav-link active lang-text" data-en="Dashboard"
-                            data-th="แผงควบคุม">Dashboard</a></li>
-                    <li><a href="premium.html" class="nav-link lang-text" data-en="Premium"
-                            data-th="พรีเมียม">Premium</a></li>
-                    <li><a href="terms.html" class="nav-link lang-text" data-en="Terms" data-th="ข้อตกลง">Terms</a></li>
-                    <li><a href="privacy.html" class="nav-link lang-text" data-en="Privacy"
-                            data-th="ความเป็นส่วนตัว">Privacy</a></li>
-                    <li><a href="https://top.gg/bot/1469606905948405833/vote" target="_blank" class="nav-link lang-text"
-                            data-en="Vote" data-th="โหวต">Vote</a></li>
+            <!-- Search Bar (YouTube Style) - Only visible when logged in -->
+            <div id="yt-search-container"
+                style="display: none; flex: 1; max-width: 650px; margin: 0 auto; padding: 0 10px;">
+                <div class="search-box-wrapper"
+                    style="display: flex; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 40px; overflow: hidden; padding-left: 20px; transition: 0.3s; box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);">
+                    <input type="text" id="song-input" class="form-control"
+                        style="border: none; background: transparent; padding: 12px 0; margin: 0; box-shadow: none; font-size: 1rem; width: 100%;"
+                        placeholder="Search or Paste URL..." onkeydown="if(event.key === 'Enter') performSearch()">
+                    <button onclick="performSearch()"
+                        style="background: rgba(255,255,255,0.1); border: none; border-left: 1px solid rgba(255,255,255,0.1); padding: 0 25px; cursor: pointer; color: var(--gold-primary); font-size: 1.1rem; transition: 0.2s;"
+                        onmouseover="this.style.background='rgba(255,255,255,0.15)'"
+                        onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button onclick="playRandom()"
+                        style="background: var(--gold-metallic); color: #000; border: none; padding: 0 20px; cursor: pointer; font-size: 1.1rem; transition: 0.2s;"
+                        title="Surprise Me / สุ่มเพลง" onmouseover="this.style.transform='scale(1.05)'"
+                        onmouseout="this.style.transform='scale(1)'">
+                        <i class="fas fa-dice"></i>
+                    </button>
+                </div>
+            </div>
 
-                    <!-- Mobile Exclusive Actions -->
-                    <li class="mobile-only-action">
-                        <div class="mobile-menu-divider"></div>
-                        <button onclick="toggleLanguage()" class="btn-glass mobile-nav-btn">
-                            <i class="fas fa-globe"></i>
-                            <span class="lang-text" data-en="Switch to Thai"
-                                data-th="เปลี่ยนเป็นภาษาอังกฤษ">Language</span>
-                        </button>
-                    </li>
-                    <li class="mobile-only-action">
-                        <a href="#" class="btn btn-primary login-btn" id="mobile-login-btn-tray" onclick="login()"
-                            style="width: 100%; margin-top: 10px;">
-                            <i class="fab fa-discord"></i>
-                            <span class="lang-text" data-en="Login to Dashboard"
-                                data-th="เข้าสู่ระบบแดชบอร์ด">Login</span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-
-            <div class="header-actions">
+            <div class="header-actions" style="flex-shrink: 0;">
                 <div class="lang-switch">
                     <button id="lang-btn" onclick="toggleLanguage()" class="btn-glass"
                         style="padding: 8px 16px; border-radius: 20px;">
@@ -83,14 +68,11 @@
                     </button>
                 </div>
 
-                <a href="#" class="btn btn-primary login-btn" onclick="login()">
+                <a href="#" class="btn btn-primary login-btn" onclick="login()"
+                    style="border-radius: 20px; padding: 10px 20px;">
                     <i class="fab fa-discord"></i>
                     <span class="lang-text" data-en="Login" data-th="เข้าสู่ระบบ">Login</span>
                 </a>
-
-                <div class="hamburger mobile-toggle" onclick="toggleMenu()">
-                    <i class="fas fa-bars"></i>
-                </div>
             </div>
         </div>
     </header>
@@ -133,7 +115,8 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#" class="sidebar-btn" onclick="switchTab('queue', this)">
+                        <a href="#queue" class="sidebar-btn"
+                            onclick="switchTab('player', document.querySelector('.sidebar-btn')); setTimeout(() => window.scrollTo(0, document.body.scrollHeight), 500);">
                             <i class="fas fa-list-ul"></i> <span class="lang-text" data-en="Queue"
                                 data-th="คิวเพลง">Queue</span>
                         </a>
@@ -177,140 +160,143 @@
             <!-- MAIN CONTENT AREA -->
             <section class="player-main">
 
-                <!-- TAB: PLAYER -->
+                <!-- TAB: PLAYER (YouTube Layout) -->
                 <div id="tab-player" class="dash-tab-content">
-                    <div class="search-section-top"
-                        style="margin-bottom: 30px; max-width: 800px; margin-left: auto; margin-right: auto;">
-                        <div class="search-box-wrapper"
-                            style="display: flex; gap: 15px; background: rgba(0,0,0,0.5); padding: 8px 15px; border-radius: 16px; border: 1px solid var(--gold-primary-faded); box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
-                            <i class="fas fa-search"
-                                style="align-self: center; color: var(--gold-dim); margin-left: 5px;"></i>
-                            <input type="text" id="song-input" class="form-control"
-                                style="margin: 0; background: transparent; border: none; flex: 1; padding: 5px 0; box-shadow: none;"
-                                placeholder="Search or Paste URL..."
-                                onkeydown="if(event.key === 'Enter') performSearch()">
-                            <div
-                                style="display: flex; gap: 10px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px;">
-                                <button class="btn btn-gold" onclick="performSearch()"
-                                    style="width: 42px; height: 42px; border-radius: 12px; padding: 0;">
-                                    <i class="fas fa-arrow-right"></i>
-                                </button>
-                                <button class="btn btn-glass" onclick="playRandom()"
-                                    style="width: 42px; height: 42px; border-radius: 12px; padding: 0;"
-                                    title="Surprise Me / สุ่มเพลง">
-                                    <i class="fas fa-dice"></i>
-                                </button>
+                    <div class="yt-dashboard-layout"
+                        style="display: grid; grid-template-columns: 1fr 400px; gap: 30px; align-items: start;">
+
+                        <!-- LEFT COLUMN: Main Video Player & Controls -->
+                        <div class="yt-main-column" style="display: flex; flex-direction: column; gap: 20px;">
+                            <div class="yt-video-container"
+                                style="position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.6); border: 1px solid var(--glass-border);">
+                                <img id="np-art"
+                                    src="https://cdn.discordapp.com/banners/1469606905948405833/3b84c3a7799d846229b2b5b2921ed270.png?size=1024"
+                                    alt="Album Art" class="now-playing-art"
+                                    style="width: 100%; height: 100%; object-fit: cover; filter: brightness(0.9);">
+                                <div class="live-badge"
+                                    style="position: absolute; bottom: 15px; left: 15px; background: red; color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; display: none; box-shadow: 0 0 10px red;">
+                                    LIVE</div>
+                            </div>
+
+                            <div class="yt-player-info" style="display: flex; flex-direction: column; gap: 10px;">
+                                <h2 id="np-title"
+                                    style="font-size: 1.8rem; font-weight: 700; color: var(--text-main); line-height: 1.3;">
+                                    No music playing</h2>
+                                <p id="np-artist"
+                                    style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 5px;">Ready to
+                                    play</p>
+
+                                <!-- Progress Bar -->
+                                <div class="progress-container" style="margin: 10px 0;">
+                                    <div class="progress-bar" id="progress-bar" onclick="seekTrack(event)"
+                                        style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; cursor: pointer; position: relative;">
+                                        <div class="progress-fill" id="progress-fill"
+                                            style="height: 100%; background: var(--gold-primary); border-radius: 3px; width: 0%;">
+                                        </div>
+                                    </div>
+                                    <div
+                                        style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">
+                                        <span id="current-time">0:00</span>
+                                        <span id="total-duration">--:--</span>
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons & Controls (YouTube Row Style) -->
+                                <div class="yt-controls-row"
+                                    style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 15px 25px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); margin-top: 5px; flex-wrap: wrap; gap: 15px;">
+
+                                    <!-- Playback Controls -->
+                                    <div class="controls" style="display: flex; gap: 15px; align-items: center;">
+                                        <button class="control-btn" onclick="control('prev')" title="Previous"
+                                            style="width: 40px; height: 40px; font-size: 1.2rem;"><i
+                                                class="fas fa-step-backward"></i></button>
+                                        <button class="control-btn play-btn" onclick="control('playpause')"
+                                            id="btn-playpause" title="Play/Pause"
+                                            style="width: 55px; height: 55px; font-size: 1.5rem;"><i class="fas fa-play"
+                                                id="play-icon"></i></button>
+                                        <button class="control-btn" onclick="control('stop')" title="Stop"
+                                            style="width: 40px; height: 40px; font-size: 1.2rem;"><i
+                                                class="fas fa-stop"></i></button>
+                                        <button class="control-btn" onclick="control('next')" title="Next"
+                                            style="width: 40px; height: 40px; font-size: 1.2rem;"><i
+                                                class="fas fa-step-forward"></i></button>
+                                    </div>
+
+                                    <!-- Secondary Actions -->
+                                    <div class="controls-secondary"
+                                        style="display: flex; gap: 10px; align-items: center;">
+                                        <button class="btn-glass" onclick="control('shuffle')" id="btn-shuffle"
+                                            title="Shuffle" style="width: 40px; height: 40px; border-radius: 50%;"><i
+                                                class="fas fa-random"></i></button>
+                                        <button class="btn-glass" onclick="control('loop')" id="btn-loop" title="Loop"
+                                            style="width: 40px; height: 40px; border-radius: 50%;"><i
+                                                class="fas fa-redo"></i></button>
+                                        <button class="btn-glass" onclick="addToFavorite()" id="btn-favorite"
+                                            title="Add to Favorites"
+                                            style="padding: 0 15px; height: 40px; border-radius: 20px; display: flex; align-items: center; gap: 8px;">
+                                            <i class="far fa-heart"></i> <span
+                                                style="font-size: 0.9rem; font-weight: 500;">Save</span>
+                                        </button>
+                                        <div class="volume-control"
+                                            style="display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.3); padding: 5px 15px; border-radius: 20px;">
+                                            <i class="fas fa-volume-up"
+                                                style="color: var(--text-muted); font-size: 0.9rem;"></i>
+                                            <input type="range" min="0" max="100" value="100" class="volume-slider"
+                                                style="position: relative; width: 60px; height: 4px;"
+                                                oninput="control('volume', this.value)">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- PREMIUM RECOMMENDED AREA -->
-                    <div class="recommended-section">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                            <h3 class="text-gradient"
-                                style="font-size: 1.4rem; display: flex; align-items: center; gap: 12px; margin: 0;">
-                                <i class="fas fa-magic"></i>
-                                <span class="lang-text" data-en="Recommended for you"
-                                    data-th="แนะนำสำหรับคุณ">Recommended for you</span>
-                            </h3>
-                            <button class="btn-refresh-mini" onclick="fetchRecommendations()">
-                                <i class="fas fa-sync-alt"></i>
-                                <span class="lang-text" data-en="Refresh" data-th="รีเฟรช">Refresh</span>
-                            </button>
-                        </div>
-                        <div id="recommended-list" class="recommended-list">
-                            <!-- Skeleton Loading -->
-                            <div class="skeleton-card"></div>
-                            <div class="skeleton-card"></div>
-                            <div class="skeleton-card"></div>
-                            <div class="skeleton-card"></div>
-                        </div>
-                    </div>
+                        <!-- RIGHT COLUMN: Up Next (Queue) & Recommended -->
+                        <div class="yt-side-column" style="display: flex; flex-direction: column; gap: 20px;">
 
-                    <div class="now-playing-panel">
-                        <div style="position: relative; display: inline-block;">
-                            <img id="np-art"
-                                src="https://cdn.discordapp.com/banners/1469606905948405833/3b84c3a7799d846229b2b5b2921ed270.png?size=1024"
-                                alt="Album Art" class="now-playing-art"
-                                style="max-width: 520px; width: 100%; height: auto; border-radius: 16px; border: 1px solid rgba(212, 175, 55, 0.3); box-shadow: 0 20px 60px rgba(0,0,0,0.7); object-fit: contain;">
-                            <div class="live-badge"
-                                style="position: absolute; top: 10px; right: 10px; background: red; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; display: none;">
-                                LIVE</div>
-                        </div>
-
-                        <div class="track-info" style="margin-top: 25px;">
-                            <h2 id="np-title" style="font-size: 1.8rem;">No music playing</h2>
-                            <p id="np-artist" style="color: var(--gold-dim); font-size: 1.1rem; margin-top: 5px;">Ready
-                                to play</p>
-                        </div>
-
-                        <!-- Progress Bar -->
-                        <div class="progress-container" style="margin: 30px 0;">
-                            <div class="progress-bar" id="progress-bar" onclick="seekTrack(event)">
-                                <div class="progress-fill" id="progress-fill"></div>
+                            <!-- Queue Section -->
+                            <div class="yt-queue-container"
+                                style="background: rgba(20,20,20,0.6); border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px; flex-grow: 1;">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">
+                                    <h3 class="lang-text" data-en="Up Next" data-th="คิวเพลงต่อไป"
+                                        style="font-size: 1.2rem; margin: 0;">Up Next</h3>
+                                    <button class="btn-glass" onclick="control('clear')"
+                                        style="font-size: 0.8rem; padding: 4px 10px; border-radius: 12px;"><i
+                                            class="fas fa-trash"></i> Clear</button>
+                                </div>
+                                <div id="queue-list" class="queue-list"
+                                    style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                                    <div class="queue-empty"
+                                        style="text-align: center; padding: 40px 10px; color: var(--text-muted);">
+                                        <i class="fas fa-list"
+                                            style="font-size: 2.5rem; margin-bottom: 10px; opacity: 0.2;"></i>
+                                        <p style="font-size: 0.9rem;">No songs in queue</p>
+                                    </div>
+                                </div>
                             </div>
-                            <div
-                                style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">
-                                <span id="current-time">0:00</span>
-                                <span id="total-duration">--:--</span>
+
+                            <!-- Recommended Section -->
+                            <div class="yt-recommended-container"
+                                style="background: rgba(20,20,20,0.4); border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px;">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                    <h3 class="lang-text" data-en="Recommended" data-th="แนะนำ"
+                                        style="font-size: 1.1rem; margin: 0; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fas fa-magic" style="color: var(--gold-primary);"></i> Recommended
+                                    </h3>
+                                    <button onclick="fetchRecommendations()"
+                                        style="background: none; border: none; color: var(--gold-primary); cursor: pointer; font-size: 0.9rem;">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                                <div id="recommended-list" class="yt-recommended-list"
+                                    style="display: flex; flex-direction: column; gap: 12px; max-height: 400px; overflow-y: auto;">
+                                    <!-- Skeleton Loading -->
+                                    <div class="skeleton-card" style="aspect-ratio: auto; height: 80px;"></div>
+                                    <div class="skeleton-card" style="aspect-ratio: auto; height: 80px;"></div>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Controls -->
-                        <div class="controls" style="gap: 20px;">
-                            <button class="control-btn" onclick="control('prev')" title="Previous"><i
-                                    class="fas fa-step-backward"></i></button>
-                            <button class="control-btn play-btn" onclick="control('playpause')" id="btn-playpause"
-                                title="Play/Pause" style="width: 80px; height: 80px; font-size: 2rem;"><i
-                                    class="fas fa-play" id="play-icon"></i></button>
-                            <button class="control-btn" onclick="control('stop')" title="Stop"><i
-                                    class="fas fa-stop"></i></button>
-                            <button class="control-btn" onclick="control('next')" title="Next"><i
-                                    class="fas fa-step-forward"></i></button>
-                        </div>
-
-                        <div class="controls-secondary"
-                            style="margin-top: 30px; display: flex; justify-content: center; gap: 20px;">
-                            <button class="btn-glass" onclick="control('shuffle')" id="btn-shuffle" title="Shuffle"
-                                style="width: 40px; height: 40px; border-radius: 50%;"><i
-                                    class="fas fa-random"></i></button>
-                            <button class="btn-glass" onclick="control('loop')" id="btn-loop" title="Loop"
-                                style="width: 40px; height: 40px; border-radius: 50%;"><i
-                                    class="fas fa-redo"></i></button>
-                            <button class="btn-glass" onclick="playRandom()" id="btn-random-bar"
-                                title="Random / สุ่มเพลง" style="width: 40px; height: 40px; border-radius: 50%;"><i
-                                    class="fas fa-dice"></i></button>
-                            <button class="btn-glass" onclick="addToFavorite()" id="btn-favorite"
-                                title="Add to Favorites" style="width: 40px; height: 40px; border-radius: 50%;"><i
-                                    class="far fa-heart"></i></button>
-                            <button class="btn-glass"
-                                onclick="switchTab('lyrics', document.querySelector('.sidebar-btn[onclick*=\'lyrics\']'))"
-                                title="View Lyrics" style="width: 40px; height: 40px; border-radius: 50%;"><i
-                                    class="fas fa-align-center"></i></button>
-                            <div class="volume-control"
-                                style="display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 5px 15px; border-radius: 20px;">
-                                <i class="fas fa-volume-up" style="color: var(--text-muted);"></i>
-                                <input type="range" min="0" max="100" value="100" class="volume-slider"
-                                    style="position: relative; width: 80px;" oninput="control('volume', this.value)">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-
-                <!-- TAB: QUEUE -->
-                <div id="tab-queue" class="dash-tab-content" style="display: none;">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3 class="lang-text" data-en="Current Queue" data-th="คิวเพลงปัจจุบัน">Current Queue</h3>
-                        <button class="btn-glass" onclick="control('clear')"
-                            style="font-size: 0.9rem; padding: 5px 15px;"><i class="fas fa-trash"></i> Clear</button>
-                    </div>
-                    <div id="queue-list" class="queue-list" style="max-height: 500px; overflow-y: auto;">
-                        <div class="queue-empty" style="text-align: center; padding: 40px; color: var(--text-muted);">
-                            <i class="fas fa-music" style="font-size: 3rem; margin-bottom: 10px; opacity: 0.3;"></i>
-                            <p>Queue is empty</p>
                         </div>
                     </div>
                 </div>
