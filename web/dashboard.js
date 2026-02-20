@@ -693,7 +693,7 @@ function updatePlayerUI(data) {
         if (title) title.textContent = "No music playing";
         if (artist) artist.textContent = "Ready to play";
         if (img) {
-            img.src = "logo-circle.png";
+            img.src = "https://cdn.discordapp.com/banners/1469606905948405833/3b84c3a7799d846229b2b5b2921ed270.png?size=1024";
         }
         if (playIcon) playIcon.className = 'fas fa-play';
         updateProgressUI(0, 0); // Reset to 0:00 / 0:00
