@@ -693,7 +693,7 @@ function updatePlayerUI(data) {
         if (title) title.textContent = "No music playing";
         if (artist) artist.textContent = "Ready to play";
         if (img) {
-            img.src = "https://cdn.discordapp.com/banners/1469606905948405833/3b84c3a7799d846229b2b5b2921ed270.png?size=1024";
+            img.src = "https://i.postimg.cc/5y5pk1bL/Cyori-Banner.png";
             img.style.objectFit = 'contain';
         }
         // Container: idle ratio (16/7)
@@ -738,7 +738,7 @@ function updatePlayerUI(data) {
     if (title) title.textContent = data.title || "Unknown Title";
     if (artist) artist.textContent = data.author || "Unknown Artist";
     if (img && data.thumbnail) {
-        img.src = data.thumbnail.includes('null') ? "https://cdn.discordapp.com/banners/1469606905948405833/3b84c3a7799d846229b2b5b2921ed270.png?size=1024" : data.thumbnail;
+        img.src = data.thumbnail.includes('null') ? "https://i.postimg.cc/5y5pk1bL/Cyori-Banner.png" : data.thumbnail;
         img.style.objectFit = 'cover';
     }
     // Container: playing ratio (16/9)
