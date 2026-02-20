@@ -692,17 +692,11 @@ function updatePlayerUI(data) {
     if (!isPlaying) {
         if (title) title.textContent = "No music playing";
         if (artist) artist.textContent = "Ready to play";
-        // Use branding thumbnail if provided by API, else logo
         if (img) {
             img.src = data.thumbnail || "logo-circle.png";
-            // If it's the banner URL, contain it to avoid ugly crop
-            if (img.src.includes('banners') || img.src.includes('logo-circle')) {
-                img.style.objectFit = 'contain';
-                img.style.padding = '20px';
-            } else {
-                img.style.objectFit = 'cover';
-                img.style.padding = '0';
-            }
+            // Logo/banner: contain with padding
+            img.style.objectFit = 'contain';
+            img.style.padding = '15px';
         }
         if (playIcon) playIcon.className = 'fas fa-play';
         updateProgressUI(0, 0); // Reset to 0:00 / 0:00
@@ -744,8 +738,8 @@ function updatePlayerUI(data) {
     if (artist) artist.textContent = data.author || "Unknown Artist";
     if (img && data.thumbnail) {
         img.src = data.thumbnail.includes('null') ? "logo-circle.png" : data.thumbnail;
-        img.style.objectFit = 'cover'; // Restore normal cover for standard music thumbs
-        img.style.padding = '0';
+        img.style.objectFit = 'cover';  // Music thumbs fill the frame
+        img.style.padding = '0';        // No padding when music is playing
     }
 
     // Update Icons
