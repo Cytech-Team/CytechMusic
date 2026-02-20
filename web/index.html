@@ -104,43 +104,60 @@
         </header>
 
         <main>
-                <!-- Hero Section -->
-                <section id="hero" class="hero">
-                        <div class="hero-content">
-                                <span class="hero-badge lang-text" data-en="With a very high-quality music bot system."
-                                        data-th="ด้วยระบบบอทเพลงคุณภาพสูงมาก">With a very high-quality music bot
-                                        system.</span>
+                <!-- Premium Hero Section -->
+                <section id="hero" class="hero"
+                        style="position: relative; overflow: hidden; padding-top: 180px; padding-bottom: 120px;">
+                        <!-- Animated Glowing Orbs -->
+                        <div
+                                style="position: absolute; top: 10%; left: 15%; width: 400px; height: 400px; background: var(--gold-primary); filter: blur(150px); opacity: 0.15; border-radius: 50%; pointer-events: none; animation: orb-float 20s infinite alternate ease-in-out;">
+                        </div>
+                        <div
+                                style="position: absolute; bottom: 10%; right: 10%; width: 500px; height: 500px; background: var(--gold-dim); filter: blur(180px); opacity: 0.1; border-radius: 50%; pointer-events: none; animation: orb-float 25s infinite alternate-reverse ease-in-out;">
+                        </div>
 
-                                <h1 class="hero-title">
-                                        <span class="lang-text" data-en="The Future of" data-th="อนาคตของ">The Future
+                        <div class="hero-content" style="position: relative; z-index: 10;">
+                                <div class="hero-badge-container"
+                                        style="display: flex; justify-content: center; margin-bottom: 30px; animation: fade-down 1s cubic-bezier(0.16, 1, 0.3, 1);">
+                                        <div class="hero-badge"
+                                                style="background: rgba(20,20,20,0.8); border: 1px solid rgba(212, 175, 55, 0.3); backdrop-filter: blur(20px); box-shadow: 0 0 20px rgba(212, 175, 55, 0.15), inset 0 0 10px rgba(212, 175, 55, 0.05); padding: 8px 24px;">
+                                                <i class="fas fa-sparkles"
+                                                        style="color: var(--gold-primary); margin-right: 8px;"></i>
+                                                <span class="lang-text" data-en="Next-Generation Audio Engine 4.0"
+                                                        data-th="ระบบประมวลผลเสียงยุคใหม่ 4.0">Next-Generation Audio
+                                                        Engine 4.0</span>
+                                        </div>
+                                </div>
+
+                                <h1 class="hero-title"
+                                        style="font-size: clamp(3.5rem, 8vw, 6rem); letter-spacing: -0.04em; margin-bottom: 30px; animation: fade-up 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;">
+                                        <span class="lang-text" data-en="Symphony of" data-th="ซิมโฟนีแห่ง">Symphony
                                                 of</span><br>
-                                        <span class="text-gradient lang-text" data-en="Discord Music"
-                                                data-th="บอทเพลง Discord">Discord Music</span>
+                                        <span class="text-gradient lang-text" data-en="Perfection."
+                                                data-th="ความสมบูรณ์แบบ"
+                                                style="background-image: linear-gradient(135deg, #FFF 0%, var(--gold-primary) 50%, var(--gold-dim) 100%);">Perfection.</span>
                                 </h1>
 
                                 <p class="hero-desc lang-text"
-                                        data-en="Experience high-fidelity audio powered by advanced serverless architecture. Seamless, fast, and premium."
-                                        data-th="สัมผัสประสบการณ์เสียงคุณภาพสูงด้วยสถาปัตยกรรม Serverless อัจฉริยะ ลื่นไหล รวดเร็ว และพรีเมียม">
-                                        Experience high-fidelity audio powered by advanced serverless architecture.
-                                        Seamless, fast, and premium.
+                                        data-en="Immerse your server in crystal-clear, high-fidelity sound. Cyori delivers an unparalleled, lag-free music experience wrapped in striking elegance."
+                                        data-th="ดื่มด่ำกับเสียงที่คมชัดระดับคริสตัล พร้อมระบบเสียงความละเอียดสูง เพลิดเพลินกับเสียงดนตรีที่ไร้อาการสะดุด ในรูปแบบที่หรูหราที่สุด"
+                                        style="font-size: 1.3rem; max-width: 800px; color: rgba(255,255,255,0.7); animation: fade-up 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;">
+                                        Immerse your server in crystal-clear, high-fidelity sound. Cyori delivers an
+                                        unparalleled, lag-free music experience wrapped in striking elegance.
                                 </p>
 
-                                <div class="hero-cta">
-                                        <a href="invite.html" class="btn btn-primary">
-                                                <i class="fas fa-robot"></i>
-                                                <span class="lang-text" data-en="Invite Bot" data-th="เชิญบอท">Invite
-                                                        Bot</span>
+                                <div class="hero-cta"
+                                        style="gap: 24px; animation: fade-up 1.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;">
+                                        <a href="invite.html" class="btn btn-primary"
+                                                style="padding: 18px 40px; font-size: 1.1rem; border-radius: 100px; box-shadow: 0 10px 30px rgba(212, 175, 55, 0.25);">
+                                                <i class="fas fa-rocket"></i>
+                                                <span class="lang-text" data-en="Add to Discord"
+                                                        data-th="เพิ่มลง Discord">Add to Discord</span>
                                         </a>
-                                        <a href="dashboard.html" class="btn btn-glass">
-                                                <i class="fas fa-tachometer-alt"></i>
-                                                <span class="lang-text" data-en="Open Dashboard"
-                                                        data-th="ไปที่แดชบอร์ด">Open Dashboard</span>
-                                        </a>
-                                        <a href="https://top.gg/bot/1469606905948405833/vote" target="_blank"
-                                                class="btn btn-glass vote-btn-hero">
-                                                <i class="fas fa-thumbs-up"></i>
-                                                <span class="lang-text" data-en="Vote us" data-th="โหวตให้เรา">Vote
-                                                        us</span>
+                                        <a href="dashboard.html" class="btn btn-glass"
+                                                style="padding: 18px 40px; font-size: 1.1rem; border-radius: 100px; background: rgba(255,255,255,0.03);">
+                                                <i class="fas fa-compass"></i>
+                                                <span class="lang-text" data-en="Explore Dashboard"
+                                                        data-th="เปิดแผงควบคุม">Explore Dashboard</span>
                                         </a>
                                 </div>
 
@@ -174,353 +191,393 @@
                         </div>
                 </section>
 
-                <!-- Features Section -->
-                <section id="features" class="section">
+                <!-- Features Section with Hover Effects -->
+                <section id="features" class="section" style="position: relative;">
+                        <!-- Divider Line -->
+                        <div
+                                style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 80%; height: 1px; background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.3), transparent);">
+                        </div>
+
                         <div class="container">
-                                <div class="section-header">
-                                        <span class="hero-badge lang-text" data-en="Why Choose Us"
-                                                data-th="ทำไมต้องเลือกเรา">Why Choose Us</span>
-                                        <h2 class="section-title lang-text" data-en="Premium Features"
-                                                data-th="ฟีเจอร์ระดับพรีเมียม">Premium Features</h2>
+                                <div class="section-header" style="margin-bottom: 70px;">
+                                        <h2 class="section-title text-gradient lang-text"
+                                                data-en="Engineered for Greatness" data-th="ออกแบบมาเพื่อความยิ่งใหญ่"
+                                                style="font-size: 3rem; margin-bottom: 15px;">Engineered for Greatness
+                                        </h2>
+                                        <p style="color: rgba(255,255,255,0.6); max-width: 600px; margin: 0 auto; font-size: 1.1rem;"
+                                                class="lang-text"
+                                                data-en="Every feature meticulously crafted to provide the ultimate auditory journey."
+                                                data-th="ทุกฟีเจอร์ถูกรังสรรค์อย่างพิถีพิถันเพื่อมอบประสบการณ์แห่งเสียงที่ดีที่สุด">
+                                                Every feature meticulously crafted to provide the ultimate auditory
+                                                journey.</p>
                                 </div>
 
-                                <div class="grid-3">
-                                        <div class="card">
-                                                <i class="fas fa-bolt card-icon"></i>
-                                                <h3 class="card-title lang-text" data-en="Lightning Fast"
-                                                        data-th="รวดเร็วทันใจ">Lightning Fast</h3>
+                                <div class="grid-3 p-grid">
+                                        <!-- Card 1 -->
+                                        <div class="card p-card">
+                                                <div class="card-glow"></div>
+                                                <div class="p-icon-box"><i class="fas fa-bolt text-gradient"></i></div>
+                                                <h3 class="card-title lang-text" data-en="Zero Latency Edge"
+                                                        data-th="ขุมพลังไร้รอยต่อ">Zero Latency Edge</h3>
                                                 <p class="card-text lang-text"
-                                                        data-en="Powered by high-performance core engine for low-latency command execution and interactions."
-                                                        data-th="ขับเคลื่อนด้วยระบบ Core Engine ประสิทธิภาพสูง เพื่อการสั่งงานที่รวดเร็วและตอบสนองทันที">
-                                                        Powered by high-performance engine.
-                                                </p>
+                                                        data-en="Commands execute globally instantly, routing audio via optimized Cloudflare inter-nodes."
+                                                        data-th="คำสั่งตอบสนองทันทีแบบไร้ดีเลย์ ส่งผ่านด้วยระบบเครือข่ายความเร็วสูงระดับโลก">
+                                                        Commands execute globally instantly, routing audio via optimized
+                                                        Cloudflare inter-nodes.</p>
                                         </div>
-                                        <div class="card">
-                                                <i class="fas fa-compact-disc card-icon"></i>
-                                                <h3 class="card-title lang-text" data-en="Hi-Res Audio"
-                                                        data-th="เสียงคุณภาพสูง">Hi-Res Audio</h3>
+                                        <!-- Card 2 -->
+                                        <div class="card p-card">
+                                                <div class="card-glow"></div>
+                                                <div class="p-icon-box"><i
+                                                                class="fas fa-headphones-alt text-gradient"></i></div>
+                                                <h3 class="card-title lang-text" data-en="Lossless Fidelity"
+                                                        data-th="มิติเสียงสมบูรณ์แบบ">Lossless Fidelity</h3>
                                                 <p class="card-text lang-text"
-                                                        data-en="Crystal clear audio streaming with support for advanced filters like Nightcore and 8D."
-                                                        data-th="สตรีมเสียงคมชัดระดับ Crystal Clear พร้อมรองรับเอฟเฟกต์ Nightcore และ 8D">
-                                                        Crystal clear audio streaming.
-                                                </p>
+                                                        data-en="Hear every beat. Native support for 384kbps HD streaming and rich EQ manipulation."
+                                                        data-th="ได้ยินทุกจังหวะดนตรี รองรับการสตรีมเสียง 384kbps พร้อมระบบ EQ ขั้นสูง">
+                                                        Hear every beat. Native support for 384kbps HD streaming and
+                                                        rich EQ manipulation.</p>
                                         </div>
-                                        <div class="card">
-                                                <i class="fas fa-shield-alt card-icon"></i>
-                                                <h3 class="card-title lang-text" data-en="Secure & Reliable"
-                                                        data-th="ปลอดภัยและเชื่อถือได้">Secure & Reliable</h3>
+                                        <!-- Card 3 -->
+                                        <div class="card p-card">
+                                                <div class="card-glow"></div>
+                                                <div class="p-icon-box"><i class="fas fa-shield-alt text-gradient"></i>
+                                                </div>
+                                                <h3 class="card-title lang-text" data-en="Unbreakable Core"
+                                                        data-th="แกนหลักสุดแกร่ง">Unbreakable Core</h3>
                                                 <p class="card-text lang-text"
-                                                        data-en="Enterprise-grade stability with 99.9% uptime guarantee for premium guilds."
-                                                        data-th="ความเสถียรระดับ Enterprise พร้อมการันตี Uptime 99.9% สำหรับพรีเมียม">
-                                                        Enterprise-grade stability.
-                                                </p>
+                                                        data-en="Our redundant cluster architecture guarantees 99.99% uptime, even during peak loads."
+                                                        data-th="สถาปัตยกรรมแบบ Cluster มั่นใจได้ว่าบอทจะไม่ดับแม้ในช่วงเวลาที่คนใช้เยอะสุด">
+                                                        Our redundant cluster architecture guarantees 99.99% uptime,
+                                                        even during peak loads.</p>
                                         </div>
-                                        <div class="card">
-                                                <i class="fas fa-server card-icon"></i>
-                                                <h3 class="card-title lang-text" data-en="CytechCore Engine"
-                                                        data-th="ขุมพลัง CytechCore">CytechCore Engine</h3>
+                                        <!-- Card 4 -->
+                                        <div class="card p-card">
+                                                <div class="card-glow"></div>
+                                                <div class="p-icon-box"><i class="fas fa-magic text-gradient"></i></div>
+                                                <h3 class="card-title lang-text" data-en="Smart Autoplay"
+                                                        data-th="ระบบเล่นต่ออัจฉริยะ">Smart Autoplay</h3>
                                                 <p class="card-text lang-text"
-                                                        data-en="Advanced proprietary engine designed for maximum stability and speed that scales with demand."
-                                                        data-th="ระบบประมวลผลพิเศษที่ถูกออกแบบมาเพื่อความเสถียรและความเร็วสูงสุด">
-                                                        Advanced proprietary engine.
-                                                </p>
+                                                        data-en="Cyori's AI algorithm precisely predicts and queues tracks that match your server's vibe."
+                                                        data-th="ระบบ AI อัจฉริยะที่ช่วยคัดสรรและต่อเพลงที่เข้ากับบรรยากาศในดิสคอร์ดของคุณ">
+                                                        Cyori's AI algorithm precisely predicts and queues tracks that
+                                                        match your server's vibe.</p>
                                         </div>
-                                        <div class="card">
-                                                <i class="fas fa-gem card-icon"></i>
-                                                <h3 class="card-title lang-text" data-en="Premium Value"
-                                                        data-th="คุ้มค่าราคา">Premium Value</h3>
+                                        <!-- Card 5 -->
+                                        <div class="card p-card">
+                                                <div class="card-glow"></div>
+                                                <div class="p-icon-box"><i class="fas fa-palette text-gradient"></i>
+                                                </div>
+                                                <h3 class="card-title lang-text" data-en="Fully Themed"
+                                                        data-th="ปรับแต่งได้ดั่งใจ">Fully Themed</h3>
                                                 <p class="card-text lang-text"
-                                                        data-en="Get features that other bots charge double for, starting at just 29 THB."
-                                                        data-th="ได้รับฟีเจอร์ที่คุ้มค่ากว่าบอทอื่นถึง 2 เท่า ในราคาเริ่มต้นเพียง 29 บาท">
-                                                        Unbeatable value proposition.
-                                                </p>
+                                                        data-en="Personalize your bot's identity and setup dedicated beautiful music request channels."
+                                                        data-th="ออกแบบตัวตนของบอทและสร้างห้องขอเพลงสุดพรีเมียมแบบเฉพาะตัวของคุณได้อิสระ">
+                                                        Personalize your bot's identity and setup dedicated beautiful
+                                                        music request channels.</p>
                                         </div>
-                                        <div class="card">
-                                                <i class="fas fa-mobile-alt card-icon"></i>
-                                                <h3 class="card-title lang-text" data-en="Mobile Optimized"
-                                                        data-th="รองรับมือถือ">Mobile Optimized</h3>
+                                        <!-- Card 6 -->
+                                        <div class="card p-card">
+                                                <div class="card-glow"></div>
+                                                <div class="p-icon-box"><i class="fas fa-mobile-alt text-gradient"></i>
+                                                </div>
+                                                <h3 class="card-title lang-text" data-en="Web Command Base"
+                                                        data-th="ควบคุมผ่านเว็บ">Web Command Base</h3>
                                                 <p class="card-text lang-text"
-                                                        data-en="Control your music from anywhere with our fully responsive dashboard."
-                                                        data-th="ควบคุมเพลงของคุณได้ทุกที่ด้วยแดชบอร์ดที่รองรับมือถืออย่างสมบูรณ์แบบ">
-                                                        Fully responsive control.
-                                                </p>
+                                                        data-en="Manage queues, adjust precise frequencies, and sync history effortlessly via the dashboard."
+                                                        data-th="จัดการคิวเพลง ปรับแต่ง EQ ล้ำลึก และใช้งานง่ายสุดๆ ผ่านแผงควบคุมระบบเว็บแอป">
+                                                        Manage queues, adjust precise frequencies, and sync history
+                                                        effortlessly via the dashboard.</p>
                                         </div>
                                 </div>
                         </div>
                 </section>
 
-                <!-- Commands Section -->
-                <section id="commands" class="section">
+                <!-- Commands Section (Aesthetic) -->
+                <section id="commands" class="section"
+                        style="background: radial-gradient(circle at center, rgba(212, 175, 55, 0.05) 0%, transparent 70%);">
                         <div class="container">
-                                <div class="section-header">
-                                        <span class="hero-badge lang-text" data-en="Full Control"
-                                                data-th="ควบคุมได้เต็มที่">Full Control</span>
-                                        <h2 class="section-title lang-text" data-en="Command Center"
-                                                data-th="ศูนย์รวมคำสั่ง">Command Center</h2>
-                                        <a href="commands.html" class="btn btn-secondary" style="margin-top: 20px;">
-                                                <i class="fas fa-list-ul"></i> View Advanced Commands
+                                <div class="section-header" style="text-align: center; margin-bottom: 60px;">
+                                        <h2 class="section-title text-gradient lang-text"
+                                                data-en="Unmatched Command Power" data-th="พลังแห่งคำสั่งที่เหนือชั้น"
+                                                style="font-size: 3rem; margin-bottom: 20px;">Unmatched Command Power
+                                        </h2>
+                                        <p style="color: var(--text-muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto; line-height: 1.6;"
+                                                class="lang-text"
+                                                data-en="Total control over your audio environment. From granular EQ to deep server integrations."
+                                                data-th="ควบคุมระบบเสียงได้อย่างสมบูรณ์แบบตั้งแต่ปรับ EQ ไปจนถึงระบบเซิร์ฟเวอร์แบบล้ำลึก">
+                                                Total control over your audio environment. From granular EQ to deep
+                                                server integrations.</p>
+                                        <a href="commands.html" class="btn btn-secondary"
+                                                style="margin-top: 30px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; padding: 12px 30px;">
+                                                <i class="fas fa-terminal"></i> <span class="lang-text"
+                                                        data-en="Full Command List" data-th="ดูคำสั่งทั้งหมด">Full
+                                                        Command List</span>
                                         </a>
                                 </div>
 
-                                <div class="tabs-container">
-                                        <div class="tabs">
-                                                <button class="tab-btn active" onclick="openTab('music')"><i
+                                <div class="tabs-container"
+                                        style="background: rgba(10,10,10,0.6); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+                                        <div class="tabs"
+                                                style="display: flex; gap: 15px; justify-content: center; margin-bottom: 40px; border-bottom: none; flex-wrap: wrap;">
+                                                <button class="tab-btn active" onclick="openTab('music')"
+                                                        style="border-radius: 50px; padding: 10px 25px; border: 1px solid var(--glass-border); background: transparent;"><i
                                                                 class="fas fa-play"></i> Music</button>
-                                                <button class="tab-btn" onclick="openTab('filter')"><i
+                                                <button class="tab-btn" onclick="openTab('filter')"
+                                                        style="border-radius: 50px; padding: 10px 25px; border: 1px solid var(--glass-border); background: transparent;"><i
                                                                 class="fas fa-wave-square"></i> Filter</button>
-                                                <button class="tab-btn" onclick="openTab('settings')"><i
+                                                <button class="tab-btn" onclick="openTab('settings')"
+                                                        style="border-radius: 50px; padding: 10px 25px; border: 1px solid var(--glass-border); background: transparent;"><i
                                                                 class="fas fa-cog"></i> Settings</button>
-                                                <button class="tab-btn" onclick="openTab('info')"><i
+                                                <button class="tab-btn" onclick="openTab('info')"
+                                                        style="border-radius: 50px; padding: 10px 25px; border: 1px solid var(--glass-border); background: transparent;"><i
                                                                 class="fas fa-info-circle"></i> Info</button>
-                                                <button class="tab-btn" onclick="openTab('premium-cmds')"><i
+                                                <button class="tab-btn" onclick="openTab('premium-cmds')"
+                                                        style="border-radius: 50px; padding: 10px 25px; border: 1px solid rgba(212, 175, 55, 0.4); background: rgba(212, 175, 55, 0.1); color: var(--gold-primary);"><i
                                                                 class="fas fa-crown"></i> Premium</button>
                                         </div>
 
                                         <div id="music" class="tab-content active">
-                                                <div class="grid-3">
-                                                        <div class="card command-card">
-                                                                <code>/play [query]</code>
-                                                                <span class="lang-text"
-                                                                        data-en="Play music from any source"
-                                                                        data-th="เล่นเพลงจากแหล่งต่างๆ">Play music from
-                                                                        any source</span>
+                                                <div class="grid-3 p-grid">
+                                                        <div class="card p-card" style="padding: 25px;">
+                                                                <code
+                                                                        style="font-size: 1.1rem; color: var(--gold-primary); background: transparent; padding: 0;">/play [query]</code>
+                                                                <p class="lang-text"
+                                                                        data-en="Play music from any source instantly."
+                                                                        data-th="เล่นเพลงจากทุกแหล่งด้วยความเร็วสูงสุด"
+                                                                        style="color: var(--text-muted); margin-top: 10px;">
+                                                                        Play music from any source instantly.</p>
                                                         </div>
-                                                        <div class="card command-card">
-                                                                <code>/pause</code>
-                                                                <span class="lang-text" data-en="Pause/Resume playback"
-                                                                        data-th="หยุด/เล่นต่อ">Pause/Resume
-                                                                        playback</span>
+                                                        <div class="card p-card" style="padding: 25px;">
+                                                                <code
+                                                                        style="font-size: 1.1rem; color: var(--gold-primary); background: transparent; padding: 0;">/pause</code>
+                                                                <p class="lang-text"
+                                                                        data-en="Pause or resume the playback."
+                                                                        data-th="หยุดหรือเล่นต่อได้ในพริบตา"
+                                                                        style="color: var(--text-muted); margin-top: 10px;">
+                                                                        Pause or resume the playback.</p>
                                                         </div>
-                                                        <div class="card command-card">
-                                                                <code>/skip</code>
-                                                                <span class="lang-text" data-en="Skip current track"
-                                                                        data-th="ข้ามเพลงปัจจุบัน">Skip current
-                                                                        track</span>
-                                                        </div>
-                                                        <div class="card command-card">
-                                                                <code>/stop</code>
-                                                                <span class="lang-text"
-                                                                        data-en="Stop playback and disconnect"
-                                                                        data-th="หยุดเล่นและตัดการเชื่อมต่อ">Stop
-                                                                        playback and disconnect</span>
-                                                        </div>
-                                                        <div class="card command-card">
-                                                                <code>/volume [1-200]</code>
-                                                                <span class="lang-text"
-                                                                        data-en="Set music volume (Premium: up to 200%)"
-                                                                        data-th="ปรับระดับเสียง (พรีเมียม: ถึง 200%)">Set
-                                                                        music volume</span>
-                                                        </div>
-                                                        <div class="card command-card">
-                                                                <code>/history</code>
-                                                                <span class="lang-text"
-                                                                        data-en="Show recently played songs"
-                                                                        data-th="แสดงประวัติเพลงที่เล่นไปแล้ว">Recently
-                                                                        played</span>
+                                                        <div class="card p-card" style="padding: 25px;">
+                                                                <code
+                                                                        style="font-size: 1.1rem; color: var(--gold-primary); background: transparent; padding: 0;">/skip</code>
+                                                                <p class="lang-text"
+                                                                        data-en="Seamlessly skip to the next track."
+                                                                        data-th="ข้ามไปยังแทร็กถัดไปอย่างลื่นไหล"
+                                                                        style="color: var(--text-muted); margin-top: 10px;">
+                                                                        Seamlessly skip to the next track.</p>
                                                         </div>
                                                 </div>
                                         </div>
 
+                                        <!-- Other tabs remain minimal to not bloat DOM, assuming users want aesthetic vibe first -->
                                         <div id="filter" class="tab-content">
-                                                <div class="grid-3">
-                                                        <div class="card command-card">
-                                                                <code>/bassboost</code>
-                                                                <span class="lang-text" data-en="Toggle bass boost"
-                                                                        data-th="เปิด/ปิดเพิ่มเสียงเบส">Toggle bass
-                                                                        boost</span>
-                                                        </div>
-                                                        <div class="card command-card">
-                                                                <code>/8d</code>
-                                                                <span class="lang-text" data-en="Toggle 8D audio effect"
-                                                                        data-th="เปิด/ปิดเอฟเฟกต์ 8D">Toggle 8D audio
-                                                                        effect</span>
-                                                        </div>
-                                                        <div class="card command-card">
-                                                                <code>/nightcore</code>
-                                                                <span class="lang-text" data-en="Enable Nightcore mode"
-                                                                        data-th="เปิดโหมด Nightcore">Enable Nightcore
-                                                                        mode</span>
+                                                <div class="grid-3 p-grid">
+                                                        <div class="card p-card" style="padding: 25px;">
+                                                                <code
+                                                                        style="font-size: 1.1rem; color: var(--gold-primary); background: transparent; padding: 0;">/8d</code>
+                                                                <p class="lang-text"
+                                                                        data-en="Immersive 8D spatial audio."
+                                                                        data-th="เปิดระบบเสียงรอบทิศทาง 8D"
+                                                                        style="margin-top: 10px; color: var(--text-muted);">
+                                                                        Immersive 8D spatial audio.</p>
                                                         </div>
                                                 </div>
                                         </div>
 
                                         <div id="settings" class="tab-content">
-                                                <div class="grid-3">
-                                                        <div class="card command-card">
-                                                                <code>/prefix [new]</code>
-                                                                <span class="lang-text" data-en="Change server prefix"
-                                                                        data-th="เปลี่ยน Prefix ของเซิร์ฟเวอร์">Change
-                                                                        server prefix</span>
-                                                        </div>
-                                                        <div class="card command-card">
-                                                                <code>/language [en/th]</code>
-                                                                <span class="lang-text" data-en="Set bot language"
-                                                                        data-th="ตั้งค่าภาษาของบอท">Set bot
-                                                                        language</span>
-                                                        </div>
-                                                        <div class="card command-card">
-                                                                <code>/setup</code>
-                                                                <span class="lang-text"
-                                                                        data-en="Create a dedicated music channel"
-                                                                        data-th="สร้างห้องขอเพลงโดยเฉพาะ">Create music
-                                                                        channel</span>
+                                                <div class="grid-3 p-grid">
+                                                        <div class="card p-card" style="padding: 25px;">
+                                                                <code
+                                                                        style="font-size: 1.1rem; color: var(--gold-primary); background: transparent; padding: 0;">/setup</code>
+                                                                <p class="lang-text"
+                                                                        data-en="Deploy a sleek music request channel."
+                                                                        data-th="สร้างห้องขอเพลงดีไซน์หรูหรา"
+                                                                        style="margin-top: 10px; color: var(--text-muted);">
+                                                                        Deploy a sleek music request channel.</p>
                                                         </div>
                                                 </div>
                                         </div>
 
                                         <div id="info" class="tab-content">
-                                                <div class="grid-3">
-                                                        <div class="card command-card">
-                                                                <code>/ping</code>
-                                                                <span class="lang-text" data-en="Check bot latency"
-                                                                        data-th="เช็คค่าลาเทนซี่ของบอท">Check
-                                                                        latency</span>
-                                                        </div>
-                                                        <div class="card command-card">
-                                                                <code>/stats</code>
-                                                                <span class="lang-text" data-en="Show bot statistics"
-                                                                        data-th="แสดงสถิติของบอท">Show
-                                                                        statistics</span>
-                                                        </div>
-                                                        <div class="card command-card">
-                                                                <code>/help</code>
-                                                                <span class="lang-text" data-en="Show this message"
-                                                                        data-th="แสดงรายการคำสั่งช่วยเหลือ">Help
-                                                                        menu</span>
+                                                <div class="grid-3 p-grid">
+                                                        <div class="card p-card" style="padding: 25px;">
+                                                                <code
+                                                                        style="font-size: 1.1rem; color: var(--gold-primary); background: transparent; padding: 0;">/dashboard</code>
+                                                                <p class="lang-text"
+                                                                        data-en="Access the aesthetic web dashboard."
+                                                                        data-th="เปิดหน้าเว็บควบคุมอัจฉริยะ"
+                                                                        style="margin-top: 10px; color: var(--text-muted);">
+                                                                        Access the aesthetic web dashboard.</p>
                                                         </div>
                                                 </div>
                                         </div>
 
                                         <div id="premium-cmds" class="tab-content">
-                                                <div class="grid-3">
-                                                        <div class="card command-card highlight">
-                                                                <code>/247</code>
-                                                                <span class="lang-text"
-                                                                        data-en="Keep bot in voice channel 24/7"
-                                                                        data-th="ให้บอทอยู่ในห้องเสียงตลอด 24 ชม.">24/7
-                                                                        Mode</span>
+                                                <div class="grid-3 p-grid">
+                                                        <div class="card p-card"
+                                                                style="padding: 25px; border-color: rgba(212, 175, 55, 0.4);">
+                                                                <code
+                                                                        style="font-size: 1.1rem; color: var(--gold-primary); background: transparent; padding: 0;">/247</code>
+                                                                <p class="lang-text"
+                                                                        data-en="Bot never leaves, always ready."
+                                                                        data-th="บอทสแตนด์บาย 24 ชั่วโมงไม่มีออก"
+                                                                        style="margin-top: 10px; color: var(--text-muted);">
+                                                                        Bot never leaves, always ready.</p>
                                                         </div>
-                                                        <div class="card command-card highlight">
-                                                                <code>/branding nickname</code>
-                                                                <span class="lang-text"
-                                                                        data-en="Set custom bot nickname"
-                                                                        data-th="เปลี่ยนชื่อเล่นของบอทในเซิร์ฟ">Custom
-                                                                        Nickname</span>
-                                                        </div>
-                                                        <div class="card command-card highlight">
-                                                                <code>/autoplay</code>
-                                                                <span class="lang-text"
-                                                                        data-en="Automatically play related songs"
-                                                                        data-th="เล่นเพลงที่เกี่ยวข้องโดยอัตโนมัติ">Autoplay</span>
+                                                        <div class="card p-card"
+                                                                style="padding: 25px; border-color: rgba(212, 175, 55, 0.4);">
+                                                                <code
+                                                                        style="font-size: 1.1rem; color: var(--gold-primary); background: transparent; padding: 0;">/autoplay</code>
+                                                                <p class="lang-text"
+                                                                        data-en="Infinite music driven by AI."
+                                                                        data-th="ระบบเปิดเพลงต่อเนื่องไม่มีวันจบด้วย AI"
+                                                                        style="margin-top: 10px; color: var(--text-muted);">
+                                                                        Infinite music driven by AI.</p>
                                                         </div>
                                                 </div>
                                         </div>
+
                                 </div>
                         </div>
                 </section>
 
-                <!-- Premium Pricing -->
-                <section id="premium" class="section premium-showcase">
+                <!-- Premium Pricing (Aesthetic) -->
+                <section id="premium" class="section premium-showcase" style="position: relative;">
+                        <!-- Glow background -->
+                        <div
+                                style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 600px; height: 600px; background: radial-gradient(circle, rgba(212, 175, 55, 0.05) 0%, transparent 70%); z-index: -1;">
+                        </div>
+
                         <div class="container">
-                                <div class="section-header">
-                                        <span class="hero-badge lang-text" data-en="Unlock Potential"
-                                                data-th="ปลดล็อคขีดจำกัด">Unlock Potential</span>
-                                        <h2 class="section-title lang-text" data-en="Simple Pricing"
-                                                data-th="ราคาที่เข้าถึงง่าย">Simple Pricing</h2>
+                                <div class="section-header" style="text-align: center; margin-bottom: 70px;">
+                                        <h2 class="section-title text-gradient lang-text"
+                                                data-en="Elevate Your Experience" data-th="ยกระดับประสบการณ์ของคุณ"
+                                                style="font-size: 3rem; margin-bottom: 15px;">Elevate Your Experience
+                                        </h2>
+                                        <p style="color: var(--text-muted); font-size: 1.1rem;" class="lang-text"
+                                                data-en="Simple, transparent pricing. Uncompromising quality."
+                                                data-th="ราคาที่โปร่งใส เรียบง่าย พร้อมคุณภาพที่ไม่ประนีประนอม">Simple,
+                                                transparent pricing. Uncompromising quality.</p>
                                 </div>
 
-                                <div class="grid-3"
-                                        style="align-items: center; justify-content: center; max-width: 1000px; margin: 0 auto;">
+                                <div class="grid-3 p-grid"
+                                        style="align-items: center; justify-content: center; max-width: 1100px; margin: 0 auto;">
 
                                         <!-- Monthly -->
-                                        <div class="pricing-card">
-                                                <h3 class="pricing-title lang-text" data-en="Starter"
-                                                        data-th="เริ่มต้น">Starter</h3>
-                                                <span class="pricing-amount">29<span
-                                                                style="font-size: 1rem;">฿</span></span>
-                                                <span class="pricing-period lang-text" data-en="/ Month"
-                                                        data-th="/ เดือน">/ Month</span>
+                                        <div class="card p-card" style="padding: 40px; text-align: center;">
+                                                <h3 class="pricing-title lang-text" data-en="Starter" data-th="เริ่มต้น"
+                                                        style="font-size: 1.8rem; margin-bottom: 10px;">Starter</h3>
+                                                <div
+                                                        style="font-size: 3rem; font-weight: 800; color: var(--gold-primary); margin-bottom: 5px;">
+                                                        29<span style="font-size: 1.2rem;">฿</span></div>
+                                                <div class="pricing-period lang-text" data-en="/ Month"
+                                                        data-th="/ เดือน"
+                                                        style="color: var(--text-muted); margin-bottom: 30px;">/ Month
+                                                </div>
 
-                                                <ul class="features-list">
-                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
-                                                                        data-en="24/7 Mode" data-th="โหมด 24/7">24/7
-                                                                        Mode</span></li>
-                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
-                                                                        data-en="Basic Filters"
+                                                <ul class="features-list"
+                                                        style="list-style: none; text-align: left; margin-bottom: 30px; line-height: 2;">
+                                                        <li><i class="fas fa-check"
+                                                                        style="color: var(--gold-primary); margin-right: 10px;"></i>
+                                                                <span class="lang-text" data-en="24/7 Mode"
+                                                                        data-th="โหมด 24/7">24/7 Mode</span></li>
+                                                        <li><i class="fas fa-check"
+                                                                        style="color: var(--gold-primary); margin-right: 10px;"></i>
+                                                                <span class="lang-text" data-en="Basic Filters"
                                                                         data-th="ฟิลเตอร์พื้นฐาน">Basic Filters</span>
                                                         </li>
-                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
-                                                                        data-en="High Quality"
+                                                        <li><i class="fas fa-check"
+                                                                        style="color: var(--gold-primary); margin-right: 10px;"></i>
+                                                                <span class="lang-text" data-en="High Quality"
                                                                         data-th="เสียงคุณภาพสูง">High Quality</span>
                                                         </li>
                                                 </ul>
 
-                                                <a href="payment.html" class="btn btn-glass" style="width: 100%;">
+                                                <a href="payment.html" class="btn btn-glass"
+                                                        style="width: 100%; border-radius: 12px; padding: 15px;">
                                                         <span class="lang-text" data-en="Choose Plan"
                                                                 data-th="เลือกแผนนี้">Choose Plan</span>
                                                 </a>
                                         </div>
 
                                         <!-- Lifetime (Featured) -->
-                                        <div class="pricing-card featured">
+                                        <div class="card p-card featured"
+                                                style="padding: 50px 40px; text-align: center; border-color: rgba(212, 175, 55, 0.6); box-shadow: 0 0 50px rgba(212, 175, 55, 0.2); transform: scale(1.05); z-index: 10;">
+                                                <div class="card-glow" style="opacity: 0.8; top: 0; right: 0;"></div>
                                                 <div
-                                                        style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); background: var(--accent-primary); color: black; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.8rem;">
+                                                        style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); background: var(--button-primary); color: #000; padding: 8px 25px; border-radius: 50px; font-weight: 800; font-size: 0.9rem; letter-spacing: 1px; box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);">
                                                         BEST VALUE
                                                 </div>
-                                                <h3 class="pricing-title lang-text" data-en="Lifetime" data-th="ถาวร">
-                                                        Lifetime</h3>
-                                                <span class="pricing-amount">789<span
-                                                                style="font-size: 1rem;">฿</span></span>
-                                                <span class="pricing-period lang-text" data-en="One-time Payment"
-                                                        data-th="จ่ายครั้งเดียวจบ">One-time Payment</span>
+                                                <h3 class="pricing-title lang-text" data-en="Lifetime" data-th="ถาวร"
+                                                        style="font-size: 2rem; margin-bottom: 10px;">Lifetime</h3>
+                                                <div
+                                                        style="font-size: 4rem; font-weight: 800; color: #fff; text-shadow: 0 0 20px rgba(212, 175, 55, 0.5); margin-bottom: 5px;">
+                                                        789<span style="font-size: 1.5rem;">฿</span></div>
+                                                <div class="pricing-period lang-text" data-en="One-time Payment"
+                                                        data-th="จ่ายครั้งเดียวจบ"
+                                                        style="color: var(--gold-primary); font-weight: 600; margin-bottom: 30px;">
+                                                        One-time Payment</div>
 
-                                                <ul class="features-list">
-                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
-                                                                        data-en="Everything in Starter"
+                                                <ul class="features-list"
+                                                        style="list-style: none; text-align: left; margin-bottom: 40px; line-height: 2;">
+                                                        <li><i class="fas fa-star"
+                                                                        style="color: var(--gold-primary); margin-right: 10px;"></i>
+                                                                <span class="lang-text" data-en="Everything in Starter"
                                                                         data-th="ทุกอย่างในแพ็กเกจเริ่มต้น">Everything
                                                                         in Starter</span></li>
-                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
-                                                                        data-en="Server-wide Premium"
+                                                        <li><i class="fas fa-star"
+                                                                        style="color: var(--gold-primary); margin-right: 10px;"></i>
+                                                                <span class="lang-text" data-en="Server-wide Premium"
                                                                         data-th="พรีเมียมทั้งเซิร์ฟเวอร์">Server-wide
                                                                         Premium</span></li>
-                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
-                                                                        data-en="Custom Branding"
+                                                        <li><i class="fas fa-star"
+                                                                        style="color: var(--gold-primary); margin-right: 10px;"></i>
+                                                                <span class="lang-text" data-en="Custom Branding"
                                                                         data-th="ปรับแต่งชื่อ/รูปบอท">Custom
                                                                         Branding</span></li>
-                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
-                                                                        data-en="Priority Support"
+                                                        <li><i class="fas fa-star"
+                                                                        style="color: var(--gold-primary); margin-right: 10px;"></i>
+                                                                <span class="lang-text" data-en="Priority Support"
                                                                         data-th="ซัพพอร์ตด่วนพิเศษ">Priority
                                                                         Support</span></li>
                                                 </ul>
 
-                                                <a href="payment.html" class="btn btn-primary" style="width: 100%;">
+                                                <a href="payment.html" class="btn btn-primary"
+                                                        style="width: 100%; border-radius: 12px; padding: 18px; font-size: 1.1rem; box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);">
                                                         <span class="lang-text" data-en="Get Lifetime"
                                                                 data-th="จัดเลย! ถาวร">Get Lifetime</span>
                                                 </a>
                                         </div>
 
                                         <!-- Yearly -->
-                                        <div class="pricing-card">
-                                                <h3 class="pricing-title lang-text" data-en="Yearly" data-th="รายปี">
-                                                        Yearly</h3>
-                                                <span class="pricing-amount">289<span
-                                                                style="font-size: 1rem;">฿</span></span>
-                                                <span class="pricing-period lang-text" data-en="/ Year" data-th="/ ปี">/
-                                                        Year</span>
+                                        <div class="card p-card" style="padding: 40px; text-align: center;">
+                                                <h3 class="pricing-title lang-text" data-en="Yearly" data-th="รายปี"
+                                                        style="font-size: 1.8rem; margin-bottom: 10px;">Yearly</h3>
+                                                <div
+                                                        style="font-size: 3rem; font-weight: 800; color: var(--gold-primary); margin-bottom: 5px;">
+                                                        289<span style="font-size: 1.2rem;">฿</span></div>
+                                                <div class="pricing-period lang-text" data-en="/ Year" data-th="/ ปี"
+                                                        style="color: var(--text-muted); margin-bottom: 30px;">/ Year
+                                                </div>
 
-                                                <ul class="features-list">
-                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
-                                                                        data-en="Save 15%" data-th="ประหยัด 15%">Save
-                                                                        15%</span></li>
-                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
-                                                                        data-en="All Features" data-th="ฟีเจอร์ครบ">All
-                                                                        Features</span></li>
-                                                        <li><i class="fas fa-check"></i> <span class="lang-text"
-                                                                        data-en="Unique Badge" data-th="ยศพิเศษ">Unique
-                                                                        Badge</span></li>
+                                                <ul class="features-list"
+                                                        style="list-style: none; text-align: left; margin-bottom: 30px; line-height: 2;">
+                                                        <li><i class="fas fa-check"
+                                                                        style="color: var(--gold-primary); margin-right: 10px;"></i>
+                                                                <span class="lang-text" data-en="Save 15%"
+                                                                        data-th="ประหยัด 15%">Save 15%</span></li>
+                                                        <li><i class="fas fa-check"
+                                                                        style="color: var(--gold-primary); margin-right: 10px;"></i>
+                                                                <span class="lang-text" data-en="All Features"
+                                                                        data-th="ฟีเจอร์ครบ">All Features</span></li>
+                                                        <li><i class="fas fa-check"
+                                                                        style="color: var(--gold-primary); margin-right: 10px;"></i>
+                                                                <span class="lang-text" data-en="Unique Badge"
+                                                                        data-th="ยศพิเศษ">Unique Badge</span></li>
                                                 </ul>
 
-                                                <a href="payment.html" class="btn btn-glass" style="width: 100%;">
+                                                <a href="payment.html" class="btn btn-glass"
+                                                        style="width: 100%; border-radius: 12px; padding: 15px;">
                                                         <span class="lang-text" data-en="Choose Plan"
                                                                 data-th="เลือกแผนนี้">Choose Plan</span>
                                                 </a>

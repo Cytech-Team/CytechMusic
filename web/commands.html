@@ -30,9 +30,24 @@
         }
 
         .page-header {
-            padding: 140px 0 60px;
+            padding: 160px 0 80px;
             text-align: center;
-            background: radial-gradient(circle at center, rgba(255, 204, 51, 0.05) 0%, transparent 70%);
+            background: radial-gradient(circle at center, rgba(212, 175, 55, 0.08) 0%, transparent 60%);
+            position: relative;
+        }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            height: 400px;
+            background: var(--gold-primary);
+            filter: blur(150px);
+            opacity: 0.1;
+            z-index: -1;
         }
 
         .commands-container {
@@ -180,17 +195,40 @@
             display: flex;
             flex-direction: column;
             min-height: 190px;
-            border: 1px solid rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 215, 0, 0.05);
             background: rgba(15, 15, 15, 0.4);
             backdrop-filter: blur(10px);
-            transition: all 0.3s var(--ease-smooth);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .cmd-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            border-radius: 16px;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), transparent, rgba(212, 175, 55, 0.05));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 2;
         }
 
         .cmd-card:hover {
-            transform: translateY(-8px);
-            border-color: rgba(255, 215, 0, 0.2);
-            background: rgba(20, 20, 20, 0.6);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            transform: translateY(-8px) scale(1.02);
+            background: rgba(20, 20, 20, 0.7);
+            border-color: transparent;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(212, 175, 55, 0.1);
+        }
+
+        .cmd-card:hover::before {
+            opacity: 1;
         }
 
         .cmd-name {
