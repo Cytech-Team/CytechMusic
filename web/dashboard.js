@@ -693,9 +693,10 @@ function updatePlayerUI(data) {
         if (title) title.textContent = "No music playing";
         if (artist) artist.textContent = "Ready to play";
         if (img) {
-            img.src = data.thumbnail || "logo-circle.png";
-            img.style.objectFit = 'cover';
-            img.style.padding = '0';
+            // ตอนไม่เล่นเพลง — แสดงโลโก้เสมอ ไม่ใช้ banner URL
+            img.src = "logo-circle.png";
+            img.style.objectFit = 'contain';
+            img.style.padding = '12%';
         }
         if (playIcon) playIcon.className = 'fas fa-play';
         updateProgressUI(0, 0); // Reset to 0:00 / 0:00
