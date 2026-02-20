@@ -127,7 +127,7 @@ WARNING_SOUND_URL_TH = "https://raw.githubusercontent.com/CytechNaRak/Cytech-Clo
 WARNING_SOUND_URL_EN = "https://raw.githubusercontent.com/CytechNaRak/Cytech-Cloud/main/warning_EN_sound.mp3"
 
 # Images
-BANNER_URL = "https://i.postimg.cc/SQY1ZX1V/wmremove-transformed-(1).jpg"
+BANNER_URL = "https://i.postimg.cc/5y5pk1bL/Cyori-Banner.png"
 
 # Links
 SUPPORT_URL = "https://discord.gg/jcJ2P6Bh2p"
