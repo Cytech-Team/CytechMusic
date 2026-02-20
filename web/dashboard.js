@@ -693,10 +693,7 @@ function updatePlayerUI(data) {
         if (title) title.textContent = "No music playing";
         if (artist) artist.textContent = "Ready to play";
         if (img) {
-            // ตอนไม่เล่นเพลง — แสดงโลโก้เสมอ ไม่ใช้ banner URL
             img.src = "logo-circle.png";
-            img.style.objectFit = 'contain';
-            img.style.padding = '12%';
         }
         if (playIcon) playIcon.className = 'fas fa-play';
         updateProgressUI(0, 0); // Reset to 0:00 / 0:00
@@ -738,8 +735,6 @@ function updatePlayerUI(data) {
     if (artist) artist.textContent = data.author || "Unknown Artist";
     if (img && data.thumbnail) {
         img.src = data.thumbnail.includes('null') ? "logo-circle.png" : data.thumbnail;
-        img.style.objectFit = 'cover';  // Music thumbs fill the frame
-        img.style.padding = '0';        // No padding when music is playing
     }
 
     // Update Icons

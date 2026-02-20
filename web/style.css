@@ -3103,11 +3103,27 @@ input[type="range"].slider::-ms-fill-upper {
     border: 1px solid var(--glass-border);
 }
 
-.yt-video-container img {
+.yt-video-container img,
+.now-playing-art {
     width: 100%;
     height: 100%;
     object-fit: cover;
     background: #000;
+    display: block;
+}
+
+.live-badge {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    background: red;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    display: none;
+    box-shadow: 0 0 10px red;
 }
 
 .yt-player-info {
