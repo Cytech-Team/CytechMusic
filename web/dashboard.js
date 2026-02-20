@@ -694,9 +694,8 @@ function updatePlayerUI(data) {
         if (artist) artist.textContent = "Ready to play";
         if (img) {
             img.src = data.thumbnail || "logo-circle.png";
-            // Logo/banner: contain with padding
-            img.style.objectFit = 'contain';
-            img.style.padding = '15px';
+            img.style.objectFit = 'cover';
+            img.style.padding = '0';
         }
         if (playIcon) playIcon.className = 'fas fa-play';
         updateProgressUI(0, 0); // Reset to 0:00 / 0:00
