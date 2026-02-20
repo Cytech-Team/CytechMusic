@@ -694,7 +694,11 @@ function updatePlayerUI(data) {
         if (artist) artist.textContent = "Ready to play";
         if (img) {
             img.src = "https://cdn.discordapp.com/banners/1469606905948405833/3b84c3a7799d846229b2b5b2921ed270.png?size=1024";
+            img.style.objectFit = 'contain';
         }
+        // Container: idle ratio (16/7)
+        const container = document.querySelector('.yt-video-container');
+        if (container) container.classList.remove('playing');
         if (playIcon) playIcon.className = 'fas fa-play';
         updateProgressUI(0, 0); // Reset to 0:00 / 0:00
         playerState.paused = true;
@@ -734,8 +738,12 @@ function updatePlayerUI(data) {
     if (title) title.textContent = data.title || "Unknown Title";
     if (artist) artist.textContent = data.author || "Unknown Artist";
     if (img && data.thumbnail) {
-        img.src = data.thumbnail.includes('null') ? "logo-circle.png" : data.thumbnail;
+        img.src = data.thumbnail.includes('null') ? "https://cdn.discordapp.com/banners/1469606905948405833/3b84c3a7799d846229b2b5b2921ed270.png?size=1024" : data.thumbnail;
+        img.style.objectFit = 'cover';
     }
+    // Container: playing ratio (16/9)
+    const container = document.querySelector('.yt-video-container');
+    if (container) container.classList.add('playing');
 
     // Update Icons
     if (playIcon) playIcon.className = data.paused ? 'fas fa-play' : 'fas fa-pause';
