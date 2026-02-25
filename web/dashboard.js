@@ -1421,7 +1421,11 @@ function viewPlaylist(idx) {
 
     // Show the + Add Song button
     const addBtn = document.getElementById('playlist-add-song-btn');
-    if (addBtn) addBtn.style.display = 'flex';
+    if (addBtn) {
+        addBtn.style.display = 'flex';
+        addBtn.style.alignItems = 'center';
+        addBtn.style.justifyContent = 'center';
+    }
     // Hide inline search (reset state)
     const inlineSearch = document.getElementById('playlist-inline-search');
     if (inlineSearch) inlineSearch.style.display = 'none';
