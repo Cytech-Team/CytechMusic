@@ -349,18 +349,25 @@ function renderRecommendations(tracks) {
         const safeAuthorHtml = escapeHtml(track.author);
         const safeThumb = escapeHtml(track.thumbnail);
 
+        const safeTitle4Playlist = escapeJsStr(track.title || '');
         return `
-        <div class="queue-item" onclick="playTrack('${safeEncoded}', '${safeUri}')" style="cursor: pointer; padding: 6px 10px; border: none; border-radius: 12px; background: transparent; display: flex; align-items: center; gap: 12px;">
-            <div class="qi-thumb" style="position: relative; width: 64px; height: 48px; border-radius: 8px; flex-shrink: 0; background: #000; overflow: hidden; border: 1px solid rgba(255,255,255,0.05);">
+        <div class="queue-item" style="cursor: pointer; padding: 6px 10px; border: none; border-radius: 12px; background: transparent; display: flex; align-items: center; gap: 12px;">
+            <div class="qi-thumb" onclick="playTrack('${safeEncoded}', '${safeUri}')" style="position: relative; width: 64px; height: 48px; border-radius: 8px; flex-shrink: 0; background: #000; overflow: hidden; border: 1px solid rgba(255,255,255,0.05);">
                 <img src="${safeThumb}" onerror="this.src='logo-circle.png'" style="width: 100%; height: 100%; object-fit: cover;">
                 <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
                     <i class="fas fa-play" style="font-size: 0.9rem; color: #fff;"></i>
                 </div>
             </div>
-            <div class="qi-info" style="flex: 1; min-width: 0;">
+            <div class="qi-info" onclick="playTrack('${safeEncoded}', '${safeUri}')" style="flex: 1; min-width: 0;">
                 <div class="qi-title" style="font-size: 0.9rem; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; margin-bottom: 4px;" title="${safeTitleHtml}">${safeTitleHtml}</div>
                 <div class="qi-artist" style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${safeAuthorHtml}</div>
             </div>
+            <button onclick="event.stopPropagation(); showAddToPlaylistModal('${safeEncoded}', '${safeUri}', '${safeTitle4Playlist}')" title="Add to Playlist"
+                    style="background: none; border: 1px solid var(--glass-border); color: var(--gold-dim); border-radius: 50%; width: 28px; height: 28px; flex-shrink: 0; cursor: pointer; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; transition: 0.2s;"
+                    onmouseover="this.style.borderColor='var(--gold-primary)'; this.style.color='var(--gold-primary)';"
+                    onmouseout="this.style.borderColor='var(--glass-border)'; this.style.color='var(--gold-dim)';">
+                <i class="fas fa-plus"></i>
+            </button>
         </div>
         `;
     }).join('');
@@ -990,29 +997,51 @@ function renderPlaylistOptions() {
 }
 
 async function createNewPlaylistPrompt() {
-    const name = prompt("ชื่อเพลย์ลิสต์ใหม่ (New Playlist Name):");
-    if (!name) return;
-    const desc = prompt("คำอธิบาย (Description):", "คอลเลกชันเพลงใหม่ของฉัน");
+    // Use inline modal input instead of native prompt()
+    return new Promise((resolve) => {
+        const existingInline = document.getElementById('create-pl-inline');
+        if (existingInline) existingInline.remove();
 
-    try {
-        const res = await smartFetch(BOT_API, {
-            method: 'POST',
-            body: JSON.stringify({
-                action: 'playlist',
-                playlist_action: 'create',
-                user_id: currentUserId,
-                name: name,
-                description: desc
-            })
-        });
-        const data = await res.json();
-        if (data.status === 'ok') {
-            await renderCollection(); // Refresh global list
-            renderPlaylistOptions(); // Refresh current modal
-        }
-    } catch (e) {
-        console.error(e);
-    }
+        const el = document.createElement('div');
+        el.id = 'create-pl-inline';
+        el.style.cssText = 'margin-top: 12px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid var(--glass-border);';
+        el.innerHTML = `
+            <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:8px;">ชื่อเพลย์ลิสต์ใหม่</div>
+            <input id="create-pl-name" type="text" placeholder="เช่น My Favorites, Chill Vibes..." autocomplete="off"
+                   style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.05); color:var(--text-main); font-size:0.9rem; outline:none; margin-bottom:8px; box-sizing:border-box;">
+            <input id="create-pl-desc" type="text" placeholder="คำอธิบาย (ไม่บังคับ)"
+                   style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.05); color:var(--text-main); font-size:0.85rem; outline:none; margin-bottom:10px; box-sizing:border-box;">
+            <div style="display:flex; gap:8px;">
+                <button id="create-pl-ok" style="flex:1; padding:10px; border-radius:10px; background:var(--gold-primary); color:#000; font-weight:700; border:none; cursor:pointer; font-size:0.9rem;">สร้าง</button>
+                <button onclick="document.getElementById('create-pl-inline').remove()" style="padding:10px 14px; border-radius:10px; background:rgba(255,255,255,0.07); color:var(--text-muted); border:none; cursor:pointer;">ยกเลิก</button>
+            </div>
+        `;
+
+        const container = document.getElementById('playlist-options-list');
+        if (container) container.prepend(el);
+        const nameInput = document.getElementById('create-pl-name');
+        if (nameInput) nameInput.focus();
+
+        document.getElementById('create-pl-ok').onclick = async () => {
+            const name = document.getElementById('create-pl-name').value.trim();
+            const desc = document.getElementById('create-pl-desc').value.trim();
+            if (!name) { document.getElementById('create-pl-name').style.borderColor = '#ff4d4d'; return; }
+            el.remove();
+            try {
+                const res = await smartFetch(BOT_API, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'playlist', playlist_action: 'create', user_id: currentUserId, name, description: desc })
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    showNotification('สร้างสำเร็จ', 'Created!', `เพลย์ลิสต์ "${name}" ถูกสร้างแล้ว`, `Playlist "${name}" created.`, 'success');
+                    await renderCollection();
+                    renderPlaylistOptions();
+                }
+            } catch (e) { console.error(e); }
+            resolve();
+        };
+    });
 }
 
 async function confirmAddTrackToPlaylist(plIdx) {
@@ -1082,6 +1111,9 @@ function renderQueue(queue) {
         // Format duration
         const duration = formatTime(track.duration || track.length);
 
+        const safeEncodedQ = escapeJsStr(track.encoded || '');
+        const safeUriQ = escapeJsStr(track.uri || '');
+        const safeTitleQ = escapeJsStr(track.title || '');
         return `
         <div class="queue-item">
             <div class="qi-thumb">
@@ -1093,6 +1125,7 @@ function renderQueue(queue) {
             </div>
             <div class="qi-actions">
                 <button class="btn-glass btn-sm" onclick="sendControl('skipto', ${index})" title="Play Now"><i class="fas fa-play"></i></button>
+                <button class="btn-glass btn-sm" onclick="showAddToPlaylistModal('${safeEncodedQ}', '${safeUriQ}', '${safeTitleQ}')" title="Add to Playlist" style="color: var(--gold-dim);"><i class="fas fa-plus"></i></button>
                 <button class="btn-glass btn-sm" onclick="sendControl('remove', ${index})" title="Remove"><i class="fas fa-trash"></i></button>
             </div>
         </div>
