@@ -371,9 +371,11 @@ class APIProxyManager:
         import time as _time
 
         uid = params.get("user_id")
-        pl_action = params.get("playlist_action") or params.get("action")
+        pl_action = params.get("playlist_action")
         if not uid:
             return self.error("Missing user_id")
+        if not pl_action:
+            return self.error("Missing playlist_action")
 
         user_doc = await self.bot.db_manager.get_user_doc(uid)
         playlists = user_doc.get("playlists", []) if user_doc else []
