@@ -811,23 +811,35 @@ class DashboardSystem:
             if p.current:
                 tracks.append(
                     {
-                        "title": p.current.title,
-                        "author": p.current.author,
-                        "uri": p.current.uri,
-                        "thumbnail": p.current.thumbnail,
-                        "length": p.current.length,
-                        "encoded": p.current.track_id,
+                        "title": getattr(p.current, "title", "Unknown"),
+                        "author": getattr(p.current, "author", "Unknown Artist"),
+                        "uri": getattr(p.current, "uri", ""),
+                        "thumbnail": getattr(p.current, "thumbnail", "logo-circle.png"),
+                        "length": getattr(p.current, "length", getattr(p.current, "duration", 0)),
+                        "encoded": getattr(p.current, "track_id", getattr(p.current, "id", "")),
                     }
                 )
-            for t in p.queue.tracks():
+            raw_queue = []
+            try:
+                if hasattr(p.queue, "tracks"):
+                    t_prop = p.queue.tracks
+                    raw_queue = list(t_prop() if callable(t_prop) else t_prop)
+                elif isinstance(p.queue, list):
+                    raw_queue = p.queue
+                else:
+                    raw_queue = list(p.queue)
+            except Exception:
+                pass
+
+            for t in raw_queue:
                 tracks.append(
                     {
-                        "title": t.title,
-                        "author": t.author,
-                        "uri": t.uri,
-                        "thumbnail": t.thumbnail,
-                        "length": t.length,
-                        "encoded": t.track_id,
+                        "title": getattr(t, "title", "Unknown"),
+                        "author": getattr(t, "author", "Unknown Artist"),
+                        "uri": getattr(t, "uri", ""),
+                        "thumbnail": getattr(t, "thumbnail", "logo-circle.png"),
+                        "length": getattr(t, "length", getattr(t, "duration", 0)),
+                        "encoded": getattr(t, "track_id", getattr(t, "id", "")),
                     }
                 )
 

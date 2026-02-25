@@ -9,8 +9,12 @@
 const BOT_API = "/api/proxy";
 
 async function smartFetch(endpoint, options = {}) {
-    // ยิงเข้าหา Internal Proxy (/api/proxy) เสมอเพื่อแก้ปัญหา CORS และ HTTPS
-    const fullProxyUrl = endpoint.includes('http') ? endpoint : (endpoint.startsWith('?') ? `${BOT_API}${endpoint}` : BOT_API);
+    let fullProxyUrl = endpoint;
+    if (!endpoint.includes('http')) {
+        if (endpoint === '' || endpoint.startsWith('?')) {
+            fullProxyUrl = BOT_API + endpoint;
+        }
+    }
 
     try {
         const response = await fetch(fullProxyUrl, options);
