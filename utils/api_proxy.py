@@ -20,6 +20,7 @@ import json
 import traceback
 import asyncio
 import datetime
+import cytechlink
 
 
 class APIProxyManager:
@@ -481,25 +482,98 @@ class APIProxyManager:
                 return self.ok({"status": "ok"})
 
             elif pl_action == "play_playlist":
+                import discord as _d
+                import time as _time
                 gid = params.get("guild_id")
                 idx = int(params.get("playlist_index", -1))
                 if not (gid and 0 <= idx < len(playlists)):
                     return self.error("invalid_params")
-                pl_tracks = playlists[idx].get("tracks", [])
+
+                pl = playlists[idx]
+                pl_name = pl.get("name", "Playlist")
+                pl_tracks = pl.get("tracks", [])
+                if not pl_tracks:
+                    return self.error("empty_playlist")
+
                 g = self.bot.get_guild(int(gid))
                 m = g.get_member(int(uid)) if g else None
                 if not m or not m.voice:
                     return self.error("no_vc")
+
+                # Connect if needed
+                p = g.voice_client
+                if not p:
+                    p = await m.voice.channel.connect(cls=cytechlink.Player)
+
+                node = p.node
+                added = 0
+                first_track = None
+
                 for t_data in pl_tracks:
-                    asyncio.create_task(
-                        self.bot.dashboard.handle_ws_control(
-                            {"action": "play", "guild_id": gid, "user_id": uid,
-                             "value": {"encoded": t_data.get("encoded", ""), "uri": t_data.get("uri", "")}},
-                            int(gid)
+                    try:
+                        encoded = t_data.get("encoded", "")
+                        uri = t_data.get("uri", "")
+                        if encoded and encoded not in ("", "undefined", "null"):
+                            track = await node.build_track(encoded, requester=m)
+                            await p.add_track(track)
+                            if first_track is None:
+                                first_track = track
+                            added += 1
+                        elif uri:
+                            results = await node.get_tracks(uri, requester=m)
+                            res_list = getattr(results, "tracks", results) if results else []
+                            if isinstance(res_list, list) and res_list:
+                                await p.add_track(res_list[0])
+                                if first_track is None:
+                                    first_track = res_list[0]
+                                added += 1
+                    except Exception:
+                        pass  # Skip failed tracks silently
+
+                if added == 0:
+                    return self.error("no_tracks_loaded")
+
+                # ── Single embed notification (not per-track spam) ───────────────
+                async def _send_playlist_embed():
+                    try:
+                        thumb = getattr(first_track, "thumbnail", None)
+                        emb = _d.Embed(
+                            title=f"📂 {pl_name}",
+                            description=f"เพิ่ม **{added}** เพลงเข้าคิวแล้ว",
+                            color=0xFFD700,
                         )
-                    )
-                    await asyncio.sleep(0.1)
-                return self.ok({"status": "ok"})
+                        emb.set_author(
+                            name="▶️ Playlist Loaded · Dashboard",
+                            icon_url=self.bot.user.display_avatar.url,
+                        )
+                        emb.set_footer(
+                            text=f"Requested by {m.display_name}",
+                            icon_url=m.display_avatar.url,
+                        )
+                        if thumb:
+                            emb.set_thumbnail(url=thumb)
+
+                        vc_channel = m.voice.channel if m.voice else None
+                        if vc_channel:
+                            try:
+                                await vc_channel.send(embed=emb, delete_after=20)
+                                return
+                            except Exception:
+                                pass
+                        # Fallback → setup channel
+                        _gd = await self.bot.db_manager.get_guild(int(gid))
+                        ch_id = _gd.get("channel_id")
+                        if ch_id:
+                            ch = self.bot.get_channel(int(ch_id))
+                            if ch:
+                                await ch.send(embed=emb, delete_after=15)
+                    except Exception:
+                        pass
+
+                asyncio.create_task(_send_playlist_embed())
+                await self.bot.broadcast_guild(int(gid))
+                return self.ok({"status": "ok", "added": added})
+
 
             elif pl_action == "remove_favorite":
                 uri = params.get("uri")
