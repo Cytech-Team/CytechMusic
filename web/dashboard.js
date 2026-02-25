@@ -961,34 +961,31 @@ function renderPlaylistOptions() {
     const trackNameTip = document.getElementById('attp-track-name');
     if (!container || !trackToAddToPlaylist) return;
 
-    trackNameTip.textContent = trackToAddToPlaylist.title;
-
-    // Use userPlaylists from Collection system if available
-    const playlists = (typeof userPlaylists !== 'undefined' && userPlaylists.length > 0) ? userPlaylists : [];
+    // Clear any leftover inline create form first
+    const oldInline = document.getElementById('create-pl-inline');
+    if (oldInline) oldInline.remove();
 
     let html = '';
 
     // Add "Create New" option at top
     html += `
-        <button class="btn-primary" onclick="createNewPlaylistPrompt()" 
+        <button class="btn-primary" onclick="createNewPlaylistPrompt()"
                 style="width: 100%; text-align: center; padding: 12px; border-radius: 12px; margin-bottom: 10px; font-weight: 600;">
-            <i class="fas fa-plus"></i> Create New Playlist
+            <i class="fas fa-plus"></i> สร้าง Playlist ใหม่
         </button>
     `;
 
     if (playlists.length === 0) {
-        html += `<p style="text-align: center; color: #aaa; padding: 20px;">No playlists found.</p>`;
+        html += `<p style="text-align: center; color: #aaa; padding: 20px;">ยังไม่มี Playlist</p>`;
     } else {
         html += playlists.map((pl, idx) => `
-            <button class="btn-glass" onclick="confirmAddTrackToPlaylist(${idx})" 
-                    style="width: 100%; text-align: left; padding: 12px 15px; border-radius: 12px; display: flex; flex-direction: column; gap: 4px; transition: 0.2s;">
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                    <span style="font-weight: 600;">${pl.name}</span>
-                    <i class="fas fa-plus-circle" style="color: var(--gold-primary);"></i>
+            <button class="btn-glass" onclick="confirmAddTrackToPlaylist(${idx})"
+                    style="width: 100%; text-align: left; padding: 12px 15px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; transition: 0.2s;">
+                <div style="flex:1; overflow:hidden;">
+                    <div style="font-weight: 600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${pl.name}</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${pl.description || ''}</div>
                 </div>
-                <div style="font-size: 0.7rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                    ${pl.description || 'No description'}
-                </div>
+                <i class="fas fa-plus-circle" style="color: var(--gold-primary); flex-shrink:0;"></i>
             </button>
         `).join('');
     }
@@ -1261,8 +1258,23 @@ async function addToFavorite() {
     // Refresh UI immediately
     updateFavoriteButton();
 
-    // 2. Send to Backend
-    await sendControl('favorite', window.currentTrack);
+    // 2. Send to Backend — save directly to DB via playlist action (no player required)
+    if (currentUserId) {
+        const track = window.currentTrack;
+        if (existingIndex > -1) {
+            // Remove
+            await smartFetch(BOT_API, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'playlist', playlist_action: 'remove_favorite', user_id: currentUserId, uri: track.uri })
+            });
+        } else {
+            // Add — store directly via add_favorite action
+            await smartFetch(BOT_API, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'playlist', playlist_action: 'add_favorite', user_id: currentUserId, track })
+            });
+        }
+    }
 
     // 3. Sync persistence in background
     setTimeout(renderCollection, 1000);

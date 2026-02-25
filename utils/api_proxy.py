@@ -575,6 +575,24 @@ class APIProxyManager:
                 return self.ok({"status": "ok", "added": added})
 
 
+            elif pl_action == "add_favorite":
+                import time as _tf
+                track = params.get("track", {})
+                if not track:
+                    return self.error("Missing track data")
+                song_data = {
+                    "title": track.get("title", "Unknown"),
+                    "uri": track.get("uri", ""),
+                    "author": track.get("author", "Unknown"),
+                    "identifier": track.get("identifier"),
+                    "thumbnail": track.get("thumbnail") or track.get("thumb") or "logo-circle.png",
+                    "length": track.get("length") or track.get("duration") or 0,
+                    "encoded": track.get("encoded"),
+                    "added_at": int(_tf.time()),
+                }
+                await self.bot.db_manager.update_user_doc(uid, {"$addToSet": {"favorites": song_data}})
+                return self.ok({"status": "ok"})
+
             elif pl_action == "remove_favorite":
                 uri = params.get("uri")
                 if uri:
