@@ -203,9 +203,8 @@
                         <!-- LEFT COLUMN: Main Video Player & Controls -->
                         <div class="yt-main-column">
                             <div class="yt-video-container">
-                                <img id="np-art"
-                                    src="https://i.postimg.cc/5y5pk1bL/Cyori-Banner.png"
-                                    alt="Album Art" class="now-playing-art">
+                                <img id="np-art" src="https://i.postimg.cc/5y5pk1bL/Cyori-Banner.png" alt="Album Art"
+                                    class="now-playing-art">
                                 <div class="live-badge">
                                     LIVE
                                 </div>
@@ -427,19 +426,44 @@
 
     <!-- FOOTER (Full Version) -->
 
-    <!-- SEARCH MODAL -->
     <div id="search-modal" class="modal" style="display: none;">
         <div class="modal-content glass-effect">
             <div class="modal-header">
-                <h3>Search Results</h3>
-                <button class="close-btn"
-                    onclick="document.getElementById('search-modal').style.display='none'">&times;</button>
+                <h3 id="modal-title">Search Results</h3>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <!-- Add Song button (shown only when viewing a playlist) -->
+                    <button id="playlist-add-song-btn" title="เพิ่มเพลงเข้า Playlist"
+                        onclick="togglePlaylistInlineSearch()"
+                        style="display: none; width: 32px; height: 32px; border-radius: 50%; background: rgba(212,175,55,0.15); border: 1px solid var(--gold-primary); color: var(--gold-primary); cursor: pointer; font-size: 0.9rem; transition: 0.2s;"
+                        onmouseover="this.style.background='var(--gold-primary)'; this.style.color='#000';"
+                        onmouseout="this.style.background='rgba(212,175,55,0.15)'; this.style.color='var(--gold-primary)';">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button class="close-btn"
+                        onclick="document.getElementById('search-modal').style.display='none'; currentViewingPlaylistIdx = null; document.getElementById('playlist-inline-search').style.display='none';">&times;</button>
+                </div>
+            </div>
+            <!-- Inline search bar for adding songs to playlist (hidden by default) -->
+            <div id="playlist-inline-search"
+                style="display: none; padding: 12px 20px; border-bottom: 1px solid var(--glass-border); gap: 8px; background: rgba(212,175,55,0.04);">
+                <div style="display: flex; gap: 8px;">
+                    <input id="playlist-song-input" type="text" placeholder="🔍 ค้นหาเพลงเพื่อเพิ่ม..."
+                        autocomplete="off"
+                        style="flex: 1; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: var(--text-main); font-size: 0.9rem; outline: none;"
+                        onkeydown="if(event.key==='Enter') searchAndAddToPlaylist()">
+                    <button onclick="searchAndAddToPlaylist()"
+                        style="padding: 10px 16px; border-radius: 12px; background: var(--gold-primary); color: #000; font-weight: 700; border: none; cursor: pointer; font-size: 0.85rem;">ค้นหา</button>
+                </div>
+                <div id="playlist-inline-results"
+                    style="margin-top: 8px; max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+                </div>
             </div>
             <div id="modal-results-list" class="modal-body">
                 <!-- Results injected here -->
             </div>
         </div>
     </div>
+
     <!-- NOTIFICATION MODAL -->
     <div id="notification-modal" class="modal" style="display: none;">
         <div class="modal-content glass-effect" style="max-width: 450px;">

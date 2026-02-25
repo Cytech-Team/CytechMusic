@@ -327,6 +327,28 @@ class APIProxyManager:
     async def handle_favorite(self, params):
         return await self._control(params)
 
+    async def handle_shuffle(self, params):
+        return await self._control(params)
+
+    async def handle_set_tracks(self, params):
+        """Overwrite tracks array for a playlist (used when removing a track from playlist view)."""
+        import time as _time
+        uid = params.get("user_id")
+        pl_idx = int(params.get("playlist_index", -1))
+        tracks = params.get("tracks", [])
+        if not uid:
+            return self.error("Missing user_id")
+        try:
+            user_doc = await self.bot.db_manager.get_user_doc(uid)
+            playlists = user_doc.get("playlists", []) if user_doc else []
+            if 0 <= pl_idx < len(playlists):
+                playlists[pl_idx]["tracks"] = tracks
+                await self.bot.db_manager.update_user_doc(uid, {"$set": {"playlists": playlists}})
+            return self.ok({"status": "ok"})
+        except Exception as e:
+            return self.error(str(e))
+
+
     async def handle_random(self, params):
         """Pick a random trending track and queue it."""
         guild_id = params.get("guild_id")
@@ -483,6 +505,14 @@ class APIProxyManager:
                 uri = params.get("uri")
                 if uri:
                     await self.bot.db_manager.update_user_doc(uid, {"$pull": {"favorites": {"uri": uri}}})
+                return self.ok({"status": "ok"})
+
+            elif pl_action == "set_tracks":
+                idx = int(params.get("playlist_index", -1))
+                new_tracks = params.get("tracks", [])
+                if 0 <= idx < len(playlists):
+                    playlists[idx]["tracks"] = new_tracks
+                    await self.bot.db_manager.update_user_doc(uid, {"$set": {"playlists": playlists}})
                 return self.ok({"status": "ok"})
 
             return self.error(f"Unknown playlist_action: {pl_action}")

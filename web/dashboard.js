@@ -1405,33 +1405,157 @@ function saveQueuePrompt() {
     if (name) saveQueueToPlaylist(name, "");
 }
 
+let currentViewingPlaylistIdx = null;
+
 function viewPlaylist(idx) {
     const pl = userPlaylists[idx];
     if (!pl) return;
+    currentViewingPlaylistIdx = idx;
+
     const modal = document.getElementById('search-modal');
     if (!modal) return;
-    const title = modal.querySelector('.modal-header h3');
+
+    // Set title
+    const titleEl = document.getElementById('modal-title');
+    if (titleEl) titleEl.textContent = `🎵 ${pl.name}`;
+
+    // Show the + Add Song button
+    const addBtn = document.getElementById('playlist-add-song-btn');
+    if (addBtn) addBtn.style.display = 'flex';
+    // Hide inline search (reset state)
+    const inlineSearch = document.getElementById('playlist-inline-search');
+    if (inlineSearch) inlineSearch.style.display = 'none';
+    const inlineResults = document.getElementById('playlist-inline-results');
+    if (inlineResults) inlineResults.innerHTML = '';
+    const inlineInput = document.getElementById('playlist-song-input');
+    if (inlineInput) inlineInput.value = '';
+
+    // Render playlist tracks
     const list = document.getElementById('modal-results-list');
-    title.textContent = `Playlist: ${pl.name}`;
-    list.innerHTML = (pl.tracks || []).map(t => {
+    list.innerHTML = (pl.tracks || []).map((t, trackIdx) => {
         const safeEnc = escapeJsStr(t.encoded);
         const safeUri = escapeJsStr(t.uri);
         const safeTitle = escapeHtml(t.title);
         const safeAuthor = escapeHtml(t.author);
         const safeThumb = escapeHtml(t.thumbnail || 'logo-circle.png');
+        const dur = t.length ? formatTime(t.length) : '';
         return `
-        <div class="search-result-item" style="display: flex; align-items: center; gap: 15px; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.03); margin-bottom: 5px;">
-            <img src="${safeThumb}" style="width:50px; height:50px; border-radius:8px; object-fit: cover;" onerror="this.src='logo-circle.png'">
+        <div class="search-result-item" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.03); margin-bottom: 5px;">
+            <img src="${safeThumb}" style="width:48px; height:48px; border-radius:8px; object-fit:cover; flex-shrink:0;" onerror="this.src='logo-circle.png'">
             <div style="flex:1; overflow:hidden;">
                 <div style="font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeTitle}</div>
-                <div style="font-size:0.8rem; color:var(--text-muted);">${safeAuthor}</div>
+                <div style="font-size:0.8rem; color:var(--text-muted);">${safeAuthor}${dur ? ' • ' + dur : ''}</div>
             </div>
-            <button class="btn btn-gold" style="width: 38px; height: 38px; padding: 0; border-radius: 50%;" onclick="playTrack('${safeEnc}', '${safeUri}')"><i class="fas fa-play"></i></button>
+            <div style="display:flex; gap:6px;">
+                <button class="btn btn-gold" style="width:34px; height:34px; padding:0; border-radius:50%;" onclick="playTrack('${safeEnc}', '${safeUri}')" title="เล่น"><i class="fas fa-play"></i></button>
+                <button class="btn-glass btn-sm" style="width:34px; height:34px; padding:0; border-radius:50%; color:#ff6666;" onclick="removeTrackFromPlaylist(${idx},${trackIdx})" title="ลบออก"><i class="fas fa-trash"></i></button>
+            </div>
         </div>
         `;
-    }).join('') || '<p style="text-align:center; padding:40px; color:var(--text-muted);">Empty Playlist</p>';
+    }).join('') || '<p style="text-align:center; padding:40px; color:var(--text-muted);">Empty Playlist — กด <b>+</b> เพื่อเพิ่มเพลง</p>';
+
     modal.style.display = 'flex';
 }
+
+function togglePlaylistInlineSearch() {
+    const el = document.getElementById('playlist-inline-search');
+    if (!el) return;
+    const isHidden = el.style.display === 'none' || el.style.display === '';
+    el.style.display = isHidden ? 'block' : 'none';
+    if (isHidden) {
+        const inp = document.getElementById('playlist-song-input');
+        if (inp) { inp.value = ''; inp.focus(); }
+        document.getElementById('playlist-inline-results').innerHTML = '';
+    }
+}
+
+async function searchAndAddToPlaylist() {
+    const input = document.getElementById('playlist-song-input');
+    const resultsEl = document.getElementById('playlist-inline-results');
+    const query = input ? input.value.trim() : '';
+    if (!query || currentViewingPlaylistIdx === null) return;
+
+    resultsEl.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; padding:8px;">กำลังค้นหา...</div>';
+
+    try {
+        const res = await smartFetch(`?action=search&q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        const tracks = data.results || [];
+
+        if (!tracks.length) {
+            resultsEl.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; padding:8px;">ไม่พบเพลง</div>';
+            return;
+        }
+
+        resultsEl.innerHTML = tracks.map((t, i) => {
+            const safeEnc = escapeJsStr(t.encoded || '');
+            const safeUri = escapeJsStr(t.uri || '');
+            const safeTitle = escapeHtml(t.title);
+            const safeAuthor = escapeHtml(t.author);
+            const safeThumb = escapeHtml(t.thumbnail || 'logo-circle.png');
+            return `
+            <div style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; background:rgba(255,255,255,0.04); cursor:pointer;"
+                 onmouseover="this.style.background='rgba(212,175,55,0.08)'" onmouseout="this.style.background='rgba(255,255,255,0.04)'">
+                <img src="${safeThumb}" style="width:36px; height:36px; border-radius:6px; object-fit:cover; flex-shrink:0;" onerror="this.src='logo-circle.png'">
+                <div style="flex:1; overflow:hidden;">
+                    <div style="font-size:0.85rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeTitle}</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">${safeAuthor}</div>
+                </div>
+                <button onclick="addSearchResultToPlaylist({title:'${escapeJsStr(t.title)}',author:'${escapeJsStr(t.author)}',uri:'${safeUri}',encoded:'${safeEnc}',thumbnail:'${escapeJsStr(t.thumbnail || '')}',length:${t.length || 0}})"
+                        style="flex-shrink:0; width:30px; height:30px; border-radius:50%; background:var(--gold-primary); border:none; color:#000; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; justify-content:center; font-weight:700;">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        resultsEl.innerHTML = '<div style="color:#ff6666; font-size:0.85rem; padding:8px;">เกิดข้อผิดพลาด</div>';
+        console.error(e);
+    }
+}
+
+async function addSearchResultToPlaylist(track) {
+    if (currentViewingPlaylistIdx === null || !currentUserId) return;
+    try {
+        const res = await smartFetch(BOT_API, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'playlist',
+                playlist_action: 'add_track',
+                user_id: currentUserId,
+                playlist_index: currentViewingPlaylistIdx,
+                track
+            })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+            showNotification('เพิ่มแล้ว', 'Added!', `"${track.title}" เพิ่มลงเพลย์ลิสต์แล้ว`, `Added to playlist.`, 'success');
+            await renderCollection();      // Sync userPlaylists global
+            viewPlaylist(currentViewingPlaylistIdx); // Re-render modal with new track
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function removeTrackFromPlaylist(plIdx, trackIdx) {
+    if (!currentUserId) return;
+    try {
+        const pl = userPlaylists[plIdx];
+        if (!pl) return;
+        pl.tracks.splice(trackIdx, 1);
+        const res = await smartFetch(BOT_API, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'playlist',
+                playlist_action: 'set_tracks',
+                user_id: currentUserId,
+                playlist_index: plIdx,
+                tracks: pl.tracks
+            })
+        });
+        await renderCollection();
+        viewPlaylist(plIdx); // Re-render
+    } catch (e) { console.error(e); }
+}
+
 
 async function playPlaylist(idx) {
     if (!selectedGuildId) return;
