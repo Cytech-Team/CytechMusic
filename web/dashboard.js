@@ -995,11 +995,12 @@ async function createNewPlaylistPrompt() {
     const desc = prompt("คำอธิบาย (Description):", "คอลเลกชันเพลงใหม่ของฉัน");
 
     try {
-        const res = await smartFetch('/api/playlist', {
+        const res = await smartFetch(BOT_API, {
             method: 'POST',
             body: JSON.stringify({
+                action: 'playlist',
+                playlist_action: 'create',
                 user_id: currentUserId,
-                action: 'create',
                 name: name,
                 description: desc
             })
@@ -1018,11 +1019,12 @@ async function confirmAddTrackToPlaylist(plIdx) {
     if (!trackToAddToPlaylist) return;
 
     try {
-        const res = await smartFetch('/api/playlist', {
+        const res = await smartFetch(BOT_API, {
             method: 'POST',
             body: JSON.stringify({
+                action: 'playlist',
+                playlist_action: 'add_track',
                 user_id: currentUserId,
-                action: 'add_track',
                 playlist_index: plIdx,
                 track: trackToAddToPlaylist
             })
@@ -1353,9 +1355,9 @@ async function renderCollection() {
 async function saveQueueToPlaylist(name, description) {
     if (!selectedGuildId) return;
     try {
-        const resp = await smartFetch('/api/playlist', {
+        const resp = await smartFetch(BOT_API, {
             method: 'POST',
-            body: JSON.stringify({ user_id: currentUserId, guild_id: selectedGuildId, action: 'save_queue', name, description })
+            body: JSON.stringify({ action: 'playlist', playlist_action: 'save_queue', user_id: currentUserId, guild_id: selectedGuildId, name, description })
         });
         const data = await resp.json();
         if (data.status === 'ok') {
@@ -1401,9 +1403,9 @@ function viewPlaylist(idx) {
 async function playPlaylist(idx) {
     if (!selectedGuildId) return;
     try {
-        const resp = await smartFetch('/api/playlist', {
+        const resp = await smartFetch(BOT_API, {
             method: 'POST',
-            body: JSON.stringify({ user_id: currentUserId, guild_id: selectedGuildId, action: 'play_playlist', playlist_index: idx })
+            body: JSON.stringify({ action: 'playlist', playlist_action: 'play_playlist', user_id: currentUserId, guild_id: selectedGuildId, playlist_index: idx })
         });
         const data = await resp.json();
         if (data.status === 'ok') {
@@ -1416,7 +1418,7 @@ async function playPlaylist(idx) {
 async function deletePlaylist(idx) {
     if (!confirm("Delete this playlist?")) return;
     try {
-        await smartFetch('/api/playlist', { method: 'POST', body: JSON.stringify({ user_id: currentUserId, action: 'delete', index: idx }) });
+        await smartFetch(BOT_API, { method: 'POST', body: JSON.stringify({ action: 'playlist', playlist_action: 'delete', user_id: currentUserId, index: idx }) });
         renderCollection();
     } catch (e) { console.error(e); }
 }
@@ -1430,7 +1432,7 @@ async function removeFavorite(uri) {
             updateFavoriteButton();
         }
 
-        await smartFetch('/api/playlist', { method: 'POST', body: JSON.stringify({ user_id: currentUserId, action: 'remove_favorite', uri }) });
+        await smartFetch(BOT_API, { method: 'POST', body: JSON.stringify({ action: 'playlist', playlist_action: 'remove_favorite', user_id: currentUserId, uri }) });
 
         // Secondary control to ensure bot state is updated if it was the currently playing song
         if (window.currentTrack && window.currentTrack.uri === uri) {
