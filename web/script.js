@@ -10,20 +10,18 @@
 const CLIENT_ID = "1469606905948405833";
 
 // SMART API ENDPOINT DETECTION
-// If running locally, connect directly to bot to bypass Cloudflare Worker latency
-const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const API_BASE = IS_LOCAL ? "http://localhost:8000/api/proxy" : "/api/proxy";
+// Since the bot now serves its own static files, we can reliably use relative paths
+const API_BASE = "/api/proxy";
 
 const WORKER_ENDPOINT = API_BASE;
 const GAS_STATS_API = API_BASE;
 const LEGACY_GAS_API = API_BASE;
 
-console.log(`[Core] Environment: ${IS_LOCAL ? 'LOCAL (Direct)' : 'PRODUCTION'}`);
-
 // Auto-detect Redirect URI (Must match Discord Dev Portal exactly)
-const REDIRECT_URI = window.location.hostname.includes("localhost") || window.location.hostname.includes("127.0.0.1")
-    ? window.location.origin + window.location.pathname
-    : "https://cyori.pages.dev/";
+// Allow dynamic domain callback if hosted on bot
+const REDIRECT_URI = window.location.hostname.includes("cyori.pages.dev")
+    ? "https://cyori.pages.dev/"
+    : window.location.origin + window.location.pathname;
 
 // Global State (Initialize from Storage immediately to prevent flicker)
 window.accessToken = localStorage.getItem('access_token');

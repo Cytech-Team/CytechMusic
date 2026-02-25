@@ -56,8 +56,7 @@ class DashboardSystem:
         # Static Files & Pages
         web_path = pathlib.Path(__file__).parent.parent / "web"
         
-        router.add_static("/web", str(web_path), name="static")
-        
+
         async def serve_index(request):
             return web.FileResponse(str(web_path / "index.html"))
         
@@ -98,8 +97,12 @@ class DashboardSystem:
 
         # Start Periodic Broadcaster (Heartbeat)
         self.bot.loop.create_task(self.realtime_broadcaster())
+        
+        # Add static file serving last, so specific routes take precedence
+        router.add_static("/", str(web_path), name="static")
+
         print(f"[CytechX] Dashboard System Embedded & Ready")
-        print(f"[CytechX] Routes loaded: /, /dashboard, /api/proxy")
+        print(f"[CytechX] Routes loaded: /, /dashboard, /api/proxy, and static files")
 
     async def handle_proxy_route(self, request):
         """Delegates to the new APIProxyManager"""

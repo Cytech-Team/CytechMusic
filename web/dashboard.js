@@ -5,14 +5,8 @@
 // ==========================================
 // CONFIGURATION
 // ==========================================
-// --- ZERO-DELAY INTERNAL RUNNER ---
-// ยิงเข้าหาตัวเอง (Pages Function) เพื่อประหยัดเวลาและไม่มี Delay
-const IS_LOCAL_DASH = window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1' ||
-    window.location.protocol === 'file:' ||
-    window.location.hostname === '';
-
-const BOT_API = IS_LOCAL_DASH ? "http://localhost:8000/api/proxy" : "/api/proxy";
+// Since the bot now serves its own static files, we can reliably use relative paths
+const BOT_API = "/api/proxy";
 
 async function smartFetch(endpoint, options = {}) {
     // ยิงเข้าหา Internal Proxy (/api/proxy) เสมอเพื่อแก้ปัญหา CORS และ HTTPS
