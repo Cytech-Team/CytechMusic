@@ -3007,6 +3007,11 @@ input[type="range"].slider::-ms-fill-upper {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    overflow-x: hidden;
+}
+
+.yt-recommended-list {
+    overflow-x: hidden;
 }
 
 .queue-item {
