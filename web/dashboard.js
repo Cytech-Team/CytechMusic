@@ -882,6 +882,12 @@ async function performSearch() {
         const data = await res.json();
 
         if (data.results && data.results.length > 0) {
+            // Reset Modal UI state (In case it was previously showing a Playlist)
+            const modalTitle = document.getElementById('modal-title');
+            if (modalTitle) modalTitle.textContent = "Search Results";
+            const addBtn = document.getElementById('playlist-add-song-btn');
+            if (addBtn) addBtn.style.display = 'none';
+
             // If we have a modal, show results there.
             if (document.getElementById('search-modal')) {
                 renderSearchResultsToModal(data.results);
