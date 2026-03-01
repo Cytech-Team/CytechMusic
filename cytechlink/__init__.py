@@ -1,7 +1,7 @@
-__version__ = "1.0.0"
-__author__ = 'Cytech Development, p.namnarak'
+__version__ = "1.1.0"
+__author__ = "Cytech Development, p.namnarak"
 __license__ = "MIT"
-__copyright__ = "Copyright 2025 (c) Cytech Development, p.namnarak"
+__copyright__ = "Copyright 2026 (c) Cytech Development, p.namnarak"
 
 from .enums import SearchType, LoopType
 from .events import *

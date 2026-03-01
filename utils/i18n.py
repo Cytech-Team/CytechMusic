@@ -1,6 +1,6 @@
-
 import json
 import pathlib
+
 
 class LanguageManager:
     def __init__(self):
@@ -12,7 +12,7 @@ class LanguageManager:
                 "footer_quote": "© 2026 Cytech Team. All rights reserved.",
                 "hello_title": "👋 Hi {author}",
                 "hello_desc": "Hello {author}. I am the Music Bot. Use `/help` or `{prefix}help` to see commands.",
-                "bot_version_footer": "Cyori {version}",
+                "bot_version_footer": "{bot_name} {version}",
                 "prefix_none": "I don't have a bot prefix set.",
                 "error_voice_required": "You must be in a voice channel to use this command!",
                 "error_no_results": "No results were found for that search term",
@@ -109,10 +109,10 @@ class LanguageManager:
                 "loop_mode_off": "Off",
                 "no_track_playing": "No track playing",
                 "settings_description": "Overview of the current configuration for **{guild}**",
-                "botinfo_title": "🤖 Bot Information",
-                "botinfo_version": "📦 Version",
-                "botinfo_stats": "📊 Stats",
-                "botinfo_system": "💻 System",
+                "botinfo_title": "Bot Information",
+                "botinfo_version": "Version",
+                "botinfo_stats": "Stats",
+                "botinfo_system": "System",
                 "stats_guilds": "Guilds: {count}",
                 "stats_users": "Users: {count}",
                 "stats_channels": "Channels: {count}",
@@ -120,10 +120,10 @@ class LanguageManager:
                 "stats_players": "Players",
                 "stats_region": "Region",
                 "stats_uptime": "Uptime",
-                "sys_os": "**OS:** {value}",
-                "sys_cpu": "**CPU:** {value}",
-                "sys_cores": "**Cores:** {physical} Physical / {logical} Logical",
-                "sys_ram": "**RAM:** {used}GB / {total}GB ({percent}%)",
+                "sys_os": "OS: {value}",
+                "sys_cpu": "CPU: {value}",
+                "sys_cores": "Cores: {physical} Physical / {logical} Logical",
+                "sys_ram": "RAM: {used}GB / {total}GB ({percent}%)",
                 # Command Descriptions
                 "cmd_help_desc": "Send help and list commands in this bot",
                 "cmd_viewsettings_desc": "Check the bot settings",
@@ -166,7 +166,6 @@ class LanguageManager:
                 "lyrics_search_title": "Lyrics Search: {query}",
                 "lyrics_not_found": "Couldn't fetch full lyrics automatically.",
                 "lyrics_click_google": "[👉 Click here to search on Google]({url})",
-                
                 # Player Controls
                 "vol_level": "Level: {volume}%",
                 "btn_random": "Random",
@@ -195,7 +194,6 @@ class LanguageManager:
                 # Vote System
                 "vote_already": "⚠️ | You have already voted!",
                 "vote_detected": "🗳️ | Vote detected! ({current}/{required})",
-                
                 # Filters
                 "filter_speed": "🎚️ Speed set to **{value}x**",
                 "filter_karaoke": "🎤 Karaoke enabled (Level: **{level}**, Mono: **{monolevel}**)",
@@ -211,7 +209,6 @@ class LanguageManager:
                 "filter_removed": "✅ Removed effect: **{effect}**",
                 "filter_removed": "✅ Removed effect: **{effect}**",
                 "filter_cleared": "✅ All effects cleared!",
-                
                 # New Commands
                 "fix_voice": "✅ **Fixing voice connection...** (Region: {region})",
                 "fix_voice_error": "❌ Failed to fix voice: {e}",
@@ -219,9 +216,7 @@ class LanguageManager:
                 "history_title": "📜 Music History",
                 "history_empty": "No songs in history.",
                 "queue_cleared": "🗑️ Queue cleared!",
-
                 # Missing Music Keys
-
                 # Missing Music Keys
                 "invalid_song_index": "❌ Invalid song index.",
                 "bot_no_prefix": "I don't have a bot prefix set.",
@@ -230,7 +225,6 @@ class LanguageManager:
                 "settings_sect_perms": "🔐 Permissions",
                 "settings_dj_mode": "🎧 **DJ Mode:**",
                 "settings_vote_mode": "🗳️ **Vote Mode:**",
-                
                 # Premium
                 "premium_only_feature": "❌ This feature requires **Premium** status.",
                 "premium_only_owner": "❌ Only the **Server Owner** can use this feature.",
@@ -274,11 +268,9 @@ class LanguageManager:
                 "payment_status_lifetime": "Lifetime",
                 "payment_days_added": "Days Added",
                 "payment_expires_on": "Expires On",
-                
                 "payment_days_added": "Days Added",
                 "payment_expires_on": "Expires On",
                 "premium_expired_msg": "Your premium membership has expired. Please renew to continue using premium features.",
-                
             },
             "th": {
                 "join_voice_chat_channel": "เข้าห้องเสียง — ใช้ {channel} เพื่อเล่นเพลง",
@@ -287,7 +279,7 @@ class LanguageManager:
                 "footer_quote": "© 2026 Cytech Team สงวนลิขสิทธิ์",
                 "hello_title": "👋 สวัสดี {author}",
                 "hello_desc": "สวัสดี {author} ฉันคือบอทเพลง ใช้ `/help` หรือ `{prefix}help` เพื่อดูคำสั่ง",
-                "bot_version_footer": "Cyori {version}",
+                "bot_version_footer": "{bot_name} {version}",
                 "prefix_none": "ฉันยังไม่มีการตั้งค่า prefix",
                 "error_voice_required": "คุณต้องอยู่ในห้องเสียงเพื่อใช้คำสั่งนี้!",
                 "error_no_results": "ไม่พบผลลัพธ์ที่ค้นหา",
@@ -384,10 +376,10 @@ class LanguageManager:
                 "loop_mode_off": "ปิด",
                 "no_track_playing": "ไม่มีเพลงที่กำลังเล่น",
                 "settings_description": "ภาพรวมการตั้งค่าปัจจุบันสำหรับ **{guild}**",
-                "botinfo_title": "🤖 ข้อมูลบอท",
-                "botinfo_version": "📦 เวอร์ชัน",
-                "botinfo_stats": "📊 สถิติ",
-                "botinfo_system": "💻 ระบบ",
+                "botinfo_title": "ข้อมูลบอท",
+                "botinfo_version": "เวอร์ชัน",
+                "botinfo_stats": "สถิติ",
+                "botinfo_system": "ระบบ",
                 "stats_guilds": "เซิร์ฟเวอร์: {count}",
                 "stats_users": "ผู้ใช้: {count}",
                 "stats_channels": "ช่อง: {count}",
@@ -395,10 +387,10 @@ class LanguageManager:
                 "stats_players": "ผู้เล่น",
                 "stats_region": "ภูมิภาค",
                 "stats_uptime": "ออนไลน์มานาน",
-                "sys_os": "**ระบบปฏิบัติการ:** {value}",
-                "sys_cpu": "**ซีพียู:** {value}",
-                "sys_cores": "**คอร์:** {physical} (จริง) / {logical} (จำลอง)",
-                "sys_ram": "**แรม:** {used}GB / {total}GB ({percent}%)",
+                "sys_os": "ระบบปฏิบัติการ: {value}",
+                "sys_cpu": "ซีพียู: {value}",
+                "sys_cores": "คอร์: {physical} (จริง) / {logical} (จำลอง)",
+                "sys_ram": "แรม: {used}GB / {total}GB ({percent}%)",
                 # Command Descriptions
                 "cmd_help_desc": "ส่งคำสั่งช่วยเหลือและรายการคำสั่งในบอทนี้",
                 "cmd_viewsettings_desc": "ตรวจสอบการตั้งค่าบอท",
@@ -441,7 +433,6 @@ class LanguageManager:
                 "lyrics_search_title": "ค้นหาเนื้อเพลง: {query}",
                 "lyrics_not_found": "ไม่สามารถดึงเนื้อเพลงโดยอัตโนมัติได้",
                 "lyrics_click_google": "[👉 คลิกที่นี่เพื่อค้นหาบน Google]({url})",
-
                 # Player Controls
                 "vol_level": "ระดับ: {volume}%",
                 "btn_random": "สุ่มเพลง",
@@ -470,7 +461,6 @@ class LanguageManager:
                 # Vote System
                 "vote_already": "⚠️ | คุณได้โหวตไปแล้ว!",
                 "vote_detected": "🗳️ | ตรวจพบการโหวต! ({current}/{required})",
-
                 # Filters
                 "filter_speed": "🎚️ ตั้งค่าความเร็วเป็น **{value}x**",
                 "filter_karaoke": "🎤 เปิดโหมดคาราโอเกะ (ระดับ: **{level}**, Mono: **{monolevel}**)",
@@ -486,7 +476,6 @@ class LanguageManager:
                 "filter_removed": "✅ ลบเอฟเฟกต์: **{effect}**",
                 "filter_removed": "✅ ลบเอฟเฟกต์: **{effect}**",
                 "filter_cleared": "✅ ล้างเอฟเฟกต์ทั้งหมดแล้ว!",
-
                 # New Commands
                 "fix_voice": "✅ **กำลังแก้ไขการเชื่อมต่อเสียง...** (ภูมิภาค: {region})",
                 "fix_voice_error": "❌ แก้ไขเสียงล้มเหลว: {e}",
@@ -494,7 +483,6 @@ class LanguageManager:
                 "history_title": "📜 ประวัติเพลง",
                 "history_empty": "ไม่มีเพลงในประวัติ",
                 "queue_cleared": "🗑️ ล้างคิวเพลงทั้งหมดแล้ว!",
-
                 # Missing Music Keys
                 "invalid_song_index": "❌ ลำดับเพลงไม่ถูกต้อง",
                 "bot_no_prefix": "ฉันยังไม่มีการตั้งค่า prefix",
@@ -503,7 +491,6 @@ class LanguageManager:
                 "settings_sect_perms": "🔐 สิทธิ์การใช้งาน",
                 "settings_dj_mode": "🎧 **โหมด DJ:**",
                 "settings_vote_mode": "🗳️ **โหมดโหวต:**",
-
                 # Premium
                 "premium_only_feature": "❌ ฟีเจอร์นี้สำหรับผู้ใช้ **Premium** เท่านั้น",
                 "premium_only_owner": "❌ เฉพาะ **เจ้าของเซิร์ฟเวอร์** เท่านั้นที่สามารถใช้ฟีเจอร์นี้ได้",
@@ -549,7 +536,7 @@ class LanguageManager:
                 "payment_expires_on": "หมดอายุวันที่",
                 "premium_expired_msg": "สถานะพรีเมียมของคุณหมดอายุแล้ว โปรดต่ออายุเพื่อใช้งานฟีเจอร์พรีเมียมต่อ",
                 "premium_badge": " | พรีเมียม ✨",
-            }
+            },
         }
         # Fallback to English
         self.default_lang = "en"
@@ -562,5 +549,6 @@ class LanguageManager:
             return text.format(**kwargs)
         except Exception:
             return text
+
 
 i18n = LanguageManager()

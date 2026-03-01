@@ -3,29 +3,22 @@ from math import ceil
 from asyncio import sleep
 import asyncio
 import traceback
-from typing import (
-    Any,
-    Dict,
-    Optional,
-    Union,
-    List
-)
+from typing import Any, Dict, Optional, Union, List
 import discord
-from discord import (
-    Guild,
-    VoiceChannel,
-    VoiceProtocol,
-    Member,
-    ui,
-    Message,
-    Interaction
-)
+from discord import Guild, VoiceChannel, VoiceProtocol, Member, ui, Message, Interaction
 from bot import Cyori
 from discord.ext import commands
 from . import events
 from .enums import SearchType, LoopType
 from .events import CytechlinkEvent, TrackEndEvent, TrackStartEvent
-from .exceptions import CytechlinkException, FilterInvalidArgument, TrackInvalidPosition, TrackLoadError, FilterTagAlreadyInUse, DuplicateTrack
+from .exceptions import (
+    CytechlinkException,
+    FilterInvalidArgument,
+    TrackInvalidPosition,
+    TrackLoadError,
+    FilterTagAlreadyInUse,
+    DuplicateTrack,
+)
 from .filters import Filter, Filters
 from .objects import Track, Playlist, ctime
 from .pool import Node, NodePool
@@ -34,15 +27,27 @@ from .formatter import encode, decode
 from random import shuffle, choice
 from utils.config import WARNING_SOUND_URL_TH, WARNING_SOUND_URL_EN, OWNER_IDS
 from utils.music_ui import (
-    safe_get_guild_data, safe_delete, safe_fetch_message, 
-    safe_text, loop_mode_to_str, loop_emoji_safe, 
-    MusicControls, JukeboxIdleView
+    safe_get_guild_data,
+    safe_delete,
+    safe_fetch_message,
+    safe_text,
+    loop_mode_to_str,
+    loop_emoji_safe,
+    MusicControls,
+    JukeboxIdleView,
 )
 
-async def connect_channel(ctx: Union[commands.Context, Interaction], channel: VoiceChannel = None):
+
+async def connect_channel(
+    ctx: Union[commands.Context, Interaction], channel: VoiceChannel = None
+):
     try:
-        channel = channel or ctx.author.voice.channel if isinstance(ctx, commands.Context) else ctx.user.voice.channel
-    except:
+        channel = (
+            channel or ctx.author.voice.channel
+            if isinstance(ctx, commands.Context)
+            else ctx.user.voice.channel
+        )
+    except Exception:
         raise CytechlinkException("")
 
     check = channel.permissions_for(ctx.guild.me)
@@ -51,18 +56,19 @@ async def connect_channel(ctx: Union[commands.Context, Interaction], channel: Vo
 
     player: Player = await channel.connect(
         cls=Player(
-            ctx.bot if isinstance(ctx, commands.Context) else ctx.client,
-            channel, ctx
-        ))
+            ctx.bot if isinstance(ctx, commands.Context) else ctx.client, channel, ctx
+        )
+    )
 
     return player
 
+
 class Player(VoiceProtocol):
     """The base player class for Cytechlink.
-       In order to initiate a player, you must pass it in as a cls when you connect to a channel.
-       i.e: ```py
-       await ctx.author.voice.channel.connect(cls=Cytechlink.Player)
-       ```
+    In order to initiate a player, you must pass it in as a cls when you connect to a channel.
+    i.e: ```py
+    await ctx.author.voice.channel.connect(cls=Cytechlink.Player)
+    ```
     """
 
     def __call__(self, client: Cyori, channel: VoiceChannel):
@@ -72,10 +78,10 @@ class Player(VoiceProtocol):
         return self
 
     def __init__(
-        self, 
-        client: Optional[Cyori] = None, 
-        channel: Optional[VoiceChannel] = None, 
-        ctx: Union[commands.Context, Interaction] = None
+        self,
+        client: Optional[Cyori] = None,
+        channel: Optional[VoiceChannel] = None,
+        ctx: Union[commands.Context, Interaction] = None,
     ):
         self.client: Cyori = client
         self._bot: Cyori = client
@@ -83,7 +89,7 @@ class Player(VoiceProtocol):
         self.dj: Optional[Member] = None
         if ctx:
             # Use getattr for maximum resilience
-            self.dj = getattr(ctx, 'user', getattr(ctx, 'author', None))
+            self.dj = getattr(ctx, "user", getattr(ctx, "author", None))
         self.channel: VoiceChannel = channel
         self._guild = channel.guild if channel else None
         self.joinTime: float = round(time.time())
@@ -115,72 +121,83 @@ class Player(VoiceProtocol):
         self.shuffle_votes = set()
         self.stop_votes = set()
         self.is_closing: bool = False
-        self.last_message_update = 0 # Rate limit handling
+        self.last_message_update = 0  # Rate limit handling
         self.update_pending: bool = False
-        
+
         # Auto-Load Queue (Persistent)
         if self._guild:
-             asyncio.create_task(self.load_queue())
+            asyncio.create_task(self.load_queue())
 
     async def save_queue(self):
         """Save current queue to MongoDB for persistence."""
-        if not self.guild: return
-        
+        if not self.guild:
+            return
+
         # Serialize Queue
         queue_data = []
         for track in self.queue:
             encoded = track.track_id
-            if not encoded: continue
-            
-            queue_data.append({
-                "encoded": encoded,
-                "info": { 
-                    "title": track.title,
-                    "author": track.author,
-                    "uri": track.uri,
-                    "identifier": track.identifier,
-                    "length": track.length,
-                    "is_stream": track.is_stream,
+            if not encoded:
+                continue
+
+            queue_data.append(
+                {
+                    "encoded": encoded,
+                    "info": {
+                        "title": track.title,
+                        "author": track.author,
+                        "uri": track.uri,
+                        "identifier": track.identifier,
+                        "length": track.length,
+                        "is_stream": track.is_stream,
+                    },
                 }
-            })
-            if len(queue_data) > 30: break # Cap at 30
-        
+            )
+            if len(queue_data) > 30:
+                break  # Cap at 30
+
         try:
             guild_id_str = str(self.guild.id)
-            await self.bot.db_manager.update_guild(guild_id_str, {"saved_queue": queue_data, "updated_at": time.time()})
+            await self.bot.db_manager.update_guild(
+                guild_id_str, {"saved_queue": queue_data, "updated_at": time.time()}
+            )
         except Exception as e:
             print(f"[Player] Save Queue Error: {e}")
 
     async def load_queue(self):
         """Load saved queue from MongoDB."""
         try:
-             await asyncio.sleep(2) # Wait for connection stabilization
-             if not self.guild: return
-             
-             data = await self.bot.db_manager.get_guild(self.guild.id)
-             if data and "saved_queue" in data:
-                 saved = data["saved_queue"]
-                 if not saved: return
-                 
-                 tracks = []
-                 for item in saved:
-                     try:
-                         encoded = item.get("encoded")
-                         info = item.get("info", {})
-                         if encoded:
-                             t_info = info
-                             if not t_info:
-                                 t_info = decode(encoded)
-                                 
-                             track = Track(encoded, t_info, requester=self.bot.user)
-                             tracks.append(track)
-                     except Exception as e:
-                         pass
-                 
-                 if tracks:
-                     if self.queue.is_empty:
-                         self.queue.extend(tracks)
-                         print(f"[Player] Loaded {len(tracks)} tracks from saved queue for {self.guild.name}")
+            await asyncio.sleep(2)  # Wait for connection stabilization
+            if not self.guild:
+                return
+
+            data = await self.bot.db_manager.get_guild(self.guild.id)
+            if data and "saved_queue" in data:
+                saved = data["saved_queue"]
+                if not saved:
+                    return
+
+                tracks = []
+                for item in saved:
+                    try:
+                        encoded = item.get("encoded")
+                        info = item.get("info", {})
+                        if encoded:
+                            t_info = info
+                            if not t_info:
+                                t_info = decode(encoded)
+
+                            track = Track(encoded, t_info, requester=self.bot.user)
+                            tracks.append(track)
+                    except Exception as e:
+                        pass
+
+                if tracks:
+                    if self.queue.is_empty:
+                        self.queue.extend(tracks)
+                        print(
+                            f"[Player] Loaded {len(tracks)} tracks from saved queue for {self.guild.name}"
+                        )
         except Exception as e:
             print(f"[Player] Load Queue Error: {e}")
 
@@ -205,8 +222,8 @@ class Player(VoiceProtocol):
         position = self._last_position + difference
 
         if current.length is None:
-             # If length is None (e.g. some streams), we can't cap it.
-             return self._last_position + difference
+            # If length is None (e.g. some streams), we can't cap it.
+            return self._last_position + difference
 
         if position > current.length:
             return 0
@@ -261,7 +278,7 @@ class Player(VoiceProtocol):
     @property
     def is_dead(self) -> bool:
         """Returns a bool representing whether the player is dead or not.
-           A player is considered dead if it has been destroyed and removed from stored players.
+        A player is considered dead if it has been destroyed and removed from stored players.
         """
         return self.guild.id not in self._node._players
 
@@ -269,34 +286,37 @@ class Player(VoiceProtocol):
     def ping(self) -> float:
         return round(self._ping / 1000, 2)
 
-
     def required(self, leave=False):
         human_members = [m for m in self.channel.members if not m.bot]
         # Calculate roughly 40-50% of listeners
-        required = ceil((len(human_members) - 1) / 2.5) if leave else ceil(len(human_members) / 2.5)
-        
+        required = (
+            ceil((len(human_members) - 1) / 2.5)
+            if leave
+            else ceil(len(human_members) / 2.5)
+        )
+
         if leave:
-             if len(human_members) == 3:
-                 required = 2
+            if len(human_members) == 3:
+                required = 2
 
         return max(required, 1)
-    
+
     async def is_privileged(self, user: Member, strict: bool = False) -> bool:
         """
         Check if user has permission to control the bot.
         strict=True: Requires Admin/DJ Role/ManageGuild regardless of other conditions. (For dangerous commands like 24/7)
-        strict=False: 
+        strict=False:
             - If user NOT in VC: Requires strict perms.
             - If user IN VC:
                 - If DJ Mode is OFF: Allowed.
                 - If DJ Mode is ON: Requires strict perms OR Alone in VC.
         """
         if user.id in OWNER_IDS:
-             return True
-             
+            return True
+
         # Check Bot Owner (Application Owner)
-        if not hasattr(self.bot, 'app_info'):
-             self.bot.app_info = await self.bot.application_info()
+        if not hasattr(self.bot, "app_info"):
+            self.bot.app_info = await self.bot.application_info()
         if user.id == self.bot.app_info.owner.id:
             return True
 
@@ -304,7 +324,7 @@ class Player(VoiceProtocol):
         is_strict = False
         if user.guild_permissions.administrator or user.guild_permissions.manage_guild:
             is_strict = True
-        
+
         # Check DJ Role
         if not is_strict:
             try:
@@ -314,12 +334,12 @@ class Player(VoiceProtocol):
                     role = self.guild.get_role(dj_role_id)
                     if role and role in user.roles:
                         is_strict = True
-            except:
+            except Exception:
                 pass
 
         if is_strict:
             return True
-        
+
         # If strict check is required, return False here
         if strict:
             return False
@@ -328,23 +348,23 @@ class Player(VoiceProtocol):
         # MUST be in same voice channel
         if user not in self.channel.members:
             return False
-            
+
         # Check DJ Mode
         try:
             guild_data = await safe_get_guild_data(str(self.guild.id))
             dj_mode = guild_data.get("dj_mode", False)
             if not dj_mode:
-                return True # DJ Mode OFF -> Everyone in VC is allowed
-        except:
-             return True # Default to allowed if error
-        
+                return True  # DJ Mode OFF -> Everyone in VC is allowed
+        except Exception:
+            return True  # Default to allowed if error
+
         # If DJ Mode is ON, check if user is ALONE in VC (excluding bots)
         human_members = [m for m in self.channel.members if not m.bot]
         if len(human_members) == 1 and human_members[0].id == user.id:
             return True
 
         return False
-    
+
     async def _update_state(self, data: dict) -> None:
         state: dict = data.get("state")
         self._last_update = time.time() * 1000
@@ -357,12 +377,15 @@ class Player(VoiceProtocol):
             return
 
         await self._node.send(
-            method=0, guild_id=self._guild.id,
-            data = {"voice": {
-                "token": voice_data['event']['token'],
-                "endpoint": voice_data['event']['endpoint'],
-                "sessionId": voice_data['sessionId'],
-            }}
+            method=0,
+            guild_id=self._guild.id,
+            data={
+                "voice": {
+                    "token": voice_data["event"]["token"],
+                    "endpoint": voice_data["event"]["endpoint"],
+                    "sessionId": voice_data["sessionId"],
+                }
+            },
         )
 
     async def on_voice_server_update(self, data: dict):
@@ -396,7 +419,9 @@ class Player(VoiceProtocol):
         if isinstance(event, TrackStartEvent):
             self._ending_track = self._current
 
-    async def update_controller(self, track: Optional[Track] = None, force: bool = False):
+    async def update_controller(
+        self, track: Optional[Track] = None, force: bool = False
+    ):
         # Rate Limit Check (5 seconds) except for forced updates (Interaction/Dashboard)
         if not force and time.time() - self.last_message_update < 5:
             self.update_pending = True
@@ -407,23 +432,30 @@ class Player(VoiceProtocol):
         try:
             # ดึง config ครั้งเดียว
             guild_data = await safe_get_guild_data(str(self.guild.id))
-            
+
             # Sanitize Premium (Owner Check)
             if guild_data:
-                is_owner_prem = await self.bot.is_premium(self.guild.owner_id, guild_id=self.guild.id)
+                is_owner_prem = await self.bot.is_premium(
+                    self.guild.owner_id, guild_id=self.guild.id
+                )
                 if not is_owner_prem:
                     gd_copy = guild_data.copy()
-                    if "premium_image" in gd_copy: del gd_copy["premium_image"]
+                    if "premium_image" in gd_copy:
+                        del gd_copy["premium_image"]
                     guild_data = gd_copy
 
             # Check Requester Premium (Async)
             requester = getattr(self.current, "requester", None)
-            is_req_prem = await self.bot.is_premium(requester.id, guild_id=self.guild.id) if requester else False
+            is_req_prem = (
+                await self.bot.is_premium(requester.id, guild_id=self.guild.id)
+                if requester
+                else False
+            )
 
             channel_id = guild_data.get("channel_id")
             queue_embed_id = guild_data.get("queue_embed_id")
             play_embed_id = guild_data.get("play_embed_id")
-            
+
             # Fetch lang
             lang = await self.bot.get_lang(self.guild.id)
 
@@ -438,25 +470,50 @@ class Player(VoiceProtocol):
 
             if current_track:
                 # สร้าง Now Playing Embed
-                loop_mode_str = loop_mode_to_str(getattr(self.queue._repeat, "mode", None) if hasattr(self.queue, "_repeat") else None)
+                loop_mode_str = loop_mode_to_str(
+                    getattr(self.queue._repeat, "mode", None)
+                    if hasattr(self.queue, "_repeat")
+                    else None
+                )
                 loop_emoji_part = loop_emoji_safe(loop_mode_str)
-                
+
                 # Check status
                 is_247 = guild_data.get("24/7", False)
                 is_autoplay = guild_data.get("autoplay", False)
-                
-                status_247 = f"{self.bot.i18n.get('enabled', lang)}" if is_247 else f"{self.bot.i18n.get('disabled', lang)}"
-                status_autoplay = f"{self.bot.i18n.get('enabled', lang)}" if is_autoplay else f"{self.bot.i18n.get('disabled', lang)}"
+
+                status_247 = (
+                    f"{self.bot.i18n.get('enabled', lang)}"
+                    if is_247
+                    else f"{self.bot.i18n.get('disabled', lang)}"
+                )
+                status_autoplay = (
+                    f"{self.bot.i18n.get('enabled', lang)}"
+                    if is_autoplay
+                    else f"{self.bot.i18n.get('disabled', lang)}"
+                )
                 is_dj_mode = guild_data.get("dj_mode", False)
-                status_dj_mode = f"{self.bot.i18n.get('enabled', lang)}" if is_dj_mode else f"{self.bot.i18n.get('disabled', lang)}"
+                status_dj_mode = (
+                    f"{self.bot.i18n.get('enabled', lang)}"
+                    if is_dj_mode
+                    else f"{self.bot.i18n.get('disabled', lang)}"
+                )
 
                 # Check if it's warning sound
-                is_warning = getattr(current_track, "uri", "") == WARNING_SOUND_URL_TH or getattr(current_track, "uri", "") == WARNING_SOUND_URL_EN 
+                is_warning = (
+                    getattr(current_track, "uri", "") == WARNING_SOUND_URL_TH
+                    or getattr(current_track, "uri", "") == WARNING_SOUND_URL_EN
+                )
 
                 if is_warning:
                     # Hide warning track, show "Waiting..." state
-                    embed = discord.Embed(description=self.bot.i18n.get("no_track_playing", lang), color=0xFFD700)
-                    embed.set_author(name=self.bot.i18n.get("now_playing_title", lang), icon_url=self.bot.user.display_avatar.url)
+                    embed = discord.Embed(
+                        description=self.bot.i18n.get("no_track_playing", lang),
+                        color=0xFFD700,
+                    )
+                    embed.set_author(
+                        name=self.bot.i18n.get("now_playing_title", lang),
+                        icon_url=self.bot.user.display_avatar.url,
+                    )
                     embed.set_footer(text=self.bot.i18n.get("waiting_for_music", lang))
                     view = None
                 else:
@@ -464,42 +521,45 @@ class Player(VoiceProtocol):
                     title_text = self.bot.i18n.get("now_playing_title", lang)
                     if is_req_prem:
                         from utils.luxury import premium_badge
+
                         title_text += premium_badge(lang)
 
                     if getattr(current_track, "is_stream", False):
-                         embed = discord.Embed(
+                        embed = discord.Embed(
                             title=f"🔴 **LIVE STREAM** {safe_text(current_track.title)}",
                             url=safe_text(current_track.uri),
-                            color=0xFFD700
-                         )
+                            color=0xFFD700,
+                        )
                     else:
                         embed = discord.Embed(
                             title=f"{safe_text(current_track.title)}",
                             url=safe_text(current_track.uri),
-                            color=0xFFD700
+                            color=0xFFD700,
                         )
-                    
+
                     # Set Author (Now Playing + Premium Badge)
-                    embed.set_author(name=title_text, icon_url=self.bot.user.display_avatar.url)
-                    
+                    embed.set_author(
+                        name=title_text, icon_url=self.bot.user.display_avatar.url
+                    )
+
                     # Better Layout with Spacing
                     from utils.luxury import luxury_line
-                    
+
                     # Define Loop Values
                     loop_map = {
                         "Track": self.bot.i18n.get("loop_mode_track", lang),
                         "Queue": self.bot.i18n.get("loop_mode_queue", lang),
-                        "Off": self.bot.i18n.get("loop_mode_off", lang)
+                        "Off": self.bot.i18n.get("loop_mode_off", lang),
                     }
 
                     dur_ms = getattr(current_track, "length", 0)
                     pos_ms = self.position
                     is_live = getattr(current_track, "is_stream", False)
                     dur_str = ctime(dur_ms) if not is_live else "🔴 LIVE"
-                    
+
                     # Calculate End Time for Discord Dynamic Timestamp
                     end_timestamp = int(time.time() + ((dur_ms - pos_ms) / 1000))
-                    
+
                     # Format: 01:23 / 04:30 (Ends in 2 minutes)
                     if is_live:
                         time_info = f"`LIVE STREAM` — (เริ่มเล่นเมื่อ <t:{int(time.time() - (pos_ms / 1000))}:R>)"
@@ -513,10 +573,8 @@ class Player(VoiceProtocol):
                             f"👤 **{self.bot.i18n.get('song_by', lang)}**: `{safe_text(getattr(current_track, 'author', 'Unknown'))}`\n\n"
                             f"🔴 **LIVE STREAM**\n"
                             f"{time_info}\n\n"
-                            
                             f"🔊 **{self.bot.i18n.get('song_volume', lang)}**: `{getattr(self, 'volume', 100)}%`  •  🔁 `{loop_map.get(loop_mode_str, loop_mode_str)}` {loop_emoji_part}\n"
                             f"⌛ **{self.bot.i18n.get('247_label', lang)}**: `{status_247}`  •  📻 **Auto**: `{status_autoplay}`\n"
-                            
                             f"🎧 **DJ Mode**: `{status_dj_mode}`\n"
                             f"{luxury_line()}"
                         )
@@ -525,10 +583,8 @@ class Player(VoiceProtocol):
                             f"👤 **{self.bot.i18n.get('song_by', lang)}**: `{safe_text(getattr(current_track, 'author', 'Unknown'))}`\n\n"
                             f"✨ **Status:** `{self.bot.i18n.get('playing', lang)}`\n"
                             f"{time_info}\n\n"
-                            
                             f"🔊 **{self.bot.i18n.get('song_volume', lang)}**: `{getattr(self, 'volume', 100)}%`  •  🔁 `{loop_map.get(loop_mode_str, loop_mode_str)}` {loop_emoji_part}\n"
                             f"⌛ **{self.bot.i18n.get('247_label', lang)}**: `{status_247}`  •  📻 **Auto**: `{status_autoplay}`\n"
-                            
                             f"🎧 **DJ Mode**: `{status_dj_mode}`\n"
                             f"{luxury_line()}"
                         )
@@ -536,16 +592,20 @@ class Player(VoiceProtocol):
                     if getattr(current_track, "requester", None):
                         req = current_track.requester
                         embed.set_footer(
-                            text=self.bot.i18n.get("requested_by", lang, user=safe_text(req.display_name or str(req))),
-                            icon_url=getattr(req.display_avatar, "url", None)
+                            text=self.bot.i18n.get(
+                                "requested_by",
+                                lang,
+                                user=safe_text(req.display_name or str(req)),
+                            ),
+                            icon_url=getattr(req.display_avatar, "url", None),
                         )
                     if getattr(current_track, "thumbnail", None):
                         embed.set_image(url=safe_text(current_track.thumbnail))
-                    
+
                     # Premium Image (Thumbnail) -> Only if Owner Premium
                     if guild_data and guild_data.get("premium_image"):
-                         embed.set_thumbnail(url=guild_data.get("premium_image"))
-    
+                        embed.set_thumbnail(url=guild_data.get("premium_image"))
+
                     # ปุ่ม
                     view = MusicControls(self, current_track.requester)
             else:
@@ -554,68 +614,89 @@ class Player(VoiceProtocol):
                 view = JukeboxIdleView(self, bot=self.bot, lang=lang)
 
             # ───────────────────────────────
-            # 2. อัปเดต play_embed (ถาวร)
+            # 2. Resolve Setup Channel ONCE (Performance Update)
             # ───────────────────────────────
-            if channel_id and play_embed_id:
+            channel = None
+            if channel_id:
+                channel = self.bot.get_channel(channel_id)
+                if not channel:
+                    try:
+                        channel = await self.bot.fetch_channel(channel_id)
+                    except discord.NotFound:
+                        # 🛡️ Auto-cleanup dirty db state if channel was manually deleted
+                        await self.bot.db_manager.unset_guild(
+                            self.guild.id,
+                            ["channel_id", "play_embed_id", "queue_embed_id"],
+                        )
+                        channel_id = None
+                        play_embed_id = None
+                        queue_embed_id = None
+
+            # ───────────────────────────────
+            # 3. อัปเดต play_embed (ถาวร)
+            # ───────────────────────────────
+            if channel and play_embed_id:
                 try:
-                    channel = self.bot.get_channel(channel_id) or await self.bot.fetch_channel(channel_id)
-                    if channel:
-                        # Try to fetch full message first (USER REQUEST)
-                        try:
-                            play_msg = await channel.fetch_message(play_embed_id)
-                            await play_msg.edit(embed=embed, view=view)
-                        except discord.NotFound:
-                             # Message deleted manually, send new one
-                            new_msg = await channel.send(embed=embed, view=view)
-                            await self.bot.db_manager.update_guild(self.guild.id, {"play_embed_id": new_msg.id})
-                        except (discord.HTTPException, discord.Forbidden):
-                            # Rate limited or other issue, try creating new one if really broken
-                            # But per request, mainly relying on fetch. 
-                            # If older than 1 hr error persists, we MUST send new one eventually.
-                            # For now, let's allow fallback to send new if fetch/edit fails critically.
-                            pass
-                except:
+                    # Try to fetch full message first (USER REQUEST)
+                    try:
+                        play_msg = await channel.fetch_message(play_embed_id)
+                        await play_msg.edit(embed=embed, view=view)
+                    except discord.NotFound:
+                        # Message deleted manually, send new one
+                        new_msg = await channel.send(embed=embed, view=view)
+                        await self.bot.db_manager.update_guild(
+                            self.guild.id, {"play_embed_id": new_msg.id}
+                        )
+                    except (discord.HTTPException, discord.Forbidden):
+                        pass
+                except Exception as e:
                     pass
 
             # ───────────────────────────────
-            # 3. อัปเดต queue_embed (ถาวร)
+            # 4. อัปเดต queue_embed (ถาวร)
             # ───────────────────────────────
-            if channel_id and queue_embed_id:
+            if channel and queue_embed_id:
                 try:
-                    channel = self.bot.get_channel(channel_id) or await self.bot.fetch_channel(channel_id)
-                    if channel:
-                        tracks = list(self.queue.tracks()) if hasattr(self.queue, "tracks") else []
-                        
-                        if tracks:
-                            queue_embed = discord.Embed(
-                                title=f"{self.bot.i18n.get("queue_title", lang)} • {len(tracks)} track{'s' if len(tracks) != 1 else ''}",
-                                color=0xFFD700
+                    tracks = (
+                        list(self.queue.tracks())
+                        if hasattr(self.queue, "tracks")
+                        else []
+                    )
+
+                    if tracks:
+                        queue_embed = discord.Embed(
+                            title=f"{self.bot.i18n.get('queue_title', lang)} • {len(tracks)} track{'s' if len(tracks) != 1 else ''}",
+                            color=0xFFD700,
+                        )
+                        for i, t in enumerate(tracks[:10], 1):
+                            title = safe_text(getattr(t, "title", "Unknown Track"))
+                            uri = safe_text(getattr(t, "uri", "")) or "#"
+                            queue_embed.add_field(
+                                name=f"{i}.", value=f"[{title}]({uri})", inline=False
                             )
-                            for i, t in enumerate(tracks[:10], 1):
-                                title = safe_text(getattr(t, "title", "Unknown Track"))
-                                uri = safe_text(getattr(t, "uri", "")) or "#"
-                                queue_embed.add_field(
-                                    name=f"{i}.",
-                                    value=f"[{title}]({uri})",
-                                    inline=False
-                                )
-                            if len(tracks) > 10:
-                                queue_embed.set_footer(text=f"And {len(tracks) - 10} more track{'s' if len(tracks) - 10 != 1 else ''}...")
-                        else:
-                            queue_embed = discord.Embed(
-                                title=self.bot.i18n.get("queue_title", lang),
-                                description=self.bot.i18n.get("no_queue", lang),
-                                color=0xFFD700
+                        if len(tracks) > 10:
+                            queue_embed.set_footer(
+                                text=f"And {len(tracks) - 10} more track{'s' if len(tracks) - 10 != 1 else ''}..."
                             )
-                        try:
-                            queue_msg = await channel.fetch_message(queue_embed_id)
-                            await queue_msg.edit(embed=queue_embed, view=None)
-                        except discord.NotFound:
-                             # Message deleted manually, send new one
-                            new_q_msg = await channel.send(embed=queue_embed)
-                            await self.bot.db_manager.update_guild(self.guild.id, {"queue_embed_id": new_q_msg.id})
-                        except: pass
-                except: pass  
+                    else:
+                        queue_embed = discord.Embed(
+                            title=self.bot.i18n.get("queue_title", lang),
+                            description=self.bot.i18n.get("no_queue", lang),
+                            color=0xFFD700,
+                        )
+                    try:
+                        queue_msg = await channel.fetch_message(queue_embed_id)
+                        await queue_msg.edit(embed=queue_embed, view=None)
+                    except discord.NotFound:
+                        # Message deleted manually, send new one
+                        new_q_msg = await channel.send(embed=queue_embed)
+                        await self.bot.db_manager.update_guild(
+                            self.guild.id, {"queue_embed_id": new_q_msg.id}
+                        )
+                    except Exception:
+                        pass
+                except Exception:
+                    pass
             # ───────────────────────────────
             # 4. ลบ + ส่ง controller ใหม่
             # ───────────────────────────────
@@ -625,7 +706,7 @@ class Player(VoiceProtocol):
             if self.controller:
                 # Don't touch if it IS the setup message (play_embed_id)
                 if self.controller.id == play_embed_id:
-                     pass
+                    pass
                 else:
                     try:
                         # ลบเมสเสจเก่าแล้วส่งใหม่ตามคำขอ (USER REQUEST)
@@ -633,9 +714,9 @@ class Player(VoiceProtocol):
                         channel = self.controller.channel
                         try:
                             await self.controller.delete()
-                        except:
+                        except Exception:
                             pass
-                        
+
                         if embed and current_track:
                             self.controller = await channel.send(embed=embed, view=view)
                         else:
@@ -648,19 +729,23 @@ class Player(VoiceProtocol):
                                 target = None
                                 if hasattr(self, "context") and self.context:
                                     target = self.context.channel
-                                
+
                                 if target:
-                                    self.controller = await target.send(embed=embed, view=view)
+                                    self.controller = await target.send(
+                                        embed=embed, view=view
+                                    )
                             else:
                                 self.controller = None
-                        except:
+                        except Exception:
                             self.controller = None
                     except discord.Forbidden:
                         self.controller = None
                     except Exception as e:
-                        print(f"Error resending controller in {self.guild.name} ({self.guild.id}): {e}")
+                        print(
+                            f"Error resending controller in {self.guild.name} ({self.guild.id}): {e}"
+                        )
                         self.controller = None
-            
+
             # ───────────────────────────────
             # 5. Broadcast to Dashboard
             # ───────────────────────────────
@@ -668,10 +753,14 @@ class Player(VoiceProtocol):
                 # Embedded Dashboard Broadcast (CytechX Core)
                 if hasattr(self.bot, "broadcast_guild"):
                     self.bot.loop.create_task(self.bot.broadcast_guild(self.guild.id))
-            except: pass
+            except Exception:
+                pass
 
         except Exception as e:
-            print(f"Error in update controller for {self.guild.name} ({self.guild.id}):", e)
+            print(
+                f"Error in update controller for {self.guild.name} ({self.guild.id}):",
+                e,
+            )
             traceback.print_exc()
 
     async def do_next(self) -> None:
@@ -693,7 +782,14 @@ class Player(VoiceProtocol):
                     print(f"Failed to connect voice: {e}")
 
             # reset votes
-            for v in ("pause_votes","resume_votes","skip_votes","previous_votes","shuffle_votes","stop_votes"):
+            for v in (
+                "pause_votes",
+                "resume_votes",
+                "skip_votes",
+                "previous_votes",
+                "shuffle_votes",
+                "stop_votes",
+            ):
                 if hasattr(self, v):
                     getattr(self, v).clear()
 
@@ -722,60 +818,74 @@ class Player(VoiceProtocol):
                 if mode_24_7:
                     # loop waiting for new items or attempt to re-enter do_next
                     return
-                
+
                 # ---------------- WARNING SOUND & GRACE PERIOD (Moved to do_next) ----------------
                 try:
                     # Check flag from previous run
                     warning_just_played = getattr(self, "warning_playing", False)
                     # Reset flag
-                    self.warning_playing = False 
+                    self.warning_playing = False
 
                     # If warning NOT just played, and queue is empty, attempt to play warning
-                    if not warning_just_played and self.queue.is_empty and not self.is_playing:
+                    if (
+                        not warning_just_played
+                        and self.queue.is_empty
+                        and not self.is_playing
+                    ):
                         # Interrupt Check 1
-                        if not self.queue.is_empty: return
+                        if not self.queue.is_empty:
+                            return
 
                         # CACHING LOGIC
                         warning_track = getattr(self, "warning_track_cache", None)
                         if not warning_track:
                             # Determine Warning URL based on Lang
                             lang = await self.bot.get_lang(self.guild.id)
-                            warn_url = WARNING_SOUND_URL_TH if lang == "th" else WARNING_SOUND_URL_EN
+                            warn_url = (
+                                WARNING_SOUND_URL_TH
+                                if lang == "th"
+                                else WARNING_SOUND_URL_EN
+                            )
 
                             if warn_url:
-                                results = await self.get_tracks(warn_url, requester=self.bot.user)
+                                results = await self.get_tracks(
+                                    warn_url, requester=self.bot.user
+                                )
                                 if results:
                                     warning_track = results[0]
-                                    self.warning_track_cache = warning_track 
-                        
+                                    self.warning_track_cache = warning_track
+
                         # Interrupt Check 2 (After fetch)
-                        if not self.queue.is_empty: return
+                        if not self.queue.is_empty:
+                            return
 
                         if warning_track:
                             # Update embed to show "Waiting..."
                             await self.update_controller(warning_track)
-                            
+
                             # Set flag BEFORE play so next do_next knows
                             self.warning_playing = True
                             await self.play(warning_track)
-                            
+
                             # Wait for track duration (Interruptible)
-                            duration = (warning_track.length / 1000)
+                            duration = warning_track.length / 1000
                             for _ in range(int(duration + 1)):
                                 if not self.queue.is_empty:
-                                     self.warning_playing = False # Cancel flag if interrupted
-                                     await self.stop()
-                                     return
+                                    self.warning_playing = (
+                                        False  # Cancel flag if interrupted
+                                    )
+                                    await self.stop()
+                                    return
                                 await asyncio.sleep(1)
-                            
+
                             # Stop triggers do_next -> which will see warning_playing=True and enter Grace Period
                             await self.stop()
-                            return 
+                            return
 
                 except Exception as e:
                     print(f"Failed to play warning sound: {e}")
-                    self.warning_playing = False # Safety reset
-                
+                    self.warning_playing = False  # Safety reset
+
                 # Grace Period (60s) with Interrupt Check
                 # Reachable ONLY if:
                 # 1. We just finished playing warning (warning_just_played=True)
@@ -787,10 +897,10 @@ class Player(VoiceProtocol):
                             await self.update_controller()
                             return
                         await asyncio.sleep(1)
-                    
+
                     # Time's up -> Call teardown
                     return await self.teardown()
-                
+
                 return
 
             # sync properties
@@ -799,26 +909,43 @@ class Player(VoiceProtocol):
 
             # update user history safely
             try:
-                uid = str(track.requester.id) if getattr(track, "requester", None) else None
+                uid = (
+                    str(track.requester.id)
+                    if getattr(track, "requester", None)
+                    else None
+                )
                 if uid:
                     user_doc = await self.bot.db_manager.get_user(uid)
                     user_history = user_doc.get("recently_played", [])
-                    
-                    identifiers = {song.get("identifier") for song in user_history if isinstance(song, dict)}
+
+                    identifiers = {
+                        song.get("identifier")
+                        for song in user_history
+                        if isinstance(song, dict)
+                    }
                     if getattr(track, "identifier", None) not in identifiers:
-                        if len(user_history) >= 25: # Keep up to 25
+                        if len(user_history) >= 25:  # Keep up to 25
                             user_history.pop(0)
-                        user_history.append({"identifier": getattr(track, "identifier", None), "title": getattr(track, "title", None)})
-                    
+                        user_history.append(
+                            {
+                                "identifier": getattr(track, "identifier", None),
+                                "title": getattr(track, "title", None),
+                            }
+                        )
+
                     # Store back to db
-                    await self.bot.db_manager.update_user(uid, {"recently_played": user_history})
+                    await self.bot.db_manager.update_user(
+                        uid, {"recently_played": user_history}
+                    )
             except Exception as e:
                 print(f"Error updating user history: {e}")
 
             # finally, play the track
             try:
                 await self.play(track, start=getattr(track, "position", 0))
-                self.dj = track.requester if getattr(track, "requester", None) else self.dj
+                self.dj = (
+                    track.requester if getattr(track, "requester", None) else self.dj
+                )
                 try:
                     # Always update controller (handles persistent jukebox as well)
                     await self.update_controller(track, force=True)
@@ -837,7 +964,7 @@ class Player(VoiceProtocol):
     async def teardown(self):
         guild_id = str(self.guild.id)
         guild_data = await self.bot.db_manager.get_guild(guild_id)
-        
+
         # Fetch lang
         lang = await self.bot.get_lang(self.guild.id)
 
@@ -854,17 +981,29 @@ class Player(VoiceProtocol):
                     # Update queue embed
                     if queue_id:
                         try:
-                            _, msg = await safe_fetch_message(self.bot, channel.id, queue_id)
+                            _, msg = await safe_fetch_message(
+                                self.bot, channel.id, queue_id
+                            )
                             if msg:
-                                await msg.edit(embed=discord.Embed(title=self.bot.i18n.get("no_queue", lang), color=0xFFD700))
+                                await msg.edit(
+                                    embed=discord.Embed(
+                                        title=self.bot.i18n.get("no_queue", lang),
+                                        color=0xFFD700,
+                                    )
+                                )
                         except (discord.HTTPException, discord.NotFound):
                             pass
 
                     if play_id:
                         try:
-                            _, msg = await safe_fetch_message(self.bot, channel.id, play_id)
+                            _, msg = await safe_fetch_message(
+                                self.bot, channel.id, play_id
+                            )
                             if msg:
-                                await msg.edit(embed=self.bot.none_play_embed(lang), view=JukeboxIdleView(None, bot=self.bot, lang=lang))
+                                await msg.edit(
+                                    embed=self.bot.none_play_embed(lang),
+                                    view=JukeboxIdleView(None, bot=self.bot, lang=lang),
+                                )
                         except (discord.HTTPException, discord.NotFound):
                             pass
 
@@ -872,18 +1011,22 @@ class Player(VoiceProtocol):
         if self.controller and self.controller.id != play_id:
             try:
                 channel = self.bot.get_channel(channel_id)
-                if guild_data and channel: 
+                if guild_data and channel:
                     play_embed = discord.Embed(
-                        title=self.bot.i18n.get("join_voice_chat_channel", lang, channel=f"<#{channel_id}>"),
-                        color=0xFFD700
+                        title=self.bot.i18n.get(
+                            "join_voice_chat_channel", lang, channel=f"<#{channel_id}>"
+                        ),
+                        color=0xFFD700,
                     )
-                    await self.controller.edit(embed=play_embed, view=None, delete_after=10)
-                
+                    await self.controller.edit(
+                        embed=play_embed, view=None, delete_after=10
+                    )
+
                 # Create background task for deletion so we don't block
                 async def _delayed_delete(msg):
                     await asyncio.sleep(10)
                     await safe_delete(msg)
-                
+
                 self.bot.loop.create_task(_delayed_delete(self.controller))
 
             except (discord.HTTPException, discord.NotFound):
@@ -894,15 +1037,20 @@ class Player(VoiceProtocol):
             self.bot.loop.create_task(self.bot.broadcast_guild(self.guild.id))
 
         # ----- FINAL DESTROY -----
-        await safe_call(self.destroy)
-        self.bot.loop.create_task(self.bot.broadcast_guild(self.guild.id)) # Final broadcast to clear UI
+        try:
+            await self.destroy()
+        except Exception:
+            pass
+        self.bot.loop.create_task(
+            self.bot.broadcast_guild(self.guild.id)
+        )  # Final broadcast to clear UI
 
     async def get_tracks(
         self,
         query: str,
         *,
         requester: Member,
-        search_type: SearchType = SearchType.ytsearch
+        search_type: SearchType = SearchType.ytsearch,
     ) -> Union[List[Track], Playlist]:
         """Fetches tracks from the node's REST api to parse into Lavalink.
 
@@ -913,17 +1061,30 @@ class Player(VoiceProtocol):
         You can also pass in a discord.py Context object to get a
         Context object on any track you search.
         """
-        return await self._node.get_tracks(query, requester=requester, search_type=search_type)
+        return await self._node.get_tracks(
+            query, requester=requester, search_type=search_type
+        )
 
-    async def connect(self, *, timeout: float, reconnect: bool, self_deaf: bool = True, self_mute: bool = False):
-        await self.guild.change_voice_state(channel=self.channel, self_deaf=True, self_mute=self_mute)
+    async def connect(
+        self,
+        *,
+        timeout: float,
+        reconnect: bool,
+        self_deaf: bool = True,
+        self_mute: bool = False,
+    ):
+        await self.guild.change_voice_state(
+            channel=self.channel, self_deaf=True, self_mute=self_mute
+        )
         self._node._players[self.guild.id] = self
         self._is_connected = True
 
     async def stop(self):
         """Stops the currently playing track."""
         self._current = None
-        await self._node.send(method=0, guild_id=self._guild.id, data={'encodedTrack': None})
+        await self._node.send(
+            method=0, guild_id=self._guild.id, data={"encodedTrack": None}
+        )
 
     async def disconnect(self, *, force: bool = False):
         """Disconnects the player from voice."""
@@ -938,11 +1099,11 @@ class Player(VoiceProtocol):
         """Disconnects and destroys the player, and runs internal cleanup."""
         try:
             await self.disconnect()
-        except:
+        except Exception:
             # 'NoneType' has no attribute '_get_voice_client_key' raised by self.cleanup() ->
             # assume we're already disconnected and cleaned up
             assert self.channel is None and not self.is_connected
-        
+
         self._node._players.pop(self.guild.id)
         await self._node.send(method=1, guild_id=self._guild.id)
 
@@ -952,7 +1113,7 @@ class Player(VoiceProtocol):
         *,
         start: int = 0,
         end: int = 0,
-        ignore_if_playing: bool = False
+        ignore_if_playing: bool = False,
     ) -> Track:
         """Plays a track. If a Spotify track is passed in, it will be handled accordingly."""
         if not self._node:
@@ -962,82 +1123,105 @@ class Player(VoiceProtocol):
             if not track.original:
                 search = None
                 queries = []
-                
+
                 if track.author and track.title:
                     queries.append(f"ytsearch:{track.author} - {track.title}")
                 if track.title:
                     queries.append(f"ytsearch:{track.title}")
-                
+
                 for q in queries:
                     try:
-                        search = await self._node.get_tracks(q, requester=track.requester)
+                        search = await self._node.get_tracks(
+                            q, requester=track.requester
+                        )
                         if search:
                             break
-                    except:
+                    except Exception:
                         continue
 
                 if not search:
                     raise TrackLoadError("Can't not found a playable source!")
 
                 track.original = search[0]
-            
+
         data = {
-            "encodedTrack": track.original.track_id if track.original else track.track_id,
-            "position": str(start)
+            "encodedTrack": (
+                track.original.track_id if track.original else track.track_id
+            ),
+            "position": str(start),
         }
 
         if end > 0:
             data["endTime"] = str(end)
-                  
+
         await self._node.send(
-            method=0, guild_id=self._guild.id,
+            method=0,
+            guild_id=self._guild.id,
             data=data,
-            query=f"noReplace={ignore_if_playing}"
+            query=f"noReplace={ignore_if_playing}",
         )
 
         self._current = track
 
         if self.volume != 100:
             await self.set_volume(self.volume)
-            
+
         return self._current
 
-    async def add_track(self, raw_tracks: Union[Track, List[Track]], *, at_font: bool = False, duplicate: bool = True) -> int:
+    async def add_track(
+        self,
+        raw_tracks: Union[Track, List[Track]],
+        *,
+        at_font: bool = False,
+        duplicate: bool = True,
+    ) -> int:
         tracks = []
         position = 0
 
         # Change: Only check UPCOMING tracks for duplicates, not history.
-        _duplicate_tracks = () if duplicate else (track.uri for track in self.queue.tracks())
+        _duplicate_tracks = (
+            () if duplicate else (track.uri for track in self.queue.tracks())
+        )
 
         try:
-            if (isList := isinstance(raw_tracks, List)):
+            if isList := isinstance(raw_tracks, List):
                 for track in raw_tracks:
                     if track.uri in _duplicate_tracks:
                         continue
-                    self.queue.put_at_front(track) if at_font else self.queue.put(track)  
+                    self.queue.put_at_front(track) if at_font else self.queue.put(track)
                     tracks.append(track)
             else:
                 if raw_tracks.uri in _duplicate_tracks:
                     raise DuplicateTrack("")
-                
-                position = self.queue.put_at_front(raw_tracks) if at_font else self.queue.put(raw_tracks)
+
+                position = (
+                    self.queue.put_at_front(raw_tracks)
+                    if at_font
+                    else self.queue.put(raw_tracks)
+                )
                 tracks.append(raw_tracks)
         except DuplicateTrack:
-             pass
-        
+            pass
+
         if tracks:
             return len(tracks) if isList else position
         return 0
-        
+
     async def seek(self, position: float, requester: Member = None) -> float:
         """Seeks to a position in the currently playing track milliseconds"""
         if position < 0 or position > self._current.original.length:
-            raise TrackInvalidPosition("Seek position must be between 0 and the track length")
+            raise TrackInvalidPosition(
+                "Seek position must be between 0 and the track length"
+            )
 
-        await self._node.send(method=0, guild_id=self._guild.id, data={"position": position})
+        await self._node.send(
+            method=0, guild_id=self._guild.id, data={"position": position}
+        )
         return self._position
 
-    async def set_pause(self, pause: bool, requester: Member = None, auto: bool = False) -> bool:
+    async def set_pause(
+        self, pause: bool, requester: Member = None, auto: bool = False
+    ) -> bool:
         """Sets the pause state of the currently playing track."""
         await self._node.send(method=0, guild_id=self._guild.id, data={"paused": pause})
         self._paused = pause
@@ -1049,17 +1233,21 @@ class Player(VoiceProtocol):
 
     async def set_volume(self, volume: int, requester: Member = None) -> int:
         """Sets the volume of the player as an integer. Lavalink accepts values from 0 to 500."""
-        await self._node.send(method=0, guild_id=self._guild.id, data={"volume": volume})
+        await self._node.send(
+            method=0, guild_id=self._guild.id, data={"volume": volume}
+        )
         self._volume = volume
         if hasattr(self.bot, "broadcast_guild"):
             self.bot.loop.create_task(self.bot.broadcast_guild(self.guild.id))
         return self._volume
 
     async def shuffle(self, queue_type: str, requester: Member = None) -> None:
-        replacement = self.queue.tracks() if queue_type == "queue" else self.queue.history()
+        replacement = (
+            self.queue.tracks() if queue_type == "queue" else self.queue.history()
+        )
         if len(replacement) < 3:
             return
-        
+
         shuffle(replacement)
         self.queue.replace(queue_type, replacement)
         self.shuffle_votes.clear()
@@ -1069,7 +1257,7 @@ class Player(VoiceProtocol):
     async def set_repeat(self, mode: str = None) -> str:
         if not mode:
             mode = self.queue._repeat.next().name
-            
+
         is_found = False
         for type in LoopType:
             if type.name.lower() == mode.lower():
@@ -1084,14 +1272,16 @@ class Player(VoiceProtocol):
             self.bot.loop.create_task(self.bot.broadcast_guild(self.guild.id))
 
         return mode
-    
+
     async def add_filter(self, filter: Filter, fast_apply=False) -> Filters:
         try:
             self._filters.add_filter(filter=filter)
         except FilterTagAlreadyInUse:
             raise FilterTagAlreadyInUse("")
         payload = self._filters.get_all_payloads()
-        await self._node.send(method=0, guild_id=self._guild.id, data={"filters": payload})
+        await self._node.send(
+            method=0, guild_id=self._guild.id, data={"filters": payload}
+        )
         if fast_apply:
             await self.seek(self.position)
         return self._filters
@@ -1099,15 +1289,19 @@ class Player(VoiceProtocol):
     async def remove_filter(self, filter_tag: str, fast_apply=False) -> Filters:
         self._filters.remove_filter(filter_tag=filter_tag)
         payload = self._filters.get_all_payloads()
-        await self._node.send(method=0, guild_id=self._guild.id, data={"filters": payload})
+        await self._node.send(
+            method=0, guild_id=self._guild.id, data={"filters": payload}
+        )
         if fast_apply:
             await self.seek(self.position)
-        
+
         return self._filters
-    
+
     async def reset_filter(self, *, fast_apply=False) -> None:
         if not self._filters:
-            raise FilterInvalidArgument("You must have filters applied first in order to use this method.")
+            raise FilterInvalidArgument(
+                "You must have filters applied first in order to use this method."
+            )
         self._filters.reset_filters()
         await self._node.send(method=0, guild_id=self._guild.id, data={"filters": {}})
         if fast_apply:
@@ -1117,7 +1311,7 @@ class Player(VoiceProtocol):
         """Change node."""
         try:
             node = NodePool.get_node(identifier=identifier)
-        except:
+        except Exception:
             return await self.teardown()
 
         self._node._players.pop(self.guild.id)
@@ -1125,7 +1319,7 @@ class Player(VoiceProtocol):
         self._node._players[self.guild.id] = self
 
         await self._dispatch_voice_update(self._voice_state)
-        
+
         if self.current:
             await self.play(self.current, start=self.position)
             self._last_update = time.time() * 1000
@@ -1135,76 +1329,102 @@ class Player(VoiceProtocol):
 
         if self.volume != 100:
             await self.set_volume(self.volume)
-    
+
     async def get_recommendations(self, *, track: Track = None) -> bool:
         """Get recommendations from Youtube or Spotify."""
         try:
             if not track:
                 hist = self.queue.history(incTrack=True)
-                if not hist: # History empty
+                if not hist:  # History empty
                     return False
                 # User Request: Pull from the very last song only
                 track = hist[-1]
 
             tracks = None
             if track.spotify:
-                spotify_tracks = await self._node._spotify_client.similar_track(seed_tracks=track.identifier or track)
+                spotify_tracks = await self._node._spotify_client.similar_track(
+                    seed_tracks=track.identifier or track
+                )
                 if spotify_tracks:
-                    tracks = [ Track(
+                    tracks = [
+                        Track(
                             track_id=None,
                             search_type=SearchType.ytsearch,
                             spotify_track=track,
                             info=track.to_dict(),
-                            requester=self.client.user
+                            requester=self.client.user,
                         )
-                        for track in spotify_tracks ]
+                        for track in spotify_tracks
+                    ]
 
             else:
                 # If valid youtube ID, try RD list
                 query = None
-                if track.source == 'youtube' and track.identifier:
+                if track.source == "youtube" and track.identifier:
                     query = f"https://www.youtube.com/watch?v={track.identifier}&list=RD{track.identifier}"
-                
+
                 if query:
                     try:
-                        tracks = await self.get_tracks(query, requester=self.client.user)
-                    except:
+                        tracks = await self.get_tracks(
+                            query, requester=self.client.user
+                        )
+                    except Exception:
                         tracks = None
 
                 # Fallback: If Mix doesn't exist or Not Youtube source, search by title
                 if not tracks and track.title:
                     try:
                         # 0. Try YouTube Music Search first (Better for songs)
-                        search_query = f"ytmsearch:{track.author} - {track.title}" if track.author else f"ytmsearch:{track.title}"
+                        search_query = (
+                            f"ytmsearch:{track.author} - {track.title}"
+                            if track.author
+                            else f"ytmsearch:{track.title}"
+                        )
                         try:
-                            tracks = await self.get_tracks(search_query, requester=self.client.user)
+                            tracks = await self.get_tracks(
+                                search_query, requester=self.client.user
+                            )
                             # Verify result is somewhat similar if possible, or just trust YTM
-                        except:
+                        except Exception:
                             tracks = None
 
                         # 1. Try Normal YouTube Search Author + Title
                         if not tracks:
-                            search_query = f"ytsearch:{track.author} - {track.title}" if track.author else f"ytsearch:{track.title}"
-                            tracks = await self.get_tracks(search_query, requester=self.client.user)
-                        
+                            search_query = (
+                                f"ytsearch:{track.author} - {track.title}"
+                                if track.author
+                                else f"ytsearch:{track.title}"
+                            )
+                            tracks = await self.get_tracks(
+                                search_query, requester=self.client.user
+                            )
+
                         # 2. If nothing, try Title only (broader match)
                         if not tracks and track.author:
-                             tracks = await self.get_tracks(f"ytsearch:{track.title}", requester=self.client.user)
-                             
-                    except:
+                            tracks = await self.get_tracks(
+                                f"ytsearch:{track.title}", requester=self.client.user
+                            )
+
+                    except Exception:
                         pass
-            
+
             if tracks:
                 candidates = tracks.tracks if isinstance(tracks, Playlist) else tracks
                 if candidates:
                     # Filter out the seed track and recently played tracks to find "Next"
-                    recent_ids = {t.identifier for t in self.queue.history(incTrack=True)[-30:] if t.identifier} # Increased history check
-                    
+                    recent_ids = {
+                        t.identifier
+                        for t in self.queue.history(incTrack=True)[-30:]
+                        if t.identifier
+                    }  # Increased history check
+
                     # Shuffle candidates to avoid always picking the top 1 result which might be the song itself
                     # But if it's a Mix (Playlist), top results are usually good.
                     if not isinstance(tracks, Playlist):
-                        candidates_to_check = candidates[:5] # Check top 5 search results
-                        shuffle(candidates_to_check) # Shuffle them for variety
+                        candidates_to_check = candidates[
+                            :5
+                        ]  # Check top 5 search results
+                        shuffle(candidates_to_check)  # Shuffle them for variety
                         candidates = candidates_to_check + candidates[5:]
 
                     # Try to find a valid track that isn't a strict duplicate
@@ -1212,7 +1432,7 @@ class Player(VoiceProtocol):
                         # Skip if it's the exact same identifier as seed (don't repeat immediately)
                         if candidate.identifier == track.identifier:
                             continue
-                        
+
                         # Soft check against recent history
                         if candidate.identifier in recent_ids:
                             continue
@@ -1222,12 +1442,19 @@ class Player(VoiceProtocol):
                         added = await self.add_track(candidate, duplicate=False)
                         if added > 0:
                             return True
-                    
+
                     # Fallback: If all candidates were in recent history
                     # Try to find one that is NOT the seed track and hasn't been played VERY recently (last 5)
-                    very_recent = {t.identifier for t in self.queue.history(incTrack=True)[-5:] if t.identifier}
+                    very_recent = {
+                        t.identifier
+                        for t in self.queue.history(incTrack=True)[-5:]
+                        if t.identifier
+                    }
                     for candidate in candidates:
-                         if candidate.identifier != track.identifier and candidate.identifier not in very_recent:
+                        if (
+                            candidate.identifier != track.identifier
+                            and candidate.identifier not in very_recent
+                        ):
                             added = await self.add_track(candidate, duplicate=False)
                             if added > 0:
                                 return True

@@ -11,21 +11,37 @@ from discord.ext import commands
 from bot import Cyori
 from utils import config as ui_config
 
+
 def sec_to_min(seconds: float):
     seconds = int(round(seconds))
-    
+
     # Hierarchy calculation
     minutes, seconds = divmod(seconds, 60)
     hours, minutes = divmod(minutes, 60)
     days, hours = divmod(hours, 24)
     months, days = divmod(days, 30)
     years, months = divmod(months, 12)
-    chati, years = divmod(years, 100) # 1 ชาติ = 100 ปี
+    chati, years = divmod(years, 100)  # 1 ชาติ = 100 ปี
 
     if chati > 0:
-        return "%d:%02d:%02d:%02d:%02d:%02d:%02d" % (chati, years, months, days, hours, minutes, seconds)
+        return "%d:%02d:%02d:%02d:%02d:%02d:%02d" % (
+            chati,
+            years,
+            months,
+            days,
+            hours,
+            minutes,
+            seconds,
+        )
     if years > 0:
-        return "%d:%02d:%02d:%02d:%02d:%02d" % (years, months, days, hours, minutes, seconds)
+        return "%d:%02d:%02d:%02d:%02d:%02d" % (
+            years,
+            months,
+            days,
+            hours,
+            minutes,
+            seconds,
+        )
     if months > 0:
         return "%d:%02d:%02d:%02d:%02d" % (months, days, hours, minutes, seconds)
     if days > 0:
@@ -35,11 +51,13 @@ def sec_to_min(seconds: float):
     else:
         return "%02d:%02d" % (minutes, seconds)
 
+
 def formatBytes(bytes: int, unit: bool = False):
     """Format bytes to human readable format (MB or GB)."""
     if bytes <= 1_000_000_000:
         return f"{bytes / (1024 ** 2):.1f}" + ("MB" if unit else "")
     return f"{bytes / (1024 ** 3):.1f}" + ("GB" if unit else "")
+
 
 def get_cmd_desc(bot, command, lang):
     key = f"cmd_{command.name}_desc"
@@ -47,6 +65,7 @@ def get_cmd_desc(bot, command, lang):
     if desc == key:
         return command.help or bot.i18n.get("no_desc", lang)
     return desc
+
 
 class HelpControl(discord.ui.View):
     def __init__(self, bot: Cyori, source, author, lang="en"):
@@ -60,64 +79,110 @@ class HelpControl(discord.ui.View):
         cogs = [cog for cog in self.bot.cogs]
         cogs.sort()  # Sort alphabetically
         self.select = discord.ui.Select(
-            placeholder=self.bot.i18n.get("help_choose_cog", self.lang), 
+            placeholder=self.bot.i18n.get("help_choose_cog", self.lang),
             options=[
-                discord.SelectOption(label=self.bot.i18n.get("help_home", self.lang), value="Home"),
-                *[discord.SelectOption(label=cog, value=cog) for index, cog in enumerate(cogs)]
-            ]
+                discord.SelectOption(
+                    label=self.bot.i18n.get("help_home", self.lang), value="Home"
+                ),
+                *[
+                    discord.SelectOption(label=cog, value=cog)
+                    for index, cog in enumerate(cogs)
+                ],
+            ],
         )
         self.add_item(self.select)
-        self.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label=self.bot.i18n.get("button_invite", self.lang), url=ui_config.INVITE_URL))
-        self.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label=self.bot.i18n.get("button_support", self.lang), url=ui_config.SUPPORT_URL))
-        self.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label=self.bot.i18n.get("button_donate", self.lang), url=ui_config.DONATE_URL))
-        self.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label=self.bot.i18n.get("button_vote", self.lang), url=ui_config.VOTE_URL))
-        self.select.callback = self.on_select    
+        self.add_item(
+            discord.ui.Button(
+                style=discord.ButtonStyle.link,
+                label=self.bot.i18n.get("button_invite", self.lang),
+                url=ui_config.INVITE_URL,
+            )
+        )
+        self.add_item(
+            discord.ui.Button(
+                style=discord.ButtonStyle.link,
+                label=self.bot.i18n.get("button_support", self.lang),
+                url=ui_config.SUPPORT_URL,
+            )
+        )
+        self.add_item(
+            discord.ui.Button(
+                style=discord.ButtonStyle.link,
+                label=self.bot.i18n.get("button_donate", self.lang),
+                url=ui_config.DONATE_URL,
+            )
+        )
+        self.add_item(
+            discord.ui.Button(
+                style=discord.ButtonStyle.link,
+                label=self.bot.i18n.get("button_vote", self.lang),
+                url=ui_config.VOTE_URL,
+            )
+        )
+        self.select.callback = self.on_select
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user != self.author:
             await interaction.response.defer(thinking=True)
-            await interaction.followup.send(content=self.bot.i18n.get("perm_button", self.lang), ephemeral=True)
+            await interaction.followup.send(
+                content=self.bot.i18n.get("perm_button", self.lang), ephemeral=True
+            )
             return False
         return True
 
-    @discord.ui.button(label='≪', style=discord.ButtonStyle.grey)
-    async def first_page_button(self, interaction:discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label="≪", style=discord.ButtonStyle.grey)
+    async def first_page_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         await interaction.response.defer()
         self.index = 0
         await self.update_page()
 
-    @discord.ui.button(label='<', style=discord.ButtonStyle.grey)
-    async def previous_page_button(self, interaction:discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label="<", style=discord.ButtonStyle.grey)
+    async def previous_page_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         await interaction.response.defer()
         if self.index == 0:
             return
         self.index -= 1
         await self.update_page()
-        
-    @discord.ui.button(label='■', style=discord.ButtonStyle.grey)
-    async def middle_button(self, interaction:discord.Interaction, button: discord.ui.Button):
+
+    @discord.ui.button(label="■", style=discord.ButtonStyle.grey)
+    async def middle_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         await interaction.message.delete()
 
-    @discord.ui.button(label='>', style=discord.ButtonStyle.grey)
-    async def next_page_button(self, interaction:discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label=">", style=discord.ButtonStyle.grey)
+    async def next_page_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         await interaction.response.defer()
         if self.index >= len(self.source) - 1:
             return
         self.index += 1
         await self.update_page()
 
-    @discord.ui.button(label='≫', style=discord.ButtonStyle.grey)
-    async def last_page_button(self, interaction:discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label="≫", style=discord.ButtonStyle.grey)
+    async def last_page_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         await interaction.response.defer()
         self.index = len(self.source) - 1
         await self.update_page()
 
     async def update_page(self):
         embed: discord.Embed = self.source[self.index]
-        embed.set_footer(text=self.bot.i18n.get("page_footer", self.lang, current=self.index + 1, total=len(self.source)), icon_url=str(self.author.avatar.url))
+        embed.set_footer(
+            text=self.bot.i18n.get(
+                "page_footer", self.lang, current=self.index + 1, total=len(self.source)
+            ),
+            icon_url=str(self.author.avatar.url),
+        )
         await self.update_buttons()
         await self.message.edit(embed=embed)
-        
+
     async def update_buttons(self):
         if self.index == 0:
             self.first_page_button.disabled = True
@@ -134,66 +199,83 @@ class HelpControl(discord.ui.View):
             self.last_page_button.disabled = False
 
         await self.message.edit(view=self)
-        
+
     async def buttons_not_use(self):
         self.first_page_button.disabled = True
         self.previous_page_button.disabled = True
         self.next_page_button.disabled = True
         self.last_page_button.disabled = True
         await self.message.edit(view=self)
-        
+
     async def buttons_use(self):
         self.first_page_button.disabled = True
         self.previous_page_button.disabled = True
         self.next_page_button.disabled = False
         self.last_page_button.disabled = False
         await self.message.edit(view=self)
-        
+
     async def on_select(self, interaction: discord.Interaction):
         guild_id = str(interaction.guild.id)
         guild_data = await self.bot.db_manager.get_guild(guild_id)
         prefix = guild_data.get("prefix", "cm!")
-        if interaction.data['values'][0] == "Home":
+        if interaction.data["values"][0] == "Home":
             await interaction.response.defer()
             from utils.luxury import LuxuryEmbed, luxury_line
+
             embed = LuxuryEmbed(
                 title=self.bot.i18n.get("help_title", self.lang),
                 description=f"{luxury_line()}\n"
-                            f"📌 **Prefix:** `{prefix}`\n"
-                            f"✨ **Slash:** `/help` or `/play`\n"
-                            f"{luxury_line()}",
-                colour=discord.Colour(value=ui_config.EMBED_COLOR)
+                f"📌 **Prefix:** `{prefix}`\n"
+                f"✨ **Slash:** `/help` or `/play`\n"
+                f"{luxury_line()}",
+                colour=discord.Colour(value=ui_config.EMBED_COLOR),
             )
             # Add a banner if available
             embed.set_image(url=ui_config.BANNER_URL)
             cog_arguments = {}
             for cog_name, cog in self.bot.cogs.items():
+                if cog_name == "DashboardAPI":
+                    continue  # Hide internal cogs
+
                 cog_command_names = []
                 for command in cog.get_commands():
-                    cog_command_names.append(f"`{commands.when_mentioned_or(prefix)(self.bot, interaction)[2]}{command.name}`")
-                cog_arguments[cog_name] = cog_command_names
+                    cog_command_names.append(f"`{command.name}`")
+                if cog_command_names:
+                    cog_arguments[cog_name] = cog_command_names
 
             other_arguments = []
             for arg in self.bot.commands:
-                if not arg.cog:
-                    other_arguments.append(f"`{commands.when_mentioned_or(prefix)(self.bot, interaction)[2]}{arg.name}`")
+                if not arg.cog and arg.name not in ["sync", "export_commands"]:
+                    other_arguments.append(f"`{arg.name}`")
 
-            embed.add_field(name=f"> **`{commands.when_mentioned_or(prefix)(self.bot, interaction)[2]}play` or `/play`**", value=self.bot.i18n.get('help_play_desc', self.lang))
+            embed.add_field(
+                name=f"> **`{commands.when_mentioned_or(prefix)(self.bot, interaction)[2]}play` or `/play`**",
+                value=self.bot.i18n.get("help_play_desc", self.lang),
+            )
             if cog_arguments:
                 for cog_name, cog_command_names in cog_arguments.items():
                     embed.add_field(
                         name=f"📂 **{cog_name}**",
                         value=", ".join(cog_command_names),
-                        inline=False
+                        inline=False,
                     )
             if other_arguments:
-                embed.add_field(name=f"> **{self.bot.i18n.get('help_other_desc', self.lang)}**", value=", ".join(other_arguments), inline=False)
+                embed.add_field(
+                    name=f"> **{self.bot.i18n.get('help_other_desc', self.lang)}**",
+                    value=", ".join(other_arguments),
+                    inline=False,
+                )
             embed.add_field(
                 name=f"💡 {self.bot.i18n.get('help_note', self.lang, prefix=prefix).replace('**', '')}",
                 value=f"{luxury_line()}\n{self.bot.i18n.get('help_footer', self.lang)}",
-                inline=False
+                inline=False,
             )
-            embed.set_footer(text=self.bot.i18n.get("requested_by", self.lang, user=interaction.user.name), icon_url=interaction.user.avatar.url)
+            embed.set_footer(
+                text=self.bot.i18n.get(
+                    "requested_by", self.lang, user=interaction.user.name
+                ),
+                icon_url=interaction.user.avatar.url,
+            )
             embed.set_thumbnail(url=self.bot.user.avatar.url)
             helpcontrol = HelpControl(self.bot, embed, interaction.user, self.lang)
             await interaction.edit_original_response(embed=embed, view=helpcontrol)
@@ -202,7 +284,7 @@ class HelpControl(discord.ui.View):
             await helpcontrol.buttons_not_use()
         else:
             await interaction.response.defer()
-            cog_name = interaction.data['values'][0]
+            cog_name = interaction.data["values"][0]
             cog = self.bot.get_cog(cog_name)
             if cog:
                 cog_commands = cog.get_commands()
@@ -212,50 +294,88 @@ class HelpControl(discord.ui.View):
                     # Simulating having less than 25 fields
                     fields = []
                     for command in cog.get_commands():
-                        fields.append({
-                            "name": f"> `{commands.when_mentioned_or(prefix)(self.bot, interaction)[2]}{command.name}` or `/{command.name}`",
-                            "value": get_cmd_desc(self.bot, command, self.lang),
-                            "inline": False
-                        })
+                        fields.append(
+                            {
+                                "name": f"> `{commands.when_mentioned_or(prefix)(self.bot, interaction)[2]}{command.name}` or `/{command.name}`",
+                                "value": get_cmd_desc(self.bot, command, self.lang),
+                                "inline": False,
+                            }
+                        )
                     # Automatically split fields into pages of 25 fields each
                     embeds = []
                     for i in range(0, len(fields), 24):
-                        embed = discord.Embed(title=f"{cog_name} Cog", colour=discord.Colour(value=ui_config.EMBED_COLOR))
+                        embed = discord.Embed(
+                            title=f"{cog_name} Cog",
+                            colour=discord.Colour(value=ui_config.EMBED_COLOR),
+                        )
                         embed.set_thumbnail(url=self.bot.user.avatar.url)
-                        embed.set_footer(text=self.bot.i18n.get("page_footer", self.lang, current=i//24 + 1, total=math.ceil(len(fields) / 24)), icon_url=str(interaction.user.avatar.url))
-                        for field in fields[i:i+25]:
-                            embed.add_field(name=field["name"], value=field["value"], inline=field["inline"])
+                        embed.set_footer(
+                            text=self.bot.i18n.get(
+                                "page_footer",
+                                self.lang,
+                                current=i // 24 + 1,
+                                total=math.ceil(len(fields) / 24),
+                            ),
+                            icon_url=str(interaction.user.avatar.url),
+                        )
+                        for field in fields[i : i + 25]:
+                            embed.add_field(
+                                name=field["name"],
+                                value=field["value"],
+                                inline=field["inline"],
+                            )
                         embeds.append(embed)
-                        
-                    helpcontrol = HelpControl(self.bot, embeds, interaction.user, self.lang)
-                    await interaction.followup.edit_message(embed=embeds[0], view=helpcontrol)
+
+                    helpcontrol = HelpControl(
+                        self.bot, embeds, interaction.user, self.lang
+                    )
+                    await interaction.followup.edit_message(
+                        embed=embeds[0], view=helpcontrol
+                    )
                     message = await interaction.original_response()
                     helpcontrol.message = message
                     await helpcontrol.buttons_use()
                 else:
-                    help_message = discord.Embed(title=f"{cog_name} Cog", colour=discord.Colour(value=ui_config.EMBED_COLOR))
+                    help_message = discord.Embed(
+                        title=f"{cog_name} Cog",
+                        colour=discord.Colour(value=ui_config.EMBED_COLOR),
+                    )
                     for command in cog.get_commands():
                         help_message.add_field(
                             name=f"> `{commands.when_mentioned_or(prefix)(self.bot, interaction)[2]}{command.name}` or `/{command.name}`",
                             value=get_cmd_desc(self.bot, command, self.lang),
-                            inline=False
+                            inline=False,
                         )
                     help_message.set_thumbnail(url=self.bot.user.avatar.url)
-                    help_message.set_footer(text=self.bot.i18n.get("requested_by", self.lang, user=interaction.user.name), icon_url=interaction.user.avatar.url)
-                    helpcontrol = HelpControl(self.bot, help_message, interaction.user, self.lang)
-                    await interaction.edit_original_response(embed=help_message, view=helpcontrol)
+                    help_message.set_footer(
+                        text=self.bot.i18n.get(
+                            "requested_by", self.lang, user=interaction.user.name
+                        ),
+                        icon_url=interaction.user.avatar.url,
+                    )
+                    helpcontrol = HelpControl(
+                        self.bot, help_message, interaction.user, self.lang
+                    )
+                    await interaction.edit_original_response(
+                        embed=help_message, view=helpcontrol
+                    )
                     message = await interaction.original_response()
                     helpcontrol.message = message
                     await helpcontrol.buttons_not_use()
             else:
-                await interaction.followup.send(f"No cog found with the name {cog_name}.", delete_after=7)
+                await interaction.followup.send(
+                    f"No cog found with the name {cog_name}.", delete_after=7
+                )
+
 
 class Info(commands.Cog):
     def __init__(self, bot: Cyori) -> None:
         self.bot = bot
 
-    @commands.hybrid_command(name='help', aliases=['h'])
-    @app_commands.describe(arguments="Command, group or cog name / ชื่อคำสั่ง กลุ่ม หรือหมวดหมู่")
+    @commands.hybrid_command(name="help", aliases=["h"])
+    @app_commands.describe(
+        arguments="Command, group or cog name / ชื่อคำสั่ง กลุ่ม หรือหมวดหมู่"
+    )
     async def help(self, ctx: commands.Context, *, arguments: str = None):
         "Show help info / แสดงวิธีใช้งานและรายชื่อคำสั่ง"
         async with ctx.typing():
@@ -266,38 +386,76 @@ class Info(commands.Cog):
             embed = discord.Embed(
                 title=self.bot.i18n.get("help_title", lang),
                 description=f"`{commands.when_mentioned_or(prefix)(self.bot, ctx)[2]}help` or `/help`",
-                colour=discord.Colour(value=ui_config.EMBED_COLOR)
+                colour=discord.Colour(value=ui_config.EMBED_COLOR),
             )
 
             if not arguments:
+                from utils.luxury import LuxuryEmbed, luxury_line
+
+                embed = LuxuryEmbed(
+                    title=self.bot.i18n.get("help_title", lang),
+                    description=f"{luxury_line()}\n"
+                    f"📌 **Prefix:** `{prefix}`\n"
+                    f"✨ **Slash:** `/help` or `/play`\n"
+                    f"{luxury_line()}",
+                    colour=discord.Colour(value=ui_config.EMBED_COLOR),
+                )
+                embed.set_image(url=ui_config.BANNER_URL)
+
                 cog_arguments = {}
                 for cog_name, cog in self.bot.cogs.items():
+                    if cog_name == "DashboardAPI":
+                        continue  # Hide internal API cogs
+
                     cog_command_names = []
                     for command in cog.get_commands():
-                        cog_command_names.append(f"`{commands.when_mentioned_or(prefix)(self.bot, ctx)[2]}{command.name}`")
-                    cog_arguments[cog_name] = cog_command_names
+                        cog_command_names.append(f"`{command.name}`")
+                    if cog_command_names:
+                        cog_arguments[cog_name] = cog_command_names
 
                 other_arguments = []
                 for command in self.bot.commands:
-                    if not command.cog:
-                        other_arguments.append(f"`{commands.when_mentioned_or(prefix)(self.bot, ctx)[2]}{command.name}`")
+                    if not command.cog and command.name not in [
+                        "sync",
+                        "export_commands",
+                    ]:
+                        other_arguments.append(f"`{command.name}`")
 
-                embed.add_field(name=f"> **`{commands.when_mentioned_or(prefix)(self.bot, ctx)[2]}play` or `/play`**", value=self.bot.i18n.get('help_play_desc', lang))
+                embed.add_field(
+                    name=f"> **`{commands.when_mentioned_or(prefix)(self.bot, ctx)[2]}play` or `/play`**",
+                    value=self.bot.i18n.get("help_play_desc", lang),
+                )
                 if cog_arguments:
                     for cog_name, cog_command_names in cog_arguments.items():
+                        # Map internal cog names to user friendly emoji categories
+                        cog_map = {
+                            "Music": "🎵",
+                            "Premium": "💎",
+                            "Settings": "⚙️",
+                            "Info": "ℹ️",
+                        }
+                        emoji = cog_map.get(cog_name, "📂")
+
                         embed.add_field(
-                            name=f"📂 **{cog_name}**",
+                            name=f"{emoji} **{cog_name}**",
                             value=", ".join(cog_command_names),
-                            inline=False
+                            inline=False,
                         )
                 if other_arguments:
-                    embed.add_field(name=f"> **{self.bot.i18n.get('help_other_desc', lang)}**", value=", ".join(other_arguments), inline=False)
+                    embed.add_field(
+                        name=f"> **{self.bot.i18n.get('help_other_desc', lang)}**",
+                        value=", ".join(other_arguments),
+                        inline=False,
+                    )
                 embed.add_field(
                     name=self.bot.i18n.get("help_note", lang, prefix=prefix),
                     value=self.bot.i18n.get("help_footer", lang),
-                    inline=False
+                    inline=False,
                 )
-                embed.set_footer(text=self.bot.i18n.get("requested_by", lang, user=ctx.author.name), icon_url=ctx.author.avatar.url)
+                embed.set_footer(
+                    text=self.bot.i18n.get("requested_by", lang, user=ctx.author.name),
+                    icon_url=ctx.author.avatar.url,
+                )
                 embed.set_thumbnail(url=self.bot.user.avatar.url)
                 helpcontrol = HelpControl(self.bot, embed, ctx.author, lang)
                 message = await ctx.reply(embed=embed, view=helpcontrol)
@@ -310,35 +468,64 @@ class Info(commands.Cog):
                     if len(cog_commands) > 25:
                         cogs = [cog for cog in self.bot.cogs]
                         cogs.sort()
-                        
+
                         fields = []
                         for command in cog.get_commands():
-                            fields.append({
-                                "name": f"> `{commands.when_mentioned_or(prefix)(self.bot, ctx)[2]}{command.name}` or `/{command.name}`",
-                                "value": get_cmd_desc(self.bot, command, lang),
-                                "inline": False
-                            })
-                            
+                            fields.append(
+                                {
+                                    "name": f"> `{commands.when_mentioned_or(prefix)(self.bot, ctx)[2]}{command.name}` or `/{command.name}`",
+                                    "value": get_cmd_desc(self.bot, command, lang),
+                                    "inline": False,
+                                }
+                            )
+
                         # Automatically split fields into pages of 25 fields each
                         embeds = []
                         for i in range(0, len(fields), 25):
-                            embed = discord.Embed(title=f"{arguments} Cog", colour=discord.Colour(value=ui_config.EMBED_COLOR))
+                            embed = discord.Embed(
+                                title=f"{arguments} Cog",
+                                colour=discord.Colour(value=ui_config.EMBED_COLOR),
+                            )
                             embed.set_thumbnail(url=self.bot.user.avatar.url)
-                            embed.set_footer(text=self.bot.i18n.get("page_footer", lang, current=i//25 + 1, total=math.ceil(len(fields) / 25)), icon_url=str(ctx.author.avatar.url))
-                            for field in fields[i:i+25]:
-                                embed.add_field(name=field["name"], value=field["value"], inline=field["inline"])
+                            embed.set_footer(
+                                text=self.bot.i18n.get(
+                                    "page_footer",
+                                    lang,
+                                    current=i // 25 + 1,
+                                    total=math.ceil(len(fields) / 25),
+                                ),
+                                icon_url=str(ctx.author.avatar.url),
+                            )
+                            for field in fields[i : i + 25]:
+                                embed.add_field(
+                                    name=field["name"],
+                                    value=field["value"],
+                                    inline=field["inline"],
+                                )
                             embeds.append(embed)
-                            
+
                         helpcontrol = HelpControl(self.bot, embeds, ctx.author, lang)
                         message = await ctx.reply(embed=embeds[0], view=helpcontrol)
                         helpcontrol.message = message
                         await helpcontrol.buttons_use()
                     else:
-                        help_message = discord.Embed(title=f"{arguments} Cog", colour=discord.Colour(value=ui_config.EMBED_COLOR))
+                        help_message = discord.Embed(
+                            title=f"{arguments} Cog",
+                            colour=discord.Colour(value=ui_config.EMBED_COLOR),
+                        )
                         for command in cog.get_commands():
-                            help_message.add_field(name=f'> `{commands.when_mentioned_or(prefix)(self.bot, ctx)[2]}{command.name}` or `/{command.name}`', value=get_cmd_desc(self.bot, command, lang), inline=False)
+                            help_message.add_field(
+                                name=f"> `{commands.when_mentioned_or(prefix)(self.bot, ctx)[2]}{command.name}` or `/{command.name}`",
+                                value=get_cmd_desc(self.bot, command, lang),
+                                inline=False,
+                            )
                         help_message.set_thumbnail(url=self.bot.user.avatar.url)
-                        help_message.set_footer(text=self.bot.i18n.get("requested_by", lang, user=ctx.author.name), icon_url=ctx.author.avatar.url)
+                        help_message.set_footer(
+                            text=self.bot.i18n.get(
+                                "requested_by", lang, user=ctx.author.name
+                            ),
+                            icon_url=ctx.author.avatar.url,
+                        )
                         helpcontrol = HelpControl(self.bot, embed, ctx.author, lang)
                         message = await ctx.reply(embed=help_message, view=helpcontrol)
                         helpcontrol.message = message
@@ -355,32 +542,48 @@ class Info(commands.Cog):
                                 if cmd.name == subcommand_name:
                                     embed = discord.Embed(
                                         title=f"Help with {cmd.name}",
-                                        color=discord.Color(value=ui_config.EMBED_COLOR)
+                                        color=discord.Color(
+                                            value=ui_config.EMBED_COLOR
+                                        ),
                                     )
                                     embed.add_field(
-                                        name=f'> `{commands.when_mentioned_or(prefix)(self.bot, ctx)[2]}{arguments} {cmd.name}` or `/{arguments} {cmd.name}`',
+                                        name=f"> `{commands.when_mentioned_or(prefix)(self.bot, ctx)[2]}{arguments} {cmd.name}` or `/{arguments} {cmd.name}`",
                                         value=get_cmd_desc(self.bot, cmd, lang),
-                                        inline=False
-                                    )   
+                                        inline=False,
+                                    )
                                     embed.set_thumbnail(url=self.bot.user.avatar.url)
-                                    embed.set_footer(text=self.bot.i18n.get("requested_by", lang, user=ctx.author.name), icon_url=ctx.author.avatar.url)
-                                    helpcontrol = HelpControl(self.bot, embed, ctx.author, lang)
-                                    message = await ctx.reply(embed=embed, view=helpcontrol)
+                                    embed.set_footer(
+                                        text=self.bot.i18n.get(
+                                            "requested_by", lang, user=ctx.author.name
+                                        ),
+                                        icon_url=ctx.author.avatar.url,
+                                    )
+                                    helpcontrol = HelpControl(
+                                        self.bot, embed, ctx.author, lang
+                                    )
+                                    message = await ctx.reply(
+                                        embed=embed, view=helpcontrol
+                                    )
                                     helpcontrol.message = message
                                     await helpcontrol.buttons_not_use()
                                     return
                         else:  # Help for a specific subcommand
                             embed = discord.Embed(
                                 title=f"Help with {arguments}",
-                                color=discord.Color(value=ui_config.EMBED_COLOR)
+                                color=discord.Color(value=ui_config.EMBED_COLOR),
                             )
                             embed.add_field(
-                                name=f'> `{commands.when_mentioned_or(prefix)(self.bot, ctx)[2]}{arguments}` or `/{arguments}`',
+                                name=f"> `{commands.when_mentioned_or(prefix)(self.bot, ctx)[2]}{arguments}` or `/{arguments}`",
                                 value=get_cmd_desc(self.bot, arg, lang),
-                                inline=False
+                                inline=False,
                             )
                             embed.set_thumbnail(url=self.bot.user.avatar.url)
-                            embed.set_footer(text=self.bot.i18n.get("requested_by", lang, user=ctx.author.name), icon_url=ctx.author.avatar.url)
+                            embed.set_footer(
+                                text=self.bot.i18n.get(
+                                    "requested_by", lang, user=ctx.author.name
+                                ),
+                                icon_url=ctx.author.avatar.url,
+                            )
                             helpcontrol = HelpControl(self.bot, embed, ctx.author, lang)
                             message = await ctx.reply(embed=embed, view=helpcontrol)
                             helpcontrol.message = message
@@ -390,38 +593,58 @@ class Info(commands.Cog):
                         if isinstance(command, commands.Group):
                             group_embed = discord.Embed(
                                 title=f"{arguments} " + "Group",
-                                colour=discord.Colour(value=ui_config.EMBED_COLOR)
+                                colour=discord.Colour(value=ui_config.EMBED_COLOR),
                             )
                             for cmd in command.commands:
                                 group_embed.add_field(
-                                    name=f'> `{commands.when_mentioned_or(prefix)(self.bot, ctx)[2]}{arguments} {cmd.name}` or `/{arguments} {cmd.name}`',
+                                    name=f"> `{commands.when_mentioned_or(prefix)(self.bot, ctx)[2]}{arguments} {cmd.name}` or `/{arguments} {cmd.name}`",
                                     value=get_cmd_desc(self.bot, cmd, lang),
-                                    inline=False
+                                    inline=False,
                                 )
                                 group_embed.set_thumbnail(url=self.bot.user.avatar.url)
-                                group_embed.set_footer(text=self.bot.i18n.get("requested_by", lang, user=ctx.author.name), icon_url=ctx.author.avatar.url)
-                                helpcontrol = HelpControl(self.bot, group_embed, ctx.author, lang)
-                                message = await ctx.reply(embed=group_embed, view=helpcontrol)
+                                group_embed.set_footer(
+                                    text=self.bot.i18n.get(
+                                        "requested_by", lang, user=ctx.author.name
+                                    ),
+                                    icon_url=ctx.author.avatar.url,
+                                )
+                                helpcontrol = HelpControl(
+                                    self.bot, group_embed, ctx.author, lang
+                                )
+                                message = await ctx.reply(
+                                    embed=group_embed, view=helpcontrol
+                                )
                                 helpcontrol.message = message
                                 await helpcontrol.buttons_not_use()
                         else:
                             embed = discord.Embed(
                                 title=f"Help with {command}",
-                                color=discord.Color(value=ui_config.EMBED_COLOR)
+                                color=discord.Color(value=ui_config.EMBED_COLOR),
                             )
                             embed.add_field(
-                                name=f'> `{commands.when_mentioned_or(prefix)(self.bot, ctx)[2]}{command}` or `/{command}`',
+                                name=f"> `{commands.when_mentioned_or(prefix)(self.bot, ctx)[2]}{command}` or `/{command}`",
                                 value=get_cmd_desc(self.bot, command, lang),
-                                inline=False
+                                inline=False,
                             )
                             embed.set_thumbnail(url=self.bot.user.avatar.url)
-                            embed.set_footer(text=self.bot.i18n.get("requested_by", lang, user=ctx.author.name), icon_url=ctx.author.avatar.url)
+                            embed.set_footer(
+                                text=self.bot.i18n.get(
+                                    "requested_by", lang, user=ctx.author.name
+                                ),
+                                icon_url=ctx.author.avatar.url,
+                            )
                             helpcontrol = HelpControl(self.bot, embed, ctx.author, lang)
                             message = await ctx.reply(embed=embed, view=helpcontrol)
                             helpcontrol.message = message
                             await helpcontrol.buttons_not_use()
                     else:
-                        await ctx.reply(embed=discord.Embed(description="Command not found.", colour=discord.Colour(value=ui_config.EMBED_COLOR)), delete_after=7)
+                        await ctx.reply(
+                            embed=discord.Embed(
+                                description="Command not found.",
+                                colour=discord.Colour(value=ui_config.EMBED_COLOR),
+                            ),
+                            delete_after=7,
+                        )
 
     @commands.hybrid_command()
     async def ping(self, ctx: commands.Context):
@@ -432,22 +655,23 @@ class Info(commands.Cog):
 
             # Mapping color + status
             if ping <= 50:
-                color, status = 0x44ff44, self.bot.i18n.get("status_excellent", lang)
+                color, status = 0x44FF44, self.bot.i18n.get("status_excellent", lang)
             elif ping <= 100:
-                color, status = 0xffd000, self.bot.i18n.get("status_good", lang)
+                color, status = 0xFFD000, self.bot.i18n.get("status_good", lang)
             elif ping <= 200:
-                color, status = 0xff6600, self.bot.i18n.get("status_moderate", lang)
+                color, status = 0xFF6600, self.bot.i18n.get("status_moderate", lang)
             else:
                 color, status = 0x990000, self.bot.i18n.get("status_poor", lang)
 
             from utils.luxury import LuxuryEmbed, luxury_line
+
             embed = LuxuryEmbed(
                 title=self.bot.i18n.get("pong", lang),
                 description=f"{luxury_line()}\n"
-                            f"📡 **{self.bot.i18n.get('latency', lang, ping=ping, status=status).split(':')[0]}:** `{ping} ms`\n"
-                            f"📊 **Status:** {status}\n"
-                            f"{luxury_line()}",
-                color=color
+                f"📡 **{self.bot.i18n.get('latency', lang, ping=ping, status=status).split(':')[0]}:** `{ping} ms`\n"
+                f"📊 **Status:** {status}\n"
+                f"{luxury_line()}",
+                color=color,
             )
             embed.add_luxury_footer(self.bot, lang, ctx.author)
 
@@ -461,36 +685,41 @@ class Info(commands.Cog):
         async with ctx.typing():
             lang = await self.bot.get_lang(ctx.guild.id)
             # Use the bot's start_time that was set when the bot initialized
-            start_time = getattr(self.bot, 'start_time', time.time())
+            start_time = getattr(self.bot, "start_time", time.time())
             current_time = time.time()
             difference = int(round(current_time - start_time))
             uptime_text = str(datetime.timedelta(seconds=difference))
 
             from utils.luxury import LuxuryEmbed
+
             embed = LuxuryEmbed(color=0xFFD700)
-            embed.set_author(name=self.bot.i18n.get("uptime_label", lang), icon_url=self.bot.user.display_avatar.url)
+            embed.set_author(
+                name=self.bot.i18n.get("uptime_label", lang),
+                icon_url=self.bot.user.display_avatar.url,
+            )
             embed.description = f"⏲️ **Online for:** `{uptime_text}`"
             embed.add_luxury_footer(self.bot, lang)
 
             try:
                 await ctx.reply(embed=embed, delete_after=7)
-            except discord.HTTPException:   
+            except discord.HTTPException:
                 await ctx.reply("Current uptime: " + uptime_text, delete_after=7)
 
-    @commands.hybrid_command() 
-    async def stats(self, ctx: commands.Context): 
+    @commands.hybrid_command()
+    async def stats(self, ctx: commands.Context):
         "Show system & node stats / แสดงสถานะระบบและ Music Node"
         async with ctx.typing():
             lang = await self.bot.get_lang(ctx.guild.id)
             from utils.luxury import LuxuryEmbed, luxury_line
-            em = LuxuryEmbed( 
+
+            em = LuxuryEmbed(
                 title=f"📊 {self.bot.i18n.get('stats_title', lang)}",
-                color=ui_config.EMBED_COLOR
+                color=ui_config.EMBED_COLOR,
             )
             for name, node in cytechlink.NodePool._nodes.items():
                 total_memory = node.stats.used + node.stats.free
                 status_emoji = "🟢" if node._available else "🔴"
-                
+
                 info = (
                     f"> 🔗 **{self.bot.i18n.get('stats_address', lang)}:** `{node._host}:{node._port}`\n"
                     f"> 👥 **{self.bot.i18n.get('stats_players', lang)}:** `{len(node._players)}`\n"
@@ -498,48 +727,81 @@ class Info(commands.Cog):
                     f"> 💻 **CPU:** `{node.stats.cpu_process_load:.1f}%`\n"
                     f"> ⏱️ **{self.bot.i18n.get('stats_uptime', lang)}:** `{sec_to_min(node.stats.uptime)}`"
                 )
-                
+
                 em.add_field(
-                    name=f"{status_emoji} Node {name}",
-                    value=info, 
-                    inline=False
+                    name=f"{status_emoji} Node {name}", value=info, inline=False
                 )
-            
-            total_players = sum(len(node._players) for node in cytechlink.NodePool._nodes.values())
+
+            total_players = sum(
+                len(node._players) for node in cytechlink.NodePool._nodes.values()
+            )
             em.add_luxury_footer(self.bot, lang, ctx.author)
             await ctx.reply(embed=em, delete_after=30)
+
+    @commands.hybrid_command(name="check")
+    async def check(self, ctx: commands.Context):
+        """Check bot & CytechLink metadata / ตรวจสอบข้อมูลบอทและ CytechLink"""
+        async with ctx.typing():
+            lang = await self.bot.get_lang(ctx.guild.id)
+            from utils.luxury import LuxuryEmbed, luxury_line
+
+            embed = LuxuryEmbed(
+                title="🔍 System Metadata Check",
+                description=f"{luxury_line()}\n"
+                f"🤖 **Bot Name:** `{self.bot.user.name}` (Legacy)\n"
+                f"📦 **Bot Version:** `{self.bot.bot_version}`\n"
+                f"🔗 **CytechLink:** `v{cytechlink.__version__}`\n"
+                f"👤 **Author:** `p.namnarak`\n"
+                f"🛠️ **Developer:** `Cytech Development Team`\n"
+                f"{luxury_line()}",
+                color=ui_config.EMBED_COLOR,
+            )
+
+            embed.add_field(
+                name="📝 Project Info",
+                value="Both the Bot and CytechLink are developed by **p.namnarak**.\n"
+                "This is **CytechLink 1.1 Version 1**.",
+                inline=False,
+            )
+
+            embed.add_luxury_footer(self.bot, lang, ctx.author)
+            await ctx.reply(embed=embed)
 
     @commands.hybrid_command(aliases=["info"])
     async def botinfo(self, ctx: commands.Context):
         "Show bot information / แสดงข้อมูลเกี่ยวกับบอท"
         async with ctx.typing():
             lang = await self.bot.get_lang(ctx.guild.id)
-            
+
             # System Info
             cpu = cpuinfo.get_cpu_info()["brand_raw"]
             cpu_cores = psutil.cpu_count(logical=False)
             memory = psutil.virtual_memory()
-            ram_used = round(memory.used / (1024 ** 3), 2)
-            ram_total = round(memory.total / (1024 ** 3), 2)
+            ram_used = round(memory.used / (1024**3), 2)
+            ram_total = round(memory.total / (1024**3), 2)
             ram_percent = memory.percent
-            
+
             from utils.luxury import LuxuryEmbed, luxury_line
-            embed = LuxuryEmbed(title=self.bot.i18n.get("botinfo_title", lang), color=ui_config.EMBED_COLOR)
+
+            embed = LuxuryEmbed(
+                title=self.bot.i18n.get("botinfo_title", lang),
+                color=ui_config.EMBED_COLOR,
+            )
             embed.set_thumbnail(url=self.bot.user.avatar.url)
             embed.set_image(url=ui_config.BANNER_URL)
-            
+
             # Bot Details
             embed.add_field(
                 name=f"📦 {self.bot.i18n.get('botinfo_version', lang)}",
-                value=f"```\nCyori: {self.bot.bot_version}\nPython: {platform.python_version()}\nDiscord.py: {discord.__version__}\n```",
-                inline=False
+                value=f"```\n{self.bot.user.name}: {self.bot.bot_version}\nCytechLink: {cytechlink.__version__}\nPython: {platform.python_version()}\nDiscord.py: {discord.__version__}\n```",
+                inline=False,
             )
             embed.add_field(
-                 name=f"📊 {self.bot.i18n.get('botinfo_stats', lang)}",
-                 value=f"```\n🏰 {self.bot.i18n.get('stats_guilds', lang, count=len(self.bot.guilds))}\n👥 {self.bot.i18n.get('stats_users', lang, count=len(self.bot.users))}\n💬 {self.bot.i18n.get('stats_channels', lang, count=sum(1 for _ in self.bot.get_all_channels()))}\n```",
-                 inline=False
+                name=f"📊 {self.bot.i18n.get('botinfo_stats', lang)}",
+                value=f"```\n🏰 {self.bot.i18n.get('stats_guilds', lang, count=len(self.bot.guilds))}\n👥 {self.bot.i18n.get('stats_users', lang, count=len(self.bot.users))}\n💬 {self.bot.i18n.get('stats_channels', lang, count=sum(1 for _ in self.bot.get_all_channels()))}\n```",
+                inline=False,
             )
-            
+
             # System Details
             sys_info = (
                 f"🖥️ {self.bot.i18n.get('sys_os', lang, value=f'{platform.system()} {platform.release()}')}\n"
@@ -550,18 +812,42 @@ class Info(commands.Cog):
             embed.add_field(
                 name=f"💻 {self.bot.i18n.get('botinfo_system', lang)}",
                 value=f"```\n{sys_info}\n```",
-                inline=False
+                inline=False,
             )
-            
+
             embed.set_footer(text=self.bot.i18n.get("footer_quote", lang))
-            
+
             # Buttons
             view = discord.ui.View()
-            view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label=self.bot.i18n.get("button_invite", lang), url=ui_config.INVITE_URL))
-            view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label=self.bot.i18n.get("button_support", lang), url=ui_config.SUPPORT_URL))
-            view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label=self.bot.i18n.get("button_donate", lang), url=ui_config.DONATE_URL))
-            view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label=self.bot.i18n.get("button_vote", lang), url=ui_config.VOTE_URL))
-            
+            view.add_item(
+                discord.ui.Button(
+                    style=discord.ButtonStyle.link,
+                    label=self.bot.i18n.get("button_invite", lang),
+                    url=ui_config.INVITE_URL,
+                )
+            )
+            view.add_item(
+                discord.ui.Button(
+                    style=discord.ButtonStyle.link,
+                    label=self.bot.i18n.get("button_support", lang),
+                    url=ui_config.SUPPORT_URL,
+                )
+            )
+            view.add_item(
+                discord.ui.Button(
+                    style=discord.ButtonStyle.link,
+                    label=self.bot.i18n.get("button_donate", lang),
+                    url=ui_config.DONATE_URL,
+                )
+            )
+            view.add_item(
+                discord.ui.Button(
+                    style=discord.ButtonStyle.link,
+                    label=self.bot.i18n.get("button_vote", lang),
+                    url=ui_config.VOTE_URL,
+                )
+            )
+
             await ctx.reply(embed=embed, view=view)
 
     @commands.hybrid_command()
@@ -569,12 +855,15 @@ class Info(commands.Cog):
         """Show member's avatar / ดูรูปโปรไฟล์ของสมาชิก"""
         member = member or ctx.author
         lang = await self.bot.get_lang(ctx.guild.id)
-        
+
         from utils.luxury import LuxuryEmbed
-        embed = LuxuryEmbed(title=f"🖼️ Avatar - {member.name}", color=ui_config.EMBED_COLOR)
+
+        embed = LuxuryEmbed(
+            title=f"🖼️ Avatar - {member.name}", color=ui_config.EMBED_COLOR
+        )
         embed.set_image(url=member.display_avatar.url)
         embed.add_luxury_footer(self.bot, lang, ctx.author)
-        
+
         await ctx.reply(embed=embed)
 
     @commands.hybrid_command()
@@ -582,15 +871,27 @@ class Info(commands.Cog):
         """Show server information / ดูข้อมูลของเซิร์ฟเวอร์นี้"""
         guild = ctx.guild
         lang = await self.bot.get_lang(ctx.guild.id)
-        
-        roles = [role.mention for role in sorted(guild.roles, key=lambda r: r.position, reverse=True) if not role.is_default()]
-        roles_text = ", ".join(roles[:10]) + (f" ... and {len(roles)-10} more" if len(roles) > 10 else "") if roles else "None"
-        
+
+        roles = [
+            role.mention
+            for role in sorted(guild.roles, key=lambda r: r.position, reverse=True)
+            if not role.is_default()
+        ]
+        roles_text = (
+            ", ".join(roles[:10])
+            + (f" ... and {len(roles)-10} more" if len(roles) > 10 else "")
+            if roles
+            else "None"
+        )
+
         from utils.luxury import LuxuryEmbed, luxury_line
-        embed = LuxuryEmbed(title=f"🏰 Server Info: {guild.name}", color=ui_config.EMBED_COLOR)
+
+        embed = LuxuryEmbed(
+            title=f"🏰 Server Info: {guild.name}", color=ui_config.EMBED_COLOR
+        )
         if guild.icon:
             embed.set_thumbnail(url=guild.icon.url)
-            
+
         embed.description = (
             f"{luxury_line()}\n"
             f"🆔 **ID:** `{guild.id}`\n"
@@ -602,10 +903,10 @@ class Info(commands.Cog):
             f"🎭 **Roles:** {roles_text}\n"
             f"{luxury_line()}"
         )
-        
+
         if guild.banner:
             embed.set_image(url=guild.banner.url)
-            
+
         embed.add_luxury_footer(self.bot, lang, ctx.author)
         await ctx.reply(embed=embed)
 
@@ -614,14 +915,26 @@ class Info(commands.Cog):
         """Show user information / ดูข้อมูลส่วนตัวของคุณหรือของผู้อื่น"""
         member = member or ctx.author
         lang = await self.bot.get_lang(ctx.guild.id)
-        
-        roles = [role.mention for role in sorted(member.roles, key=lambda r: r.position, reverse=True) if not role.is_default()]
-        roles_text = ", ".join(roles[:10]) + (f" ... and {len(roles)-10} more" if len(roles) > 10 else "") if roles else "None"
-        
+
+        roles = [
+            role.mention
+            for role in sorted(member.roles, key=lambda r: r.position, reverse=True)
+            if not role.is_default()
+        ]
+        roles_text = (
+            ", ".join(roles[:10])
+            + (f" ... and {len(roles)-10} more" if len(roles) > 10 else "")
+            if roles
+            else "None"
+        )
+
         from utils.luxury import LuxuryEmbed, luxury_line
-        embed = LuxuryEmbed(title=f"👤 User Info: {member.name}", color=ui_config.EMBED_COLOR)
+
+        embed = LuxuryEmbed(
+            title=f"👤 User Info: {member.name}", color=ui_config.EMBED_COLOR
+        )
         embed.set_thumbnail(url=member.display_avatar.url)
-        
+
         embed.description = (
             f"{luxury_line()}\n"
             f"🆔 **ID:** `{member.id}`\n"
@@ -632,7 +945,7 @@ class Info(commands.Cog):
             f"🎭 **Roles:** {roles_text}\n"
             f"{luxury_line()}"
         )
-        
+
         embed.add_luxury_footer(self.bot, lang, ctx.author)
         await ctx.reply(embed=embed)
 
@@ -640,48 +953,60 @@ class Info(commands.Cog):
     async def invite(self, ctx: commands.Context):
         """Invite the bot to your server / เชิญบอทเข้าเซิร์ฟเวอร์ของคุณ"""
         lang = await self.bot.get_lang(ctx.guild.id)
-        
+
         from utils.luxury import LuxuryEmbed, luxury_line
+
         embed = LuxuryEmbed(
-            title="💌 Invite Cyori",
+            title=f"💌 Invite {self.bot.user.name}",
             description=f"{luxury_line()}\n"
-                        f"Click the button below to invite me to your server!\nหรือคลิกที่ปุ่มด้านล่างเพื่อเชิญบอท\n\n"
-                        f"👉 **[Click here to Invite]({ui_config.INVITE_URL})**\n"
-                        f"{luxury_line()}",
-            color=ui_config.EMBED_COLOR
+            f"Click the button below to invite me to your server!\nหรือคลิกที่ปุ่มด้านล่างเพื่อเชิญบอท\n\n"
+            f"👉 **[Click here to Invite]({ui_config.INVITE_URL})**\n"
+            f"{luxury_line()}",
+            color=ui_config.EMBED_COLOR,
         )
         embed.set_thumbnail(url=self.bot.user.avatar.url)
-        
+
         view = discord.ui.View()
-        view.add_item(discord.ui.Button(label=self.bot.i18n.get("button_invite", lang), url=ui_config.INVITE_URL, style=discord.ButtonStyle.link))
-        
+        view.add_item(
+            discord.ui.Button(
+                label=self.bot.i18n.get("button_invite", lang),
+                url=ui_config.INVITE_URL,
+                style=discord.ButtonStyle.link,
+            )
+        )
+
         await ctx.reply(embed=embed, view=view)
 
-    @commands.hybrid_command(name="dashboard", description="Web Dashboard link / ลิงก์แดชบอร์ดควบคุมผ่านเว็บ")
+    @commands.hybrid_command(
+        name="dashboard", description="Web Dashboard link / ลิงก์แดชบอร์ดควบคุมผ่านเว็บ"
+    )
     async def dashboard(self, ctx: commands.Context):
         lang = await self.bot.get_lang(ctx.guild.id)
-        
+
         from utils.luxury import LuxuryEmbed, luxury_line
+
         embed = LuxuryEmbed(
             title=f"🌐 {self.bot.i18n.get('dashboard_title', lang)}",
             description=f"{luxury_line()}\n"
-                        f"{self.bot.i18n.get('dashboard_desc', lang)}\n\n"
-                        f"👉 **[Link to Dashboard]({ui_config.DASHBOARD_URL})**\n"
-                        f"{luxury_line()}",
-            color=ui_config.EMBED_COLOR
+            f"{self.bot.i18n.get('dashboard_desc', lang)}\n\n"
+            f"👉 **[Link to Dashboard]({ui_config.DASHBOARD_URL})**\n"
+            f"{luxury_line()}",
+            color=ui_config.EMBED_COLOR,
         )
         embed.set_thumbnail(url=self.bot.user.avatar.url)
         embed.set_image(url=ui_config.BANNER_URL)
         embed.add_luxury_footer(self.bot, lang, ctx.author)
-        
+
         view = discord.ui.View()
-        view.add_item(discord.ui.Button(
-            label=self.bot.i18n.get("button_dashboard", lang), 
-            url=ui_config.DASHBOARD_URL, 
-            style=discord.ButtonStyle.link,
-            emoji="🌐"
-        ))
-        
+        view.add_item(
+            discord.ui.Button(
+                label=self.bot.i18n.get("button_dashboard", lang),
+                url=ui_config.DASHBOARD_URL,
+                style=discord.ButtonStyle.link,
+                emoji="🌐",
+            )
+        )
+
         await ctx.reply(embed=embed, view=view)
 
     @commands.command(name="export_commands", hidden=True)
@@ -691,11 +1016,12 @@ class Info(commands.Cog):
         cog = self.bot.get_cog("DashboardAPI")
         if not cog:
             return await ctx.send("DashboardAPI cog not found.")
-        
+
         # We need a fake request object or just call the logic
         class FakeRequest:
-            def __init__(self): self.query = {"show_all": "true"}
-        
+            def __init__(self):
+                self.query = {"show_all": "true"}
+
         # Actually it's easier to just re-implement the logic or move it to a helper
         # Let's just use the cog's method but we need to handle the response
         try:
@@ -704,16 +1030,20 @@ class Info(commands.Cog):
             for c_name, c_obj in self.bot.cogs.items():
                 for cmd in c_obj.get_commands():
                     all_cmds.extend(cog._parse_command_recursive(cmd, category=c_name))
-            
+
             topgg_text = ""
             for cmd in all_cmds:
-                if cmd.get("is_group"): continue
+                if cmd.get("is_group"):
+                    continue
                 topgg_text += f"{cmd['usage']} - {cmd['description']}\n"
-            
+
             # Send as file if too long
             if len(topgg_text) > 1900:
                 import io
-                file = discord.File(io.BytesIO(topgg_text.encode()), filename="topgg_commands.txt")
+
+                file = discord.File(
+                    io.BytesIO(topgg_text.encode()), filename="topgg_commands.txt"
+                )
                 await ctx.send("✅ Exported commands to file:", file=file)
             else:
                 await ctx.send(f"✅ **Top.gg Command Export:**\n```\n{topgg_text}\n```")

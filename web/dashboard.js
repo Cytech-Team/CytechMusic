@@ -882,12 +882,6 @@ async function performSearch() {
         const data = await res.json();
 
         if (data.results && data.results.length > 0) {
-            // Reset Modal UI state (In case it was previously showing a Playlist)
-            const modalTitle = document.getElementById('modal-title');
-            if (modalTitle) modalTitle.textContent = "Search Results";
-            const addBtn = document.getElementById('playlist-add-song-btn');
-            if (addBtn) addBtn.style.display = 'none';
-
             // If we have a modal, show results there.
             if (document.getElementById('search-modal')) {
                 renderSearchResultsToModal(data.results);
@@ -915,21 +909,15 @@ async function performSearch() {
 }
 
 async function playTrack(encoded, uri) {
-    if (!selectedGuildId) {
-        showNotification("No Channel", "ไม่ระบุช่อง", "Please join a voice channel first to play music.", "กรุณาเข้าห้องเสียงก่อนนะครับถึงจะเล่นเพลงได้", "error");
-        return;
-    }
-
     const modal = document.getElementById('search-modal');
     if (modal) modal.style.display = 'none';
 
     const input = document.getElementById('song-input');
     if (input) input.value = '';
 
-    // UI Feedback
-    showNotification("Adding to Queue", "กำลังเพิ่มลงคิว", "Your request is being processed...", "กำลังดำเนินการตามคำขอของคุณ...", "success");
-
+    // UI Feedback: Show loading on the card if possible or global notification
     console.log(`[Dashboard] Playing track: ${encoded || uri}`);
+
     await sendControl('play', { encoded, uri, source: 'dashboard' });
 }
 
@@ -973,10 +961,6 @@ function renderPlaylistOptions() {
     const trackNameTip = document.getElementById('attp-track-name');
     if (!container || !trackToAddToPlaylist) return;
 
-    if (trackNameTip) {
-        trackNameTip.textContent = `Adding: ${trackToAddToPlaylist.title}`;
-    }
-
     // Clear any leftover inline create form first
     const oldInline = document.getElementById('create-pl-inline');
     if (oldInline) oldInline.remove();
@@ -985,18 +969,17 @@ function renderPlaylistOptions() {
 
     // Add "Create New" option at top
     html += `
-        <button class="btn btn-primary" onclick="createNewPlaylistPrompt()"
+        <button class="btn-primary" onclick="createNewPlaylistPrompt()"
                 style="width: 100%; text-align: center; padding: 12px; border-radius: 12px; margin-bottom: 10px; font-weight: 600;">
             <i class="fas fa-plus"></i> สร้าง Playlist ใหม่
         </button>
     `;
 
-    // Use correct variable name: userPlaylists (defined at line 1295)
-    if (!userPlaylists || userPlaylists.length === 0) {
+    if (playlists.length === 0) {
         html += `<p style="text-align: center; color: #aaa; padding: 20px;">ยังไม่มี Playlist</p>`;
     } else {
-        html += userPlaylists.map((pl, idx) => `
-            <button class="btn btn-glass" onclick="confirmAddTrackToPlaylist(${idx})"
+        html += playlists.map((pl, idx) => `
+            <button class="btn-glass" onclick="confirmAddTrackToPlaylist(${idx})"
                     style="width: 100%; text-align: left; padding: 12px 15px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; transition: 0.2s;">
                 <div style="flex:1; overflow:hidden;">
                     <div style="font-weight: 600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${pl.name}</div>
@@ -1088,7 +1071,10 @@ async function confirmAddTrackToPlaylist(plIdx) {
 // 6. INITIALIZATION & EVENTS
 // ==========================================
 
-// function playTrack(encoded, uri) { ... } // Removed duplicate definition
+async function playTrack(encoded, uri) {
+    if (!selectedGuildId) return showNotification("No Channel", "ไม่ระบุช่อง", "Please join a voice channel first.", "กรุณาเข้าห้องเสียงก่อนนะครับ", "error");
+    await sendControl('play', { encoded, uri, source: 'dashboard' });
+}
 
 function attachSeekListener() {
     const bar = document.getElementById('progress-bar');

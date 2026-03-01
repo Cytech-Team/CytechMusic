@@ -69,8 +69,9 @@ class DashboardSystem:
         router.add_get("/dashboard.html", serve_dashboard)
         
         async def redirect_invite(request):
-            return web.HTTPFound("https://discord.com/oauth2/authorize?client_id=1469606905948405833&permissions=8&scope=bot%20applications.commands")
-        
+            from utils.config import NEW_BOT_ID
+            return web.HTTPFound(f"https://discord.com/oauth2/authorize?client_id={NEW_BOT_ID}&permissions=8&scope=bot%20applications.commands")
+
         router.add_get("/invite", redirect_invite)
         
         router.add_get("/api/status", self.get_status)
@@ -103,6 +104,8 @@ class DashboardSystem:
 
         print(f"[CytechX] Dashboard System Embedded & Ready")
         print(f"[CytechX] Routes loaded: /, /dashboard, /api/proxy, and static files")
+        print(f"[!] SECURITY WARNING: The built-in dashboard uses a simple web server.")
+        print(f"[!] For public use, hide it behind a reverse proxy (e.g. Nginx).")
 
     async def handle_proxy_route(self, request):
         """Delegates to the new APIProxyManager"""

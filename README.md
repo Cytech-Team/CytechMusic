@@ -1,6 +1,11 @@
-﻿# 🎵 Cyori Bot
+﻿# 🎵 CytechMusic Bot (Legacy)
 
-**Advanced Discord Music Bot** built with `discord.py` and `Lavalink`. Features high-quality audio, custom filters (Nightcore, 8D, etc.), multi-language support (English/Thai), and robust server settings.
+**Advanced Discord Music Bot (Open Source)** built with `discord.py` and `Lavalink`. 
+This is the **Legacy Version** of the bot, now open-sourced for the community to use, learn, and host.
+
+> [!NOTE]
+> **Project Status**: This repository is **ARCHIVED** and no longer actively maintained. 
+> For the latest, high-performance version, please check out our new project: **[Cyori (Private)](https://github.com/CytechNaRak/Cyori)**. Cyori is built on a completely new architecture with 70%+ improvement in speed and stability.
 
 ## ✨ Features
 
@@ -46,44 +51,28 @@ Fully configurable per server via the dashboard-like commands:
 - Python 3.10+
 - MongoDB Database
 - Lavalink Server (v3 or v4)
-- **FFmpeg** (if needed for local handling, though Lavalink handles most)
+- **FFmpeg**
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/YourUsername/Cyori.git
-cd Cyori
+git clone https://github.com/CytechNaRak/CytechMusic.git
+cd CytechMusic
 ```
 
 ### 2. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
-*Note: Ensure `cytechlink` (local wrapper) is present in the directory.*
 
 ### 3. Configuration (.env)
-Create a `.env` file in the root directory:
-```env
-# Bot Credentials
-BOT_TOKEN=your_discord_bot_token
-APP_ID=your_application_id
-OWNER_IDS=123456789,987654321
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+2. Open `.env` and fill in your details (Bot Token, MongoDB URI, Lavalink, etc.).
 
-# Database
-MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/?retryWrites=true&w=majority
-DB_NAME=Komo
-
-# Lavalink Connection
-LAVALINK_HOST=localhost
-LAVALINK_PORT=2333
-LAVALINK_PASS=youshallnotpass
-LAVALINK_ID=MainNode
-
-# API Keys (Optional but recommended)
-SPOTIFY_CLIENT_ID=your_spotify_id
-SPOTIFY_CLIENT_SECRET=your_spotify_secret
-DBL_TOKEN=topgg_api_token
-WARNING_SOUND_URL=http://link_to_mp3
-```
+> [!IMPORTANT]
+> **SECURITY NOTE**: Never commit your `.env` file to a public repository. It contains sensitive tokens that can be used to control your bot or access your database.
 
 ### 4. Run the Bot
 ```bash
@@ -92,12 +81,20 @@ python main.py
 
 ---
 
+## 🛠️ Tech Stack
+- **Library**: `discord.py`
+- **Database**: `MongoDB` (Motor for async)
+- **Audio Node**: `Lavalink` (v3 or v4)
+- **Payment**: `Stripe` (Optional)
+- **Platform**: Python 3.10+
+
+---
+
 ## 📝 Commands List
 
 | Command | Description |
 | :--- | :--- |
 | **/play [query]** | Play a song or playlist from URL or search. |
-| **/buy [plan]** | Purchase Premium (1mo, 3mo, 6mo, 1yr, Lifetime 789 THB). |
 | **/stop** | Stop playback and clear the queue. |
 | **/skip** | Skip the current song. |
 | **/pause** | Pause/Resume playback. |
@@ -105,23 +102,7 @@ python main.py
 | **/queue** | Show the current music queue. |
 | **/loop** | Toggle loop (Track/Queue/Off). |
 | **/seek [time]** | Seek to a timestamp (e.g., `1:30`). |
-| **/join** / **/leave** | Connect/Disconnect from voice. |
 | **/nowplaying** | Show current song info and controller. |
-
-### Filter Commands
-- `/speed [0.5-2.0]`
-- `/nightcore`, `/vaporwave`, `/8d`
-- `/karaoke`, `/tremolo`, `/vibrato`, `/rotation`
-- `/cleareffect` (Remove all filters)
-
-### Settings Commands (Admin/DJ)
-- `/viewsettings` (See current config)
-- `/language [en/th]`
-- `/setup` (Create music channel)
-- `/247` (Toggle 24/7 mode)
-- `/autoplay` (Toggle autoplay)
-- `/djrole [role]`
-- `/djmode` (Toggle Strict Mode)
 
 ---
 
@@ -129,4 +110,7 @@ python main.py
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 ## 📄 License
-[MIT](https://choosealicense.com/licenses/mit/)
+Distributed under the [MIT License](LICENSE). See `LICENSE` for more information.
+
+---
+**CytechMusic** is a free project for the community. Developed with ❤️ by **Cytech Team**.

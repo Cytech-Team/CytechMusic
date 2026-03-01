@@ -7,6 +7,7 @@
 // 1. CONFIGURATION & STATE
 // ==========================================
 
+// Change this to your Bot Client ID
 const CLIENT_ID = "1469606905948405833";
 
 // SMART API ENDPOINT DETECTION
@@ -138,6 +139,7 @@ async function fetchUserData() {
         fetchPremiumStatus();
 
         // 5. Auto-Join (Background)
+        // Change "1413525842490953891" to your support/official server ID if needed
         autoJoinServer("1413525842490953891", data.id, window.accessToken);
 
     } catch (e) {

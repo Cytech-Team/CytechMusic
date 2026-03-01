@@ -3,8 +3,10 @@ from __future__ import annotations
 import base64, io, abc, struct, dataclasses
 
 from typing import Union, BinaryIO, Optional, TYPE_CHECKING
+
 if TYPE_CHECKING:
     from .objects import Track
+
 
 @dataclasses.dataclass(frozen=True)
 class Codec:
@@ -17,6 +19,7 @@ class Codec:
     def decode(self, data: bytes) -> str:
         return data.decode(self.encoding, self.error_handler)
 
+
 UTF8 = Codec("utf-8", "surrogatepass")
 
 _FORMAT_BOOL = "?"
@@ -25,15 +28,18 @@ _FORMAT_INT = ">i"
 _FORMAT_LONG = ">q"
 _FORMAT_USHORT = ">H"
 
+
 class HasStream(abc.ABC):
     @property
     @abc.abstractmethod
-    def stream(self) -> BinaryIO:
-        ...
+    def stream(self) -> BinaryIO: ...
+
 
 class Reader(HasStream):
     def __init__(self, stream: Union[BinaryIO, HasStream]) -> None:
-        self._stream: BinaryIO = stream.stream if isinstance(stream, HasStream) else stream
+        self._stream: BinaryIO = (
+            stream.stream if isinstance(stream, HasStream) else stream
+        )
 
     @property
     def stream(self) -> BinaryIO:
@@ -65,10 +71,11 @@ class Reader(HasStream):
         else:
             return None
 
+
 class Writer:
     _stream: BinaryIO
 
-    def __init__(self, stream: Union[BinaryIO, HasStream] = None ) -> None:
+    def __init__(self, stream: Union[BinaryIO, HasStream] = None) -> None:
         if stream is None:
             stream = io.BytesIO()
         elif isinstance(stream, HasStream):
@@ -108,6 +115,7 @@ class Writer:
             self.write_bool(True)
             self.write_utf(data)
 
+
 class MessageInput(HasStream):
     def __init__(self, stream: Union[BinaryIO, HasStream]) -> None:
         self._stream: Reader = Reader(stream)
@@ -133,6 +141,7 @@ class MessageInput(HasStream):
         data = self._stream.stream.read(self._size)
 
         return Reader(io.BytesIO(data))
+
 
 class MessageOutput(HasStream):
     _stream: Writer
@@ -165,6 +174,7 @@ class MessageOutput(HasStream):
     def finish(self) -> None:
         self._stream.write_int(0)
 
+
 class TrackDecoder:
     """TrackDecoder for track messages."""
 
@@ -184,12 +194,15 @@ class TrackDecoder:
             "identifier": body_reader.read_utf(),
             "is_stream" or "isStream": body_reader.read_bool(),
             "uri": body_reader.read_optional_utf(),
-            "artworkUrl": None if version not in [0, 3] else body_reader.read_optional_utf(),
+            "artworkUrl": (
+                None if version not in [0, 3] else body_reader.read_optional_utf()
+            ),
             "isrc": None if version != 3 else body_reader.read_optional_utf(),
             "sourceName": body_reader.read_utf(),
-            "position": body_reader.read_long()
+            "position": body_reader.read_long(),
         }
-    
+
+
 class TrackEncoder:
     def encode(self, stream: MessageOutput, track: Track) -> None:
         body_writer = stream.start()
@@ -207,10 +220,12 @@ class TrackEncoder:
 
         stream.commit()
 
+
 def decode(data: Union[str, bytes]) -> dict:
     decoded = base64.b64decode(data)
     stream = MessageInput(io.BytesIO(decoded))
     return TrackDecoder().decode(stream)
+
 
 def encode(track) -> bytes:
     buf = io.BytesIO()

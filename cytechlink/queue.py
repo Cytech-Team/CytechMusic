@@ -6,6 +6,7 @@ from typing import Optional, Tuple, List, Callable
 from itertools import cycle
 from discord import Member
 
+
 class LoopTypeCycle:
     def __init__(self) -> None:
         self._cycle = cycle(LoopType)
@@ -15,10 +16,10 @@ class LoopTypeCycle:
         self.current = next(self._cycle)
         return self.current
 
-    def set_mode(self, value: 'LoopType') -> 'LoopType':
+    def set_mode(self, value: "LoopType") -> "LoopType":
         # Safety break to prevent infinite loop
         # LoopType has 3 values (OFF, QUEUE, TRACK) usually. Check standard Enum size + buffer.
-        for _ in range(10): 
+        for _ in range(10):
             if next(self._cycle) == value:
                 break
         self.current = value
@@ -27,9 +28,10 @@ class LoopTypeCycle:
     @property
     def mode(self) -> LoopType:
         return self.current
-    
+
     def __str__(self) -> str:
         return self.current.name.capitalize()
+
 
 class Queue:
     def __init__(self) -> None:
@@ -42,10 +44,16 @@ class Queue:
     def get(self) -> Optional[Track]:
         track = None
         try:
-            track = self._queue[self._position - 1 if self._repeat.mode == LoopType.track else self._position]
+            track = self._queue[
+                (
+                    self._position - 1
+                    if self._repeat.mode == LoopType.track
+                    else self._position
+                )
+            ]
             if self._repeat.mode != LoopType.track:
                 self._position += 1
-        except:
+        except Exception:
             if self._repeat.mode == LoopType.queue:
                 try:
                     track = self._queue[self._repeat_position]
@@ -92,23 +100,26 @@ class Queue:
             self._position -= index
 
     def history_clear(self, is_playing: bool) -> None:
-        self._queue[:self._position - 1 if is_playing else self._position] = []
+        self._queue[: self._position - 1 if is_playing else self._position] = []
         self._position = 1 if is_playing else 0
 
     def clear(self) -> None:
-        del self._queue[self._position:]
+        del self._queue[self._position :]
 
     def replace(self, queue_type: str, replacement: list) -> None:
         if queue_type == "queue":
             self.clear()
             self._queue += replacement
         elif queue_type == "history":
-            self._queue[:self._position] = replacement
+            self._queue[: self._position] = replacement
 
     def swap(self, num1: int, num2: int) -> Tuple[Track, Track]:
         try:
             pos = self._position - 1
-            self._queue[pos + num1], self._queue[pos + num2] = self._queue[pos + num2], self._queue[pos + num1]
+            self._queue[pos + num1], self._queue[pos + num2] = (
+                self._queue[pos + num2],
+                self._queue[pos + num1],
+            )
             return self._queue[pos + num1], self._queue[pos + num2]
         except IndexError:
             raise OutofList("")
@@ -122,10 +133,12 @@ class Queue:
             self._queue.remove(moveItem)
             self.put_at_index(to, moveItem)
             return moveItem
-        except:
+        except Exception:
             raise OutofList("")
 
-    def remove(self, index: int, index2: int = None, member: Member = None) -> Optional[List[Track]]:
+    def remove(
+        self, index: int, index2: int = None, member: Member = None
+    ) -> Optional[List[Track]]:
         pos = self._position - 1
 
         if index2 is None:
@@ -136,38 +149,38 @@ class Queue:
 
         try:
             count = []
-            for i, track in enumerate(self._queue[pos + index: pos + index2 + 1]):
+            for i, track in enumerate(self._queue[pos + index : pos + index2 + 1]):
                 if member:
                     if track.requester != member:
                         continue
-            
+
                 self._queue.remove(track)
                 count.append({"position": pos + index + i, "track": track})
 
             return count
-        except:
+        except Exception:
             raise OutofList("")
 
     def history(self, incTrack: bool = False) -> List[Track]:
         if incTrack:
-            return self._queue[:self._position]
-        return self._queue[:self._position - 1]
+            return self._queue[: self._position]
+        return self._queue[: self._position - 1]
 
     def tracks(self, incTrack: bool = False) -> List[Track]:
         if incTrack:
-            return self._queue[self._position - 1:]
-        return self._queue[self._position:]
+            return self._queue[self._position - 1 :]
+        return self._queue[self._position :]
 
     @property
     def count(self) -> int:
-        return len(self._queue[self._position:])
+        return len(self._queue[self._position :])
 
     def __iter__(self):
-        return iter(self._queue[self._position:])
+        return iter(self._queue[self._position :])
 
     def __len__(self):
         return self.count
-    
+
     @property
     def repeat(self) -> str:
         return self._repeat.mode.name.capitalize()
@@ -176,9 +189,10 @@ class Queue:
     def is_empty(self) -> bool:
         try:
             self._queue[self._position]
-        except:
+        except Exception:
             return True
         return False
+
 
 class FairQueue(Queue):
     def __init__(self, size: int, allow_duplicate: bool, get_msg) -> None:

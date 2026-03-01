@@ -14,7 +14,7 @@ async def get_prefix(bot, message: discord.Message):
     try:
         guild_data = await bot.db_manager.get_guild(message.guild.id)
         prefix = guild_data.get("prefix", "cm!")
-    except:
+    except Exception:
         prefix = "cm!"
         
     return commands.when_mentioned_or(prefix)(bot, message)

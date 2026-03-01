@@ -1,10 +1,8 @@
 import collections
 from .exceptions import FilterInvalidArgument, FilterTagAlreadyInUse, FilterTagInvalid
 
-from typing import (
-    Dict,
-    List
-)
+from typing import Dict, List
+
 
 class Filter:
     """
@@ -13,9 +11,11 @@ class Filter:
     installed. If you do not have the latest Lavalink version,
     these filters will not work.
     """
+
     def __init__(self):
         self.payload: Dict[str, List] = None
         self.tag: str = None
+
 
 class Filters:
     def __init__(self) -> None:
@@ -29,26 +29,27 @@ class Filters:
     def remove_filter(self, *, filter_tag: str) -> None:
         if not self.has_filter(filter_tag=filter_tag):
             raise FilterTagInvalid("A filter with that tag was not found.")
-        
+
         for index, filter in enumerate(self._filters):
             if filter.tag == filter_tag:
                 del self._filters[index]
-        
+
     def has_filter(self, *, filter_tag: str) -> bool:
         return any(f for f in self._filters if f.tag == filter_tag)
-    
+
     def reset_filters(self) -> None:
         self._filters = []
-    
+
     def get_all_payloads(self) -> dict:
         payload = {}
         for filter in self._filters:
             payload.update(filter.payload)
         return payload
-    
+
     def get_filters(self) -> List[Filter]:
         return self._filters
-        
+
+
 class Equalizer(Filter):
     """
     Filter which represents a 15 band equalizer.
@@ -75,46 +76,84 @@ class Equalizer(Filter):
         return _dict
 
     def __repr__(self) -> str:
-        return f"<Cytechlink.EqualizerFilter tag={self.tag} eq={self.eq} raw={self.raw}>"
+        return (
+            f"<Cytechlink.EqualizerFilter tag={self.tag} eq={self.eq} raw={self.raw}>"
+        )
 
     @classmethod
     def flat(cls):
         """Equalizer preset which represents a flat EQ board,
-            with all levels set to their default values.
+        with all levels set to their default values.
         """
 
         levels = [
-            (0, 0.0), (1, 0.0), (2, 0.0), (3, 0.0), (4, 0.0),
-            (5, 0.0), (6, 0.0), (7, 0.0), (8, 0.0), (9, 0.0),
-            (10, 0.0), (11, 0.0), (12, 0.0), (13, 0.0), (14, 0.0)
+            (0, 0.0),
+            (1, 0.0),
+            (2, 0.0),
+            (3, 0.0),
+            (4, 0.0),
+            (5, 0.0),
+            (6, 0.0),
+            (7, 0.0),
+            (8, 0.0),
+            (9, 0.0),
+            (10, 0.0),
+            (11, 0.0),
+            (12, 0.0),
+            (13, 0.0),
+            (14, 0.0),
         ]
         return cls(tag="flat", levels=levels)
 
     @classmethod
     def boost(cls):
         """Equalizer preset which boosts the sound of a track,
-           making it sound fun and energetic by increasing the bass
-           and the highs.
+        making it sound fun and energetic by increasing the bass
+        and the highs.
         """
 
         levels = [
-            (0, -0.075), (1, 0.125), (2, 0.125), (3, 0.1), (4, 0.1),
-            (5, .05), (6, 0.075), (7, 0.0), (8, 0.0), (9, 0.0),
-            (10, 0.0), (11, 0.0), (12, 0.125), (13, 0.15), (14, 0.05)
+            (0, -0.075),
+            (1, 0.125),
+            (2, 0.125),
+            (3, 0.1),
+            (4, 0.1),
+            (5, 0.05),
+            (6, 0.075),
+            (7, 0.0),
+            (8, 0.0),
+            (9, 0.0),
+            (10, 0.0),
+            (11, 0.0),
+            (12, 0.125),
+            (13, 0.15),
+            (14, 0.05),
         ]
         return cls(tag="boost", levels=levels)
 
     @classmethod
     def metal(cls):
-        """Equalizer preset which increases the mids of a track, 
-            preferably one of the metal genre, to make it sound 
-            more full and concert-like.
+        """Equalizer preset which increases the mids of a track,
+        preferably one of the metal genre, to make it sound
+        more full and concert-like.
         """
 
         levels = [
-            (0, 0.0), (1, 0.1), (2, 0.1), (3, 0.15), (4, 0.13),
-            (5, 0.1), (6, 0.0), (7, 0.125), (8, 0.175), (9, 0.175),
-            (10, 0.125), (11, 0.125), (12, 0.1), (13, 0.075), (14, 0.0)
+            (0, 0.0),
+            (1, 0.1),
+            (2, 0.1),
+            (3, 0.15),
+            (4, 0.13),
+            (5, 0.1),
+            (6, 0.0),
+            (7, 0.125),
+            (8, 0.175),
+            (9, 0.175),
+            (10, 0.125),
+            (11, 0.125),
+            (12, 0.1),
+            (13, 0.075),
+            (14, 0.0),
         ]
 
         return cls(tag="metal", levels=levels)
@@ -122,32 +161,38 @@ class Equalizer(Filter):
     @classmethod
     def piano(cls):
         """Equalizer preset which increases the mids and highs
-            of a track, preferably a piano based one, to make it 
-            stand out.
+        of a track, preferably a piano based one, to make it
+        stand out.
         """
 
         levels = [
-            (0, -0.25), (1, -0.25), (2, -0.125), (3, 0.0),
-            (4, 0.25), (5, 0.25), (6, 0.0), (7, -0.25), (8, -0.25),
-            (9, 0.0), (10, 0.0), (11, 0.5), (12, 0.25), (13, -0.025)
+            (0, -0.25),
+            (1, -0.25),
+            (2, -0.125),
+            (3, 0.0),
+            (4, 0.25),
+            (5, 0.25),
+            (6, 0.0),
+            (7, -0.25),
+            (8, -0.25),
+            (9, 0.0),
+            (10, 0.0),
+            (11, 0.5),
+            (12, 0.25),
+            (13, -0.025),
         ]
         return cls(tag="piano", levels=levels)
 
 
 class Timescale(Filter):
     """Filter which changes the speed and pitch of a track.
-       You can make some very nice effects with this filter,
-       i.e: a vaporwave-esque filter which slows the track down
-       a certain amount to produce said effect.
+    You can make some very nice effects with this filter,
+    i.e: a vaporwave-esque filter which slows the track down
+    a certain amount to produce said effect.
     """
 
     def __init__(
-        self, 
-        *, 
-        tag: str,
-        speed: float = 1.0, 
-        pitch: float = 1.0, 
-        rate: float = 1.0
+        self, *, tag: str, speed: float = 1.0, pitch: float = 1.0, rate: float = 1.0
     ):
         super().__init__()
 
@@ -164,18 +209,14 @@ class Timescale(Filter):
         self.tag = tag
 
         self.payload = {
-            "timescale": {
-                "speed": self.speed,
-                "pitch": self.pitch,
-                "rate": self.rate
-            }
+            "timescale": {"speed": self.speed, "pitch": self.pitch, "rate": self.rate}
         }
 
     @classmethod
     def vaporwave(cls):
-        """Timescale preset which slows down the currently playing track, 
+        """Timescale preset which slows down the currently playing track,
         giving it the effect of a half-speed record/casette playing.
-        
+
         This preset will assign the tag 'vaporwave'.
         """
 
@@ -185,11 +226,11 @@ class Timescale(Filter):
     def nightcore(cls):
         """Timescale preset which speeds up the currently playing track,
         which matches up to nightcore, a genre of sped-up music
-        
+
         This preset will assign the tag 'nightcore'.
         """
 
-        return cls(tag="nightcore", speed=1.25, pitch=1.3)                    
+        return cls(tag="nightcore", speed=1.25, pitch=1.3)
 
     def __repr__(self):
         return f"<Cytechlink.TimescaleFilter tag={self.tag} speed={self.speed} pitch={self.pitch} rate={self.rate}>"
@@ -197,7 +238,7 @@ class Timescale(Filter):
 
 class Karaoke(Filter):
     """Filter which filters the vocal track from any song and leaves the instrumental.
-       Best for karaoke as the filter implies.
+    Best for karaoke as the filter implies.
     """
 
     def __init__(
@@ -207,7 +248,7 @@ class Karaoke(Filter):
         level: float = 1.0,
         mono_level: float = 1.0,
         filter_band: float = 220.0,
-        filter_width: float = 100.0
+        filter_width: float = 100.0,
     ):
         super().__init__()
 
@@ -222,7 +263,7 @@ class Karaoke(Filter):
                 "level": self.level,
                 "monoLevel": self.mono_level,
                 "filterBand": self.filter_band,
-                "filterWidth": self.filter_width
+                "filterWidth": self.filter_width,
             }
         }
 
@@ -235,16 +276,10 @@ class Karaoke(Filter):
 
 class Tremolo(Filter):
     """Filter which produces a wavering tone in the music,
-       causing it to sound like the music is changing in volume rapidly.
+    causing it to sound like the music is changing in volume rapidly.
     """
 
-    def __init__(
-        self, 
-        *, 
-        tag: str,
-        frequency: float = 2.0, 
-        depth: float = 0.5
-    ):
+    def __init__(self, *, tag: str, frequency: float = 2.0, depth: float = 0.5):
         super().__init__()
 
         if frequency < 0:
@@ -256,12 +291,7 @@ class Tremolo(Filter):
         self.depth = depth
         self.tag = tag
 
-        self.payload = {
-            "tremolo": {
-                "frequency": self.frequency,
-                "depth": self.depth
-            }
-        }
+        self.payload = {"tremolo": {"frequency": self.frequency, "depth": self.depth}}
 
     def __repr__(self):
         return f"<Cytechlink.TremoloFilter tag={self.tag} frequency={self.frequency} depth={self.depth}>"
@@ -269,16 +299,10 @@ class Tremolo(Filter):
 
 class Vibrato(Filter):
     """Filter which produces a wavering tone in the music, similar to the Tremolo filter,
-       but changes in pitch rather than volume.
+    but changes in pitch rather than volume.
     """
 
-    def __init__(
-        self, 
-        *, 
-        tag: str,
-        frequency: float = 2.0, 
-        depth: float = 0.5
-    ):
+    def __init__(self, *, tag: str, frequency: float = 2.0, depth: float = 0.5):
 
         super().__init__()
         if frequency < 0 or frequency > 14:
@@ -290,13 +314,8 @@ class Vibrato(Filter):
         self.depth = depth
         self.tag = tag
 
-        self.payload = {
-            "vibrato": {
-                "frequency": self.frequency,
-                "depth": self.depth
-            }
-        }
-        
+        self.payload = {"vibrato": {"frequency": self.frequency, "depth": self.depth}}
+
     def __repr__(self):
         return f"<Cytechlink.VibratoFilter tag={self.tag} frequency={self.frequency} depth={self.depth}>"
 
@@ -333,18 +352,26 @@ class ChannelMix(Filter):
         left_to_left: float = 1,
         right_to_right: float = 1,
         left_to_right: float = 0,
-        right_to_left: float = 0
+        right_to_left: float = 0,
     ):
         super().__init__()
 
         if not 0 <= left_to_left <= 1:
-            raise ValueError("'left_to_left' value must be more than or equal to 0 or less than or equal to 1.")
+            raise ValueError(
+                "'left_to_left' value must be more than or equal to 0 or less than or equal to 1."
+            )
         if not 0 <= right_to_right <= 1:
-            raise ValueError("'right_to_right' value must be more than or equal to 0 or less than or equal to 1.")
+            raise ValueError(
+                "'right_to_right' value must be more than or equal to 0 or less than or equal to 1."
+            )
         if not 0 <= left_to_right <= 1:
-            raise ValueError("'left_to_right' value must be more than or equal to 0 or less than or equal to 1.")
+            raise ValueError(
+                "'left_to_right' value must be more than or equal to 0 or less than or equal to 1."
+            )
         if not 0 <= right_to_left <= 1:
-            raise ValueError("'right_to_left' value must be more than or equal to 0 or less than or equal to 1.")
+            raise ValueError(
+                "'right_to_left' value must be more than or equal to 0 or less than or equal to 1."
+            )
 
         self.left_to_left = left_to_left
         self.left_to_right = left_to_right
@@ -354,36 +381,37 @@ class ChannelMix(Filter):
 
         self.payload = {
             "channelMix": {
-                "leftToLeft": self.left_to_left, 
-                "leftToRight": self.left_to_right, 
-                "rightToLeft": self.right_to_left, 
-                "rightToRight": self.right_to_right
+                "leftToLeft": self.left_to_left,
+                "leftToRight": self.left_to_right,
+                "rightToLeft": self.right_to_left,
+                "rightToRight": self.right_to_right,
             }
         }
 
     def __repr__(self) -> str:
-        return ( 
+        return (
             f"<Cytechlink.ChannelMix tag={self.tag} left_to_left={self.left_to_left} left_to_right={self.left_to_right} "
-            f"right_to_left={self.right_to_left} right_to_right={self.right_to_right}>" 
+            f"right_to_left={self.right_to_left} right_to_right={self.right_to_right}>"
         )
+
 
 class Distortion(Filter):
     """Filter which generates a distortion effect. Useful for certain filter implementations where
-    distortion is needed. 
+    distortion is needed.
     """
 
     def __init__(
         self,
         *,
         tag: str,
-        sin_offset: float =  0,
+        sin_offset: float = 0,
         sin_scale: float = 1,
         cos_offset: float = 0,
         cos_scale: float = 1,
         tan_offset: float = 0,
         tan_scale: float = 1,
         offset: float = 0,
-        scale: float = 1
+        scale: float = 1,
     ):
         super().__init__()
 
@@ -406,7 +434,7 @@ class Distortion(Filter):
                 "tanOffset": self.tan_offset,
                 "tanScale": self.tan_scale,
                 "offset": self.offset,
-                "scale": self.scale
+                "scale": self.scale,
             }
         }
 
@@ -432,5 +460,3 @@ class LowPass(Filter):
 
     def __repr__(self) -> str:
         return f"<Cytechlink.LowPass tag={self.tag} smoothing={self.smoothing}>"
-
-

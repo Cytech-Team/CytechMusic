@@ -12,7 +12,7 @@ from typing import Dict, Optional, TYPE_CHECKING, Union, List
 from urllib.parse import quote
 
 from . import (
-    __version__, 
+    __version__,
     spotify,
 )
 
@@ -24,7 +24,7 @@ from .exceptions import (
     NodeException,
     NodeNotAvailable,
     NoNodesAvailable,
-    TrackLoadError
+    TrackLoadError,
 )
 from .objects import Playlist, Track
 from .utils import ExponentialBackoff, NodeStats, Ping
@@ -42,17 +42,16 @@ DISCORD_MP3_URL_REGEX = re.compile(
     r"(?P<message_id>[0-9]+)/(?P<file>[a-zA-Z0-9_.]+)+"
 )
 
-URL_REGEX = re.compile(
-    r"https?://(?:www\.)?.+"
-)
+URL_REGEX = re.compile(r"https?://(?:www\.)?.+")
 
 NODE_VERSION = "v4"
 CALL_METHOD = ["PATCH", "DELETE"]
 
+
 class Node:
-    """The base class for a node. 
-       This node object represents a Lavalink node. 
-       To enable Spotify searching, pass in a proper Spotify Client ID and Spotify Client Secret
+    """The base class for a node.
+    This node object represents a Lavalink node.
+    To enable Spotify searching, pass in a proper Spotify Client ID and Spotify Client Secret
     """
 
     def __init__(
@@ -69,8 +68,7 @@ class Node:
         session: Optional[aiohttp.ClientSession] = None,
         spotify_client_id: Optional[str] = None,
         spotify_client_secret: Optional[str] = None,
-        resume_key: Optional[str] = None
-
+        resume_key: Optional[str] = None,
     ):
         self._bot: Bot = bot
         self._host: str = host
@@ -80,9 +78,15 @@ class Node:
         self._identifier: str = identifier
         self._heartbeat: int = heartbeat
         self._secure: bool = secure
-        
-        self._websocket_uri: str = f"{'wss' if self._secure else 'ws'}://{self._host}:{self._port}/" + NODE_VERSION + "/websocket"
-        self._rest_uri: str = f"{'https' if self._secure else 'http'}://{self._host}:{self._port}"
+
+        self._websocket_uri: str = (
+            f"{'wss' if self._secure else 'ws'}://{self._host}:{self._port}/"
+            + NODE_VERSION
+            + "/websocket"
+        )
+        self._rest_uri: str = (
+            f"{'https' if self._secure else 'http'}://{self._host}:{self._port}"
+        )
 
         self._session: aiohttp.ClientSession = session or aiohttp.ClientSession()
         self._websocket: aiohttp.ClientWebSocketResponse = None
@@ -96,7 +100,7 @@ class Node:
             "Authorization": self._password,
             "User-Id": str(bot.user.id),
             "Client-Name": f"Cytechlink/{__version__}",
-            'Resume-Key': self.resume_key
+            "Resume-Key": self.resume_key,
         }
 
         self._players: Dict[int, Player] = {}
@@ -104,7 +108,7 @@ class Node:
         self._spotify_client_id: Optional[str] = spotify_client_id
         self._spotify_client_secret: Optional[str] = spotify_client_secret
         self._spotify_client: Optional[spotify.Client] = None
-        
+
         self._bot.add_listener(self._update_handler, "on_socket_response")
 
     def __repr__(self):
@@ -112,24 +116,23 @@ class Node:
             f"<Cytechlink.node ws_uri={self._websocket_uri} rest_uri={self._rest_uri} "
             f"player_count={len(self._players)}>"
         )
-    
+
     @property
     def spotify_client(self) -> Optional[spotify.Client]:
         if not self._spotify_client:
             if not self._spotify_client_id or not self._spotify_client_secret:
                 return None
-            
+
             self._spotify_client = spotify.Client(
                 self._spotify_client_id, self._spotify_client_secret
             )
 
         return self._spotify_client
-    
+
     @property
     def is_connected(self) -> bool:
-        """"Property which returns whether this node is connected or not"""
+        """ "Property which returns whether this node is connected or not"""
         return self._websocket is not None and not self._websocket.closed
-
 
     @property
     def stats(self) -> NodeStats:
@@ -162,7 +165,7 @@ class Node:
         return Ping(self._host, port=self._port).get_ping()
 
     async def _update_handler(self, data: dict) -> None:
-        #await self._bot.wait_until_ready()
+        # await self._bot.wait_until_ready()
 
         if not data:
             return
@@ -187,15 +190,18 @@ class Node:
                 return
 
     async def _listen(self) -> None:
-        backoff = ExponentialBackoff(base=7)    
+        backoff = ExponentialBackoff(base=7)
 
         while True:
             try:
                 msg = await self._websocket.receive()
-            except:
+            except Exception:
+                self._available = False
+                asyncio.create_task(self.migrate_players())
                 break
             if msg.type == aiohttp.WSMsgType.CLOSED:
                 self._available = False
+                asyncio.create_task(self.migrate_players())
 
                 retry = backoff.delay()
                 print(f"Trying to reconnect {self._identifier} with {round(retry)}s")
@@ -203,10 +209,44 @@ class Node:
                 if not self.is_connected:
                     try:
                         await self.connect()
-                    except:
+                    except Exception:
                         pass
             else:
                 self._bot.loop.create_task(self._handle_payload(msg.json()))
+
+    async def migrate_players(self) -> None:
+        """Seamlessly migrates players to another available node if possible."""
+        available_nodes = [node for identifier, node in self._pool._nodes.items() if node.is_connected and identifier != self._identifier]
+        if not available_nodes:
+            print(f"[Cytechlink] No other available nodes... Waiting for {self._identifier} to reconnect.")
+            return
+
+        print(f"[Cytechlink] Found {len(available_nodes)} active node(s). Starting Seamless Migration of {len(self.players)} players from {self._identifier}...")
+
+        for guild_id, player in list(self.players.items()):
+            try:
+                new_node = self._pool.get_best_node(algorithm=NodeAlgorithm.by_players)
+
+                # Transfer reference
+                player._node = new_node
+                new_node._players[guild_id] = player
+                del self.players[guild_id]
+
+                # Update Node & Resume Playback
+                if player._voice_state:
+                    await player._dispatch_voice_update(player._voice_state)
+
+                if player.current:
+                    await player.play(
+                        track=player.current,
+                        start=player._last_position,
+                    )
+                    if getattr(player, 'is_paused', False):
+                        await player.set_pause(True)
+
+                print(f"[Cytechlink] Migrated Server {guild_id} to Node: {new_node._identifier}")
+            except Exception as e:
+                print(f"[Cytechlink] Failed to migrate Server {guild_id}: {e}")
 
     async def _handle_payload(self, data: dict) -> None:
         op = data.get("op", None)
@@ -230,24 +270,28 @@ class Node:
             await player._update_state(data)
 
     async def send(
-        self, method: int, 
-        guild_id: Union[str, int] = None, 
-        query: str = None, 
-        data: Union[dict, str] = {}
+        self,
+        method: int,
+        guild_id: Union[str, int] = None,
+        query: str = None,
+        data: Union[dict, str] = {},
     ) -> dict:
         if not self._available:
             raise NodeNotAvailable(f"The node '{self._identifier}' is unavailable.")
-        
-        uri: str = f"{self._rest_uri}/{NODE_VERSION}" \
-                   f"/sessions/{self._session_id}/players" \
-                   f"/{guild_id}" if guild_id else "" \
-                   f"?{query}" if query else ""
-        
+
+        uri: str = (
+            f"{self._rest_uri}/{NODE_VERSION}"
+            f"/sessions/{self._session_id}/players"
+            f"/{guild_id}"
+            if guild_id
+            else "" f"?{query}" if query else ""
+        )
+
         async with self._session.request(
             method=CALL_METHOD[method],
             url=uri,
             headers={"Authorization": self._password},
-            json=data
+            json=data,
         ) as resp:
             # --- FIX START: Handle 204 No Content ---
             if resp.status == 204:
@@ -256,9 +300,9 @@ class Node:
 
             if resp.status >= 300:
                 raise NodeException(f"Getting errors from Lavalink REST api")
-            
+
             return await resp.json()
-        
+
     def get_player(self, guild_id: int) -> Optional[Player]:
         """Takes a guild ID as a parameter. Returns a Cytechlink Player object."""
         return self._players.get(guild_id, None)
@@ -275,7 +319,7 @@ class Node:
             self._available = True
 
             print(f"{self._identifier} is connected!")
-        
+
         except aiohttp.ClientConnectorError:
             raise NodeConnectionFailure(
                 f"The connection to node '{self._identifier}' failed."
@@ -288,19 +332,19 @@ class Node:
             raise NodeConnectionFailure(
                 f"The URI for node '{self._identifier}' is invalid."
             )
-        
+
         if self.players:
             await self.reconnect()
 
         return self
-              
+
     async def disconnect(self) -> None:
         """Disconnects a connected Lavalink node and removes it from the node pool.
-           This also destroys any players connected to the node.
+        This also destroys any players connected to the node.
         """
         for player in self.players.copy().values():
             await player.teardown()
-        
+
         if self.spotify_client:
             await self.spotify_client.close()
 
@@ -317,19 +361,18 @@ class Node:
                     await player._dispatch_voice_update(player._voice_state)
 
                 if player.current:
-                    await player.play(track=player.current, start=min(player._last_position, player.current.length))
+                    await player.play(
+                        track=player.current,
+                        start=min(player._last_position, player.current.length),
+                    )
 
                     if player.is_paused:
                         await player.set_pause(True)
-            except:
+            except Exception:
                 await player.teardown()
             await asyncio.sleep(2)
 
-    async def build_track(
-        self,
-        identifier: str,
-        requester: Member = None
-    ) -> Track:
+    async def build_track(self, identifier: str, requester: Member = None) -> Track:
         """
         Builds a track using a valid track identifier
 
@@ -340,7 +383,7 @@ class Node:
         async with self._session.get(
             f"{self._rest_uri}/" + NODE_VERSION + "/decodetrack?",
             headers={"Authorization": self._password},
-            params={"encodedTrack": identifier}
+            params={"encodedTrack": identifier},
         ) as resp:
             if not resp.status == 200:
                 raise TrackLoadError(
@@ -349,7 +392,7 @@ class Node:
 
             data: dict = await resp.json()
             # Support V4 Response Structure
-            info = data.get("info", data) 
+            info = data.get("info", data)
             return Track(track_id=identifier, info=info, requester=requester)
 
     async def get_tracks(
@@ -357,15 +400,15 @@ class Node:
         query: str,
         *,
         requester: Member,
-        search_type: SearchType = SearchType.ytsearch
+        search_type: SearchType = SearchType.ytsearch,
     ) -> Union[List[Track], Playlist]:
         """Fetches tracks from the node's REST api to parse into Lavalink.
 
-           If you passed in Spotify API credentials, you can also pass in a
-           Spotify URL of a playlist, album or track and it will be parsed accordingly.
+        If you passed in Spotify API credentials, you can also pass in a
+        Spotify URL of a playlist, album or track and it will be parsed accordingly.
 
-           You can also pass in a discord.py Context object to get a
-           Context object on any track you search.
+        You can also pass in a discord.py Context object to get a
+        Context object on any track you search.
         """
 
         # Strict URL check: must start with http/https and have no spaces, or use a better regex
@@ -375,19 +418,21 @@ class Node:
             query = f"{search_type}:{query}"
 
         if match := SPOTIFY_URL_REGEX.search(query):
-            query = match.group(0) # Use the exact URL found
+            query = match.group(0)  # Use the exact URL found
             try:
                 if not self.spotify_client:
                     raise InvalidSpotifyClientAuthorization(
-                    "You did not provide proper Spotify client authorization credentials. "
-                    "If you would like to use the Spotify searching feature, "
-                    "please obtain Spotify API credentials here: https://developer.spotify.com/"
-                )
+                        "You did not provide proper Spotify client authorization credentials. "
+                        "If you would like to use the Spotify searching feature, "
+                        "please obtain Spotify API credentials here: https://developer.spotify.com/"
+                    )
 
                 spotify_results = await self.spotify_client.search(query=query)
             except Exception as _:
-                raise TrackLoadError("Not able to find the provided Spotify entity, is it private?")
-                
+                raise TrackLoadError(
+                    "Not able to find the provided Spotify entity, is it private?"
+                )
+
             if isinstance(spotify_results, spotify.Track):
                 return [
                     Track(
@@ -406,7 +451,9 @@ class Node:
                     requester=requester,
                     search_type=search_type,
                     spotify_track=track,
-                ) for track in spotify_results.tracks if track.uri
+                )
+                for track in spotify_results.tracks
+                if track.uri
             ]
 
             return Playlist(
@@ -414,32 +461,34 @@ class Node:
                 tracks=tracks,
                 requester=requester,
                 spotify=True,
-                spotify_playlist=spotify_results
+                spotify_playlist=spotify_results,
             )
 
         elif DISCORD_MP3_URL_REGEX.match(query):
             async with self._session.get(
-                url=f"{self._rest_uri}/" + NODE_VERSION + f"/loadtracks?identifier={quote(query)}",
-                headers={"Authorization": self._password}
+                url=f"{self._rest_uri}/"
+                + NODE_VERSION
+                + f"/loadtracks?identifier={quote(query)}",
+                headers={"Authorization": self._password},
             ) as response:
                 data: dict = await response.json()
 
             try:
                 track: dict = data["data"]
-            except:
+            except Exception:
                 raise TrackLoadError("Not able to find the provided track.")
 
             return [
                 Track(
-                    track_id=track["encoded"],
-                    info=track["info"],
-                    requester=requester
+                    track_id=track["encoded"], info=track["info"], requester=requester
                 )
             ]
         else:
             async with self._session.get(
-                url=f"{self._rest_uri}/" + NODE_VERSION + f"/loadtracks?identifier={quote(query)}",
-                headers={"Authorization": self._password}
+                url=f"{self._rest_uri}/"
+                + NODE_VERSION
+                + f"/loadtracks?identifier={quote(query)}",
+                headers={"Authorization": self._password},
             ) as response:
                 data = await response.json()
 
@@ -457,19 +506,15 @@ class Node:
 
         elif load_type == "playlist":
             data = data.get("data")
-            
+
             return Playlist(
-                playlist_info=data["info"],
-                tracks=data["tracks"],
-                requester=requester
+                playlist_info=data["info"], tracks=data["tracks"], requester=requester
             )
 
         elif load_type == "search":
             return [
                 Track(
-                    track_id=track["encoded"],
-                    info=track["info"],
-                    requester=requester
+                    track_id=track["encoded"], info=track["info"], requester=requester
                 )
                 for track in data["data"]
             ]
@@ -478,38 +523,42 @@ class Node:
             track = data["data"]
             return [
                 Track(
-                    track_id=track["encoded"],
-                    info=track["info"],
-                    requester=requester
+                    track_id=track["encoded"], info=track["info"], requester=requester
                 )
             ]
-    
-    async def spotifySearch(self, query: str, *, requester: Member) -> Optional[List[Track]]:
+
+    async def spotifySearch(
+        self, query: str, *, requester: Member
+    ) -> Optional[List[Track]]:
         try:
             if not self.spotify_client:
                 raise InvalidSpotifyClientAuthorization(
-                "You did not provide proper Spotify client authorization credentials. "
-                "If you would like to use the Spotify searching feature, "
-                "please obtain Spotify API credentials here: https://developer.spotify.com/"
-            )
-                
+                    "You did not provide proper Spotify client authorization credentials. "
+                    "If you would like to use the Spotify searching feature, "
+                    "please obtain Spotify API credentials here: https://developer.spotify.com/"
+                )
+
             tracks = await self._spotify_client.trackSearch(query=query)
         except Exception as _:
-            raise TrackLoadError("Not able to find the provided Spotify entity, is it private?")
-            
-        return [ 
+            raise TrackLoadError(
+                "Not able to find the provided Spotify entity, is it private?"
+            )
+
+        return [
             Track(
                 track_id=None,
                 requester=requester,
                 search_type=SearchType.ytsearch,
                 spotify_track=track,
-                info=track.to_dict()
+                info=track.to_dict(),
             )
-            for track in tracks ]
+            for track in tracks
+        ]
+
 
 class NodePool:
     """The base class for the node pool.
-       This holds all the nodes that are to be used by the bot.
+    This holds all the nodes that are to be used by the bot.
     """
 
     _nodes: Dict[str, Node] = {}
@@ -529,17 +578,17 @@ class NodePool:
     @classmethod
     def get_best_node(cls, *, algorithm: NodeAlgorithm) -> Node:
         """Fetches the best node based on an NodeAlgorithm.
-         This option is preferred if you want to choose the best node
-         from a multi-node setup using either the node's latency
-         or the node's voice region.
-         Use NodeAlgorithm.by_ping if you want to get the best node
-         based on the node's latency.
-         Use NodeAlgorithm.by_region if you want to get the best node
-         based on the node's voice region. This method will only work
-         if you set a voice region when you create a node.
-         Use NodeAlgorithm.by_players if you want to get the best node
-         based on how players it has. This method will return a node with
-         the least amount of players
+        This option is preferred if you want to choose the best node
+        from a multi-node setup using either the node's latency
+        or the node's voice region.
+        Use NodeAlgorithm.by_ping if you want to get the best node
+        based on the node's latency.
+        Use NodeAlgorithm.by_region if you want to get the best node
+        based on the node's voice region. This method will only work
+        if you set a voice region when you create a node.
+        Use NodeAlgorithm.by_players if you want to get the best node
+        based on how players it has. This method will return a node with
+        the least amount of players
         """
         available_nodes = [node for node in cls._nodes.values() if node._available]
 
@@ -557,15 +606,15 @@ class NodePool:
     @classmethod
     def get_node(cls, *, identifier: str = None) -> Node:
         """Fetches a node from the node pool using it's identifier.
-           If no identifier is provided, it will choose a node at random.
+        If no identifier is provided, it will choose a node at random.
         """
 
-        available_nodes = { node
-            for _, node in cls._nodes.items() if node.is_connected
-        }
+        available_nodes = {node for _, node in cls._nodes.items() if node.is_connected}
 
         if identifier:
-            available_nodes = { node for node in available_nodes if node._identifier == identifier }
+            available_nodes = {
+                node for node in available_nodes if node._identifier == identifier
+            }
 
         if not available_nodes:
             raise NoNodesAvailable("There are no nodes available.")
@@ -590,16 +639,26 @@ class NodePool:
         resume_key: Optional[str] = None,
     ) -> Node:
         """Creates a Node object to be then added into the node pool.
-           For Spotify searching capabilites, pass in valid Spotify API credentials.
+        For Spotify searching capabilites, pass in valid Spotify API credentials.
         """
         if identifier in cls._nodes.keys():
-            raise NodeCreationError(f"A node with identifier '{identifier}' already exists.")
+            raise NodeCreationError(
+                f"A node with identifier '{identifier}' already exists."
+            )
 
         node = Node(
-            pool=cls, bot=bot, host=host, port=port, password=password,
-            identifier=identifier, secure=secure, heartbeat=heartbeat, spotify_client_id=spotify_client_id, 
-            session=session, spotify_client_secret=spotify_client_secret,
-            resume_key=resume_key
+            pool=cls,
+            bot=bot,
+            host=host,
+            port=port,
+            password=password,
+            identifier=identifier,
+            secure=secure,
+            heartbeat=heartbeat,
+            spotify_client_id=spotify_client_id,
+            session=session,
+            spotify_client_secret=spotify_client_secret,
+            resume_key=resume_key,
         )
 
         await node.connect()
