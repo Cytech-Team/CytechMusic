@@ -1,5 +1,22 @@
-/* Adds the logged-in Discord bearer token to same-origin dashboard API calls. */
+/* Runtime identity + bearer-token bootstrap for Community dashboard pages. */
 (() => {
+    // Load deployment identity before script.js/settings.js evaluate their constants.
+    if (!window.CYTECHMUSIC_CLIENT_ID) {
+        try {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/proxy?action=runtime_config', false);
+            xhr.send(null);
+            if (xhr.status >= 200 && xhr.status < 300) {
+                const runtime = JSON.parse(xhr.responseText || '{}');
+                if (runtime.client_id) {
+                    window.CYTECHMUSIC_CLIENT_ID = String(runtime.client_id);
+                }
+            }
+        } catch (_) {
+            // Fail closed: login/invite code will refuse to use an unknown client ID.
+        }
+    }
+
     const nativeFetch = window.fetch.bind(window);
 
     window.fetch = function securedFetch(input, init = {}) {
