@@ -5,11 +5,11 @@ dnspython>=2.6.1
 tldextract==3.2.1
 validators==0.18.2
 humanize==4.0.0
-python-dotenv==0.20.0
+python-dotenv>=1.2.2
 beautifulsoup4==4.11.1
 websockets==10.4
 psutil==5.9.5
-werkzeug==2.2.2
+werkzeug>=3.1.6
 gevent-websocket
 py-cpuinfo
 legacy-cgi
