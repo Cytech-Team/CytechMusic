@@ -1,7 +1,40 @@
 import asyncio
 import time
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Union
 from motor.motor_asyncio import AsyncIOMotorCollection
+
+
+class _RootSafeCollectionProxy:
+    """Delegate collection access while making empty root selectors fail-safe.
+
+    This collection stores both the root config document and standalone user
+    documents. Accidental find_one({}) / update_one({}) calls can otherwise
+    select an arbitrary user document. Empty selectors are rewritten to the
+    resolved root _id.
+    """
+
+    def __init__(self, manager: "DatabaseManager", collection: AsyncIOMotorCollection):
+        self._manager = manager
+        self._collection = collection
+
+    def __getattr__(self, name):
+        return getattr(self._collection, name)
+
+    async def find_one(self, filter=None, *args, **kwargs):
+        if filter == {}:
+            await self._manager._fetch_root()
+            if self._manager._root_id is None:
+                return None
+            filter = {"_id": self._manager._root_id}
+        return await self._collection.find_one(filter, *args, **kwargs)
+
+    async def update_one(self, filter, update, *args, **kwargs):
+        if filter == {}:
+            await self._manager._fetch_root()
+            if self._manager._root_id is None:
+                raise RuntimeError("Refusing update_one({}): root document could not be resolved")
+            filter = {"_id": self._manager._root_id}
+        return await self._collection.update_one(filter, update, *args, **kwargs)
 
 
 class DatabaseManager:
@@ -11,15 +44,16 @@ class DatabaseManager:
     """
 
     def __init__(self, collection: AsyncIOMotorCollection):
-        self.collection = collection
+        self._raw_collection = collection
         self._cache_data: Dict[str, Any] = {}
         self._last_fetch_time: float = 0
         self._cache_ttl: int = 60  # Cache duration (seconds)
         self._lock = asyncio.Lock()
         self._root_id = None
+        self.collection = _RootSafeCollectionProxy(self, collection)
 
     async def _fetch_root(self, force: bool = False) -> Dict[str, Any]:
-        """Fetch the root document (often empty query `{}`) and cache it."""
+        """Fetch the root document and cache it."""
         current_time = time.time()
         # Return cache if valid
         if (
@@ -39,7 +73,7 @@ class DatabaseManager:
                 return self._cache_data
 
             try:
-                # 🛡️ Protection: Exclude user docs strictly, find the actual root config doc
+                # Protection: Exclude user docs strictly, find the actual root config doc
                 data = await self.collection.find_one(
                     {"user_id": {"$exists": False}, "guilds": {"$exists": True}}
                 )
@@ -102,7 +136,7 @@ class DatabaseManager:
         set_payload = {f"guilds.{gid}.{k}": v for k, v in update_dict.items()}
 
         try:
-            # 🛡️ Protection: Only update the explicitly cached root document
+            # Protection: Only update the explicitly cached root document
             query = (
                 {"_id": self._root_id}
                 if self._root_id

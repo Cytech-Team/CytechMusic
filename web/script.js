@@ -8,7 +8,7 @@
 // ==========================================
 
 // Change this to your Bot Client ID
-const CLIENT_ID = "1469606905948405833";
+const CLIENT_ID = window.CYTECHMUSIC_CLIENT_ID || "";
 
 // SMART API ENDPOINT DETECTION
 // Since the bot now serves its own static files, we can reliably use relative paths
@@ -20,9 +20,7 @@ const LEGACY_GAS_API = API_BASE;
 
 // Auto-detect Redirect URI (Must match Discord Dev Portal exactly)
 // Allow dynamic domain callback if hosted on bot
-const REDIRECT_URI = window.location.hostname.includes("cyori.pages.dev")
-    ? "https://cyori.pages.dev/"
-    : window.location.origin + window.location.pathname;
+const REDIRECT_URI = window.CYTECHMUSIC_REDIRECT_URI || (window.location.origin + window.location.pathname);
 
 // Global State (Initialize from Storage immediately to prevent flicker)
 window.accessToken = localStorage.getItem('access_token');
@@ -35,7 +33,11 @@ window.currentLang = localStorage.getItem('preferred-lang') || 'en';
 // ==========================================
 
 function login() {
-    const scope = "identify guilds guilds.join";
+    if (!CLIENT_ID) {
+        alert("Discord Client ID is not configured for this Community deployment.");
+        return;
+    }
+    const scope = "identify guilds";
     // Save current page to return to after login
     localStorage.setItem('login_target', window.location.href);
 
@@ -138,9 +140,7 @@ async function fetchUserData() {
         // when premium data arrives. This is acceptable for progressive loading.
         fetchPremiumStatus();
 
-        // 5. Auto-Join (Background)
-        // Change "1413525842490953891" to your support/official server ID if needed
-        autoJoinServer("1413525842490953891", data.id, window.accessToken);
+        // Community builds never auto-join users to a maintainer-owned server.
 
     } catch (e) {
         console.error("[Auth] Data Fetch Error:", e);

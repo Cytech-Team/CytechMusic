@@ -1,20 +1,9 @@
 /**
- * CYORI CLOUDFLARE PAGES PROXY
- * =============================
- * Routes all dashboard requests to the VPS bot API.
+ * CytechMusic Cloudflare Pages API proxy.
  *
- * Flow:
- *   Browser → /api/proxy (Cloudflare)  →  VPS /api/proxy  →  Bot
- *   Browser ← response                 ←  VPS response    ←  Bot
- *
- * Special cases handled IN this file (not forwarded):
- *   - Stripe checkout  (needs STRIPE_SECRET_KEY env var)
- *   - GitHub / Stripe webhooks
- *   - register_bot / poll  (stubs)
+ * Community builds are fail-closed: no Cyori/Cytech production endpoint is used
+ * unless the deployer explicitly sets VPS_API_URL (or BOT_API_URL).
  */
-
-const VPS_API = "http://bkk.fe-grp.com:11050";
-const SUCCESS_URL = "https://cyori.pages.dev/success.html";
 
 const PLANS = {
     "1_month": { price: 2900, name: "Premium (1 Month)" },
@@ -24,55 +13,126 @@ const PLANS = {
     "lifetime": { price: 78900, name: "Premium (Lifetime)" },
 };
 
-const CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
+function backendBase(env) {
+    const value = env.VPS_API_URL || env.BOT_API_URL || "";
+    return value ? value.replace(/\/+$/, "") : null;
+}
 
-function jsonResponse(data, status = 200) {
+function corsHeaders(request, env) {
+    const requestOrigin = request.headers.get("Origin");
+    const allowedOrigin = env.DASHBOARD_ORIGIN || new URL(request.url).origin;
+    const origin = !requestOrigin || requestOrigin === allowedOrigin ? allowedOrigin : "null";
+    return {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Vary": "Origin",
+    };
+}
+
+function jsonResponse(request, env, data, status = 200) {
     return new Response(JSON.stringify(data), {
         status,
-        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+        headers: { "Content-Type": "application/json", ...corsHeaders(request, env) },
     });
+}
+
+function bearerToken(request) {
+    const auth = request.headers.get("Authorization") || "";
+    return auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+}
+
+async function verifyDiscordUser(request) {
+    const token = bearerToken(request);
+    if (!token) return null;
+    try {
+        const response = await fetch("https://discord.com/api/users/@me", {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) return null;
+        const user = await response.json();
+        return user && user.id ? user : null;
+    } catch (_) {
+        return null;
+    }
+}
+
+function forwardedHeaders(request, env, { webhook = false } = {}) {
+    const headers = new Headers();
+    const contentType = request.headers.get("Content-Type");
+    if (contentType) headers.set("Content-Type", contentType);
+
+    const auth = request.headers.get("Authorization");
+    if (auth) headers.set("Authorization", auth);
+
+    if (env.DASHBOARD_SECRET) {
+        headers.set("X-Dashboard-Secret", env.DASHBOARD_SECRET);
+    }
+
+    if (webhook) {
+        for (const name of ["stripe-signature", "x-github-event", "x-hub-signature-256", "x-github-delivery"]) {
+            const value = request.headers.get(name);
+            if (value) headers.set(name, value);
+        }
+    }
+    return headers;
 }
 
 export async function onRequest(context) {
     const { request, env } = context;
     const url = new URL(request.url);
     const method = request.method;
+    const cors = corsHeaders(request, env);
 
-    // ── 0. CORS Preflight ─────────────────────────────────────────────────
     if (method === "OPTIONS") {
-        return new Response(null, { headers: CORS_HEADERS });
+        return new Response(null, { status: 204, headers: cors });
     }
 
-    // ── 1. Read body (once, prevents "Body already consumed") ───────────────
     let bodyText = "";
     let bodyData = null;
-    if (method === "POST") {
+    if (["POST", "PUT", "PATCH"].includes(method)) {
         try {
             bodyText = await request.text();
-            bodyData = JSON.parse(bodyText);
-        } catch (e) { /* empty or non-JSON body */ }
+            if (bodyText) bodyData = JSON.parse(bodyText);
+        } catch (_) {
+            return jsonResponse(request, env, { error: "invalid_json" }, 400);
+        }
     }
 
     const action = url.searchParams.get("action") || (bodyData && bodyData.action);
+    const backend = backendBase(env);
 
-    // ── 2. Stripe Checkout ────────────────────────────────────────────────
+    // Public, non-secret deployment identity used by security-bootstrap.js.
+    if (action === "runtime_config") {
+        const clientId = /^\d{15,22}$/.test(env.DISCORD_CLIENT_ID || "")
+            ? String(env.DISCORD_CLIENT_ID)
+            : "";
+        return jsonResponse(request, env, { client_id: clientId });
+    }
+
+    // Stripe checkout is handled at the edge, but identity comes only from Discord.
     if (action === "create_checkout") {
+        const verifiedUser = await verifyDiscordUser(request);
+        if (!verifiedUser) {
+            return jsonResponse(request, env, { error: "unauthorized" }, 401);
+        }
+
         const stripeKey = env.STRIPE_SECRET_KEY;
         if (!stripeKey) {
-            return jsonResponse({ status: "error", message: "Stripe key missing" }, 500);
+            return jsonResponse(request, env, { error: "stripe_not_configured" }, 503);
         }
-        const { user_id, plan_id } = bodyData || {};
-        const plan = PLANS[plan_id];
-        if (!plan) return jsonResponse({ status: "error", message: "Invalid plan" }, 400);
+
+        const planId = bodyData && bodyData.plan_id;
+        const plan = PLANS[planId];
+        if (!plan) {
+            return jsonResponse(request, env, { error: "invalid_plan" }, 400);
+        }
 
         try {
+            const successUrl = env.SUCCESS_URL || `${url.origin}/success.html`;
             const stripeParams = new URLSearchParams({
                 "ui_mode": "embedded",
-                "return_url": `${SUCCESS_URL}?session_id={CHECKOUT_SESSION_ID}`,
+                "return_url": `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
                 "mode": "payment",
                 "payment_method_types[0]": "card",
                 "payment_method_types[1]": "promptpay",
@@ -80,73 +140,92 @@ export async function onRequest(context) {
                 "line_items[0][price_data][product_data][name]": plan.name,
                 "line_items[0][price_data][unit_amount]": plan.price.toString(),
                 "line_items[0][quantity]": "1",
-                "metadata[user_id]": String(user_id),
-                "metadata[plan_id]": plan_id,
-                "metadata[days]": String(getDaysFromPlan(plan_id)),
+                "metadata[user_id]": String(verifiedUser.id),
+                "metadata[plan_id]": planId,
+                "metadata[days]": String(getDaysFromPlan(planId)),
             });
+
             const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
                 method: "POST",
-                headers: { Authorization: `Bearer ${stripeKey}`, "Content-Type": "application/x-www-form-urlencoded" },
+                headers: {
+                    Authorization: `Bearer ${stripeKey}`,
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
                 body: stripeParams.toString(),
             });
             const session = await stripeRes.json();
-            if (session.error) throw new Error(session.error.message);
-            return jsonResponse({ status: "success", clientSecret: session.client_secret });
-        } catch (err) {
-            return jsonResponse({ status: "error", message: "Stripe: " + err.message }, 500);
+            if (!stripeRes.ok || session.error) {
+                throw new Error(session.error?.message || `Stripe HTTP ${stripeRes.status}`);
+            }
+            return jsonResponse(request, env, {
+                status: "success",
+                clientSecret: session.client_secret,
+            });
+        } catch (error) {
+            return jsonResponse(request, env, { error: "stripe_error", message: String(error.message || error) }, 502);
         }
     }
 
-    // ── 3. Webhooks (GitHub / Stripe) ────────────────────────────────────
+    // Never silently accept or drop webhook authenticity headers.
     const isGithub = request.headers.get("x-github-event");
-    const isStripe = request.headers.get("stripe-signature");
-    if (isGithub || isStripe) {
+    const stripeSignature = request.headers.get("stripe-signature");
+    if (isGithub || stripeSignature) {
+        if (!backend) {
+            return jsonResponse(request, env, { error: "backend_not_configured" }, 503);
+        }
         const target = isGithub
-            ? `${VPS_API}/api/webhook/github`
-            : `${VPS_API}/stripe/webhook`;
+            ? `${backend}/api/webhook/github`
+            : `${backend}/stripe/webhook`;
         try {
-            await fetch(target, {
+            const response = await fetch(target, {
                 method: "POST",
-                headers: { "Content-Type": request.headers.get("Content-Type") || "application/json" },
+                headers: forwardedHeaders(request, env, { webhook: true }),
                 body: bodyText,
             });
-            return new Response("OK", { status: 200 });
-        } catch (e) {
-            return new Response("Broadcast Failed", { status: 502 });
+            return new Response(await response.text(), {
+                status: response.status,
+                headers: { "Content-Type": response.headers.get("Content-Type") || "text/plain", ...cors },
+            });
+        } catch (_) {
+            return jsonResponse(request, env, { error: "backend_unreachable" }, 502);
         }
     }
 
-    // ── 4. register_bot / poll  (stubs — Cloudflare is static) ──────────
     if (action === "register_bot") {
-        return jsonResponse({ status: "success", info: "Cloudflare proxy – static" });
+        return jsonResponse(request, env, { status: "success", info: "static proxy" });
     }
     if (action === "poll") {
-        return jsonResponse([]);
+        return jsonResponse(request, env, []);
     }
 
-    // ── 5. Forward everything else → VPS /api/proxy ──────────────────────
-    //    The VPS handles all action routing internally.
-    const targetUrl = new URL(`${VPS_API}/api/proxy`);
-    // Preserve query params (e.g. ?action=status&guild_id=xxx on GET requests)
-    url.searchParams.forEach((v, k) => targetUrl.searchParams.set(k, v));
+    if (!backend) {
+        return jsonResponse(request, env, {
+            error: "backend_not_configured",
+            message: "Set VPS_API_URL (or BOT_API_URL) for this Community deployment.",
+        }, 503);
+    }
+
+    const targetUrl = new URL(`${backend}/api/proxy`);
+    url.searchParams.forEach((value, key) => targetUrl.searchParams.set(key, value));
 
     try {
-        const vpsRes = await fetch(targetUrl.toString(), {
+        const response = await fetch(targetUrl.toString(), {
             method,
-            headers: { "Content-Type": "application/json" },
-            body: (method === "POST" || method === "PUT") ? bodyText : null,
+            headers: forwardedHeaders(request, env),
+            body: ["POST", "PUT", "PATCH"].includes(method) ? bodyText : null,
         });
-        const respText = await vpsRes.text();
-        return new Response(respText, {
-            status: vpsRes.status,
-            headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+        return new Response(await response.text(), {
+            status: response.status,
+            headers: {
+                "Content-Type": response.headers.get("Content-Type") || "application/json",
+                ...cors,
+            },
         });
-    } catch (err) {
-        return jsonResponse({ error: "VPS Offline or unreachable" }, 502);
+    } catch (_) {
+        return jsonResponse(request, env, { error: "backend_unreachable" }, 502);
     }
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────────
 function getDaysFromPlan(planId) {
     const map = { "1_month": 30, "3_months": 90, "6_months": 180, "1_year": 365, "lifetime": 36500 };
     return map[planId] ?? 0;

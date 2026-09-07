@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Join & Invite - Cytech Music</title>
+    <title>Invite - Cytech Music</title>
     <link rel="icon" href="logo-circle.png" type="image/png">
     <link
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
@@ -16,82 +16,39 @@
 <body class="flex-center-screen">
     <div class="bg-gradient"></div>
     <div class="loader"></div>
-    <div id="status" class="status-desc" style="font-size: 1.2rem;">Initializing...</div>
+    <div id="status" class="status-desc" style="font-size: 1.2rem;">Preparing invite...</div>
 
     <script>
-        // Change these to your own IDs
-        const CLIENT_ID = "1469606905948405833";
-        const BOT_INVITE_URL = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&permissions=3533896&scope=bot%20applications.commands`;
-        const SERVER_ID = "1413525842490953891";
-        const GAS_STATS_API = "/api/proxy";
-
         function setStatus(text) {
             document.getElementById('status').textContent = text;
         }
 
-        function redirectNow() {
-            window.location.href = BOT_INVITE_URL;
+        async function redirectToBotInvite() {
+            try {
+                const response = await fetch('/api/proxy?action=runtime_config', { cache: 'no-store' });
+                if (!response.ok) throw new Error(`Runtime config HTTP ${response.status}`);
+                const runtime = await response.json();
+                const clientId = String(runtime.client_id || '');
+                if (!/^\d{15,22}$/.test(clientId)) {
+                    throw new Error('Discord Client ID is not configured for this deployment');
+                }
+
+                const inviteUrl = new URL('https://discord.com/api/oauth2/authorize');
+                inviteUrl.searchParams.set('client_id', clientId);
+                inviteUrl.searchParams.set('permissions', '3533896');
+                inviteUrl.searchParams.set('scope', 'bot applications.commands');
+
+                setStatus('Redirecting to Discord...');
+                window.location.replace(inviteUrl.toString());
+            } catch (error) {
+                console.error('[Invite] Configuration error:', error);
+                document.querySelector('.loader').style.display = 'none';
+                setStatus(`Invite unavailable: ${error.message}`);
+            }
         }
 
-        // 1. Extract Token
-        const params = new URLSearchParams(window.location.hash.slice(1));
-        const accessToken = params.get('access_token');
-
-        if (accessToken) {
-            console.log("Token found, starting auto-join flow...");
-            setStatus("🚀 Joining Server...");
-
-            // 2. Fetch User Identity
-            fetch('https://discord.com/api/users/@me', {
-                headers: { 'Authorization': `Bearer ${accessToken}` }
-            })
-                .then(res => res.json())
-                .then(user => {
-                    if (!user.id) throw new Error("Could not get user ID from Discord API");
-                    console.log("Found User ID:", user.id);
-
-                    // 3. Trigger Join via Proxy
-                    setStatus("✅ Joining Support Server...");
-                    const proxyUrl = `${GAS_STATS_API}?action=join_guild&guild_id=${SERVER_ID}&user_id=${user.id}&access_token=${accessToken}`;
-                    console.log("Calling Proxy:", proxyUrl.split('access_token=')[0] + "access_token=HIDDEN");
-
-                    return fetch(proxyUrl);
-                })
-                .then(res => res.text()) // Get raw text first to see what's happening
-                .then(text => {
-                    console.log("Raw Proxy Response:", text);
-                    try {
-                        const data = JSON.parse(text);
-                        if (data.status === 'success') {
-                            setStatus("🎉 Joined Successfully!");
-                        } else {
-                            setStatus("⚠️ Join status: " + (data.error || "Unknown"));
-                        }
-                    } catch (e) {
-                        console.log("Proxy response was not JSON, proceeding anyway.");
-                    }
-                    setTimeout(redirectNow, 1200); // Wait a bit to let user see status
-                })
-                .catch(err => {
-                    console.error("Auto-Join Logic Failure:", err);
-                    setStatus("❌ Error: " + err.message);
-                    setTimeout(redirectNow, 2000);
-                });
-
-            // Failsafe
-            setTimeout(redirectNow, 10000);
-
-        } else {
-            // STEP 0: Redirect to Discord for Auth
-            setStatus("🔒 Authenticating...");
-            const REDIRECT_URI = window.location.origin + window.location.pathname;
-
-            // Use 'guilds' + 'guilds.join' for maximum success rate
-            const scope = "identify guilds guilds.join";
-            const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=${encodeURIComponent(scope)}`;
-
-            window.location.href = authUrl;
-        }
+        // Community edition never requests guilds.join and never auto-joins a maintainer-owned server.
+        redirectToBotInvite();
     </script>
 </body>
 
