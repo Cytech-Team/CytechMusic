@@ -4,6 +4,7 @@ from discord.ext import commands
 from bot import Cyori
 from utils.config import BOT_TOKEN
 from utils.dashboard_security import make_dashboard_security_middleware
+from utils.runtime_config import make_runtime_config_middleware
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("discord.http").setLevel(logging.CRITICAL)
@@ -25,6 +26,7 @@ class SecuredCyori(Cyori):
         await super().setup_hook()
         if self.web_app is not None:
             self.web_app.middlewares.append(make_dashboard_security_middleware(self))
+            self.web_app.middlewares.append(make_runtime_config_middleware(self))
 
 intents = discord.Intents.default()
 intents.members = True
