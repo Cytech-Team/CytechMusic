@@ -1,5 +1,7 @@
 /* Runtime identity + bearer-token bootstrap for Community dashboard pages. */
 (() => {
+    const LEGACY_CYORI_CLIENT_ID = '1469606905948405833';
+
     // Load deployment identity before script.js/settings.js evaluate their constants.
     if (!window.CYTECHMUSIC_CLIENT_ID) {
         try {
@@ -16,6 +18,41 @@
             // Fail closed: login/invite code will refuse to use an unknown client ID.
         }
     }
+
+    function rewriteLegacyAppUrl(rawUrl) {
+        if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.includes(LEGACY_CYORI_CLIENT_ID)) {
+            return rawUrl;
+        }
+        const clientId = String(window.CYTECHMUSIC_CLIENT_ID || '');
+        if (!/^\d{15,22}$/.test(clientId)) {
+            return null;
+        }
+        return rawUrl.split(LEGACY_CYORI_CLIENT_ID).join(clientId);
+    }
+
+    // Old Community HTML/JS still contains some Cyori invite/vote links. Never allow
+    // those stale links to send a Community deployer's users to the production Cyori app.
+    const nativeOpen = window.open.bind(window);
+    window.open = function securedOpen(url, ...args) {
+        const safeUrl = rewriteLegacyAppUrl(String(url || ''));
+        if (!safeUrl) {
+            alert('Discord Client ID is not configured for this Community deployment.');
+            return null;
+        }
+        return nativeOpen(safeUrl, ...args);
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('a[href]').forEach((anchor) => {
+            const rewritten = rewriteLegacyAppUrl(anchor.href);
+            if (rewritten === null) {
+                anchor.removeAttribute('href');
+                anchor.setAttribute('aria-disabled', 'true');
+            } else if (rewritten !== anchor.href) {
+                anchor.href = rewritten;
+            }
+        });
+    }, { once: true });
 
     const nativeFetch = window.fetch.bind(window);
 
