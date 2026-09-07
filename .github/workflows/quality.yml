@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - "revival/**"
+      - "hotfix/**"
   pull_request:
 
 permissions:
@@ -40,6 +41,32 @@ jobs:
 
       - name: Compile Python sources
         run: python -m compileall -q bot.py main.py cogs core cytechlink utils web
+
+  web-syntax:
+    name: JavaScript syntax
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Check browser scripts
+        run: |
+          node --check web/script.js
+          node --check web/settings.js
+          node --check web/security-bootstrap.js
+
+      - name: Check Cloudflare Pages modules
+        run: |
+          node --input-type=module --check < web/functions/_middleware.js
+          node --input-type=module --check < web/functions/api/proxy.js
+          node --input-type=module --check < web/functions/api/gateway.js
+          node --input-type=module --check < web/functions/api/recommended.js
 
   security-audit:
     name: Dependency audit
