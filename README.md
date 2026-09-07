@@ -1,116 +1,136 @@
-﻿# 🎵 CytechMusic Bot (Legacy)
+# CytechMusic
 
-**Advanced Discord Music Bot (Open Source)** built with `discord.py` and `Lavalink`. 
-This is the **Legacy Version** of the bot, now open-sourced for the community to use, learn, and host.
-
-> [!NOTE]
-> **Project Status**: This repository is **ARCHIVED** and no longer actively maintained. 
-> For the latest, high-performance version, please check out our new project: **[Cyori (Private)](https://github.com/CytechNaRak/Cyori)**. Cyori is built on a completely new architecture with 70%+ improvement in speed and stability.
-
-## ✨ Features
-
-### 🎧 Music Playback
-- **High Quality Audio**: Powered by Lavalink for lag-free performance.
-- **Sources**: Supports YouTube, Spotify, SoundCloud, and more.
-- **Controls**: Play, Pause, Skip, Stop, Seek, Volume, Loop (Track/Queue), Shuffle.
-- **Queue System**: View queue with pagination, remove songs, swap order.
-
-### 🎚️ Audio Filters
-ENHANCE your listening experience with real-time audio effects:
-- **Presets**: `Nightcore`, `Vaporwave`, `8D Audio`
-- **Manual Adjustments**:
-  - `Speed`: Control playback speed.
-  - `Karaoke`: Remove vocals for singing along.
-  - `Tremolo` & `Vibrato`: Add pitch/volume oscillation effects.
-  - `Rotation`: 8D-like rotating audio effect.
-  - `Distortion`: Add grit to the sound.
-  - `Lowpass`: Muffled/Lo-Fi effect.
-  - `ChannelMix`: Custom left/right audio routing.
-
-### ⚙️ Server Settings
-Fully configurable per server via the dashboard-like commands:
-- **Language**: Switch between **English (EN)** and **Thai (TH)**.
-- **DJ System**:
-  - **DJ Role**: Assign a specific role for music controls.
-  - **DJ Mode**: Restrict strict controls (Skip/Stop/Vol) to DJs/Admins only.
-- **Vote System**: Enable voting requirements for specific filters (forces users to vote for the bot).
-- **24/7 Mode**: Keep the bot in the voice channel even when inactive.
-- **Autoplay**: Automatically play related songs when the queue ends.
-- **Setup Channel**: Create a dedicated channel (`#cytech-music`) with a permanent player controller.
-
-### 📊 Info & Utilities
-- **Status**: View detailed uptime, CPU/RAM usage, and Lavalink node stats.
-- **Ping**: Color-coded latency check.
-- **Help**: Dynamic help menu with dropdowns for categories.
-
----
-
-## 🛠️ Installation & Setup
-
-### Prerequisites
-- Python 3.10+
-- MongoDB Database
-- Lavalink Server (v3 or v4)
-- **FFmpeg**
-
-### 1. Clone the Repository
-```bash
-git clone https://github.com/CytechNaRak/CytechMusic.git
-cd CytechMusic
-```
-
-### 2. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Configuration (.env)
-1. Copy the example environment file:
-   ```bash
-   cp .env.example .env
-   ```
-2. Open `.env` and fill in your details (Bot Token, MongoDB URI, Lavalink, etc.).
+Open-source Discord music bot powered by `discord.py`, Lavalink, MongoDB, and the bundled CytechLink audio client.
 
 > [!IMPORTANT]
-> **SECURITY NOTE**: Never commit your `.env` file to a public repository. It contains sensitive tokens that can be used to control your bot or access your database.
+> **Project status: Revived / Maintenance Mode**
+>
+> CytechMusic has been reopened to keep the public release installable, compatible, secure, and maintainable. The revival focuses on bug fixes, dependency updates, code quality, documentation, and compatibility patches. Major new features are not planned here.
+>
+> **Cyori remains the active next-generation project.** CytechMusic is the public community edition and maintenance line.
 
-### 4. Run the Bot
+[![Quality](https://github.com/Cytech-Team/CytechMusic/actions/workflows/quality.yml/badge.svg)](https://github.com/Cytech-Team/CytechMusic/actions/workflows/quality.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
+
+## Revival goals
+
+- Keep the existing feature set working on supported Python and Discord/Lavalink stacks.
+- Patch bugs, compatibility problems, and security issues.
+- Clean technical debt where it can be done without changing expected behaviour.
+- Improve automated checks and documentation.
+- Keep self-hosting straightforward.
+- Avoid feature creep and large rewrites; new product development belongs in Cyori.
+
+## Features
+
+### Music playback
+- Lavalink-backed playback.
+- YouTube, Spotify, SoundCloud, and other sources supported by the configured Lavalink node.
+- Play, pause, skip, stop, seek, volume, loop, shuffle, and queue controls.
+- Queue pagination, removal, and ordering tools.
+
+### Audio filters
+- Nightcore, Vaporwave, and 8D presets.
+- Speed, karaoke, tremolo, vibrato, rotation, distortion, low-pass, and channel-mix controls.
+
+### Server controls
+- English and Thai language support.
+- DJ role and DJ mode.
+- Vote-gated features.
+- 24/7 mode and autoplay.
+- Dedicated music channel/controller setup.
+
+### Dashboard and utilities
+- Embedded web dashboard/API.
+- Uptime, CPU/RAM, latency, and Lavalink status information.
+- Dynamic help and bot information commands.
+
+## Requirements
+
+- Python 3.10+
+- MongoDB
+- Lavalink v3 or v4 compatible with the bundled CytechLink implementation
+- FFmpeg where required by your deployment
+
+## Installation
+
+```bash
+git clone https://github.com/Cytech-Team/CytechMusic.git
+cd CytechMusic
+python -m venv .venv
+```
+
+Activate the virtual environment and install dependencies:
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+Copy the environment template:
+
+```bash
+cp .env.example .env
+```
+
+Fill in at minimum your Discord bot token, MongoDB connection, and Lavalink connection details, then start the bot:
+
 ```bash
 python main.py
 ```
 
----
+> [!CAUTION]
+> Never commit `.env`, bot tokens, API keys, database credentials, or webhook secrets. The provided `.gitignore` excludes common local environment files.
 
-## 🛠️ Tech Stack
-- **Library**: `discord.py`
-- **Database**: `MongoDB` (Motor for async)
-- **Audio Node**: `Lavalink` (v3 or v4)
-- **Payment**: `Stripe` (Optional)
-- **Platform**: Python 3.10+
+## Configuration
 
----
+The complete public configuration template is in [`.env.example`](.env.example). Optional integrations such as Spotify, Top.gg, Stripe, remote logging, and cross-server role synchronisation can be left unset when unused.
 
-## 📝 Commands List
+For cross-server role synchronisation, configure `SOURCE_GUILD_ID` and `SYNC_ROLE_ID` only if you intentionally use that feature. The public template leaves both disabled by default.
+
+## Tech stack
+
+- `discord.py`
+- MongoDB / Motor / PyMongo
+- Lavalink + bundled CytechLink
+- `aiohttp` web API/dashboard
+- Optional Stripe, Spotify, Top.gg, and lyrics integrations
+
+## Commands
 
 | Command | Description |
-| :--- | :--- |
-| **/play [query]** | Play a song or playlist from URL or search. |
-| **/stop** | Stop playback and clear the queue. |
-| **/skip** | Skip the current song. |
-| **/pause** | Pause/Resume playback. |
-| **/volume [1-200]** | Adjust volume (Premium needed for >100). |
-| **/queue** | Show the current music queue. |
-| **/loop** | Toggle loop (Track/Queue/Off). |
-| **/seek [time]** | Seek to a timestamp (e.g., `1:30`). |
-| **/nowplaying** | Show current song info and controller. |
+| --- | --- |
+| `/play [query]` | Play a song or playlist from a URL or search. |
+| `/stop` | Stop playback and clear the queue. |
+| `/skip` | Skip the current song. |
+| `/pause` | Pause or resume playback. |
+| `/volume [1-200]` | Adjust playback volume. |
+| `/queue` | Show the current queue. |
+| `/loop` | Toggle track/queue looping. |
+| `/seek [time]` | Seek to a timestamp such as `1:30`. |
+| `/nowplaying` | Show current track information and controls. |
+
+## Maintenance policy
+
+Accepted changes are primarily:
+
+- bug fixes;
+- compatibility patches;
+- dependency/security updates;
+- reliability and performance fixes;
+- tests, CI, documentation, and safe refactors.
+
+Large new features should target Cyori instead of expanding CytechMusic's scope again.
+
+## Contributing
+
+Pull requests are welcome. Please keep changes focused and preserve existing behaviour unless the change fixes a documented bug or compatibility issue.
+
+## License
+
+Distributed under the [MIT License](LICENSE).
 
 ---
 
-## 👥 Contributing
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-## 📄 License
-Distributed under the [MIT License](LICENSE). See `LICENSE` for more information.
-
----
-**CytechMusic** is a free project for the community. Developed with ❤️ by **Cytech Team**.
+Developed and maintained by **Cytech Team Development**.
