@@ -1,38 +1,41 @@
 /**
- * CYORI RECOMMENDED API PROXY
- * Direct Entry Point for Recommended Tracks
+ * Recommended tracks proxy for Community deployments.
+ * No Cyori/Cytech production backend is used by default.
  */
-const VPS_API = "http://bkk.fe-grp.com:11050/api/recommended";
-
 export async function onRequest(context) {
-    const { request } = context;
-    const url = new URL(request.url);
+    const { request, env } = context;
+    const backend = (env.VPS_API_URL || env.BOT_API_URL || "").replace(/\/+$/, "");
+    if (!backend) {
+        return new Response(JSON.stringify({ error: "backend_not_configured" }), {
+            status: 503,
+            headers: { "Content-Type": "application/json" },
+        });
+    }
 
-    // Construct target URL with same query params
-    const targetUrl = new URL(VPS_API);
-    url.searchParams.forEach((v, k) => {
-        targetUrl.searchParams.set(k, v);
+    const sourceUrl = new URL(request.url);
+    const targetUrl = new URL(`${backend}/api/proxy`);
+    targetUrl.searchParams.set("action", "recommended");
+    sourceUrl.searchParams.forEach((value, key) => {
+        if (key !== "action") targetUrl.searchParams.set(key, value);
     });
 
     try {
         const response = await fetch(targetUrl.toString(), {
             method: "GET",
-            headers: { "Content-Type": "application/json" }
+            headers: { "Content-Type": "application/json" },
         });
-
-        const data = await response.text();
-
-        return new Response(data, {
+        return new Response(await response.text(), {
             status: response.status,
             headers: {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            }
+                "Content-Type": response.headers.get("Content-Type") || "application/json",
+                "Access-Control-Allow-Origin": env.DASHBOARD_ORIGIN || sourceUrl.origin,
+                "Vary": "Origin",
+            },
         });
-    } catch (err) {
-        return new Response(JSON.stringify({ status: "error", message: "VPS Offline" }), {
+    } catch (_) {
+        return new Response(JSON.stringify({ error: "backend_unreachable" }), {
             status: 502,
-            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+            headers: { "Content-Type": "application/json" },
         });
     }
 }
