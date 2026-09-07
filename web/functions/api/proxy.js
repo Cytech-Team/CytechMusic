@@ -102,6 +102,14 @@ export async function onRequest(context) {
     const action = url.searchParams.get("action") || (bodyData && bodyData.action);
     const backend = backendBase(env);
 
+    // Public, non-secret deployment identity used by security-bootstrap.js.
+    if (action === "runtime_config") {
+        const clientId = /^\d{15,22}$/.test(env.DISCORD_CLIENT_ID || "")
+            ? String(env.DISCORD_CLIENT_ID)
+            : "";
+        return jsonResponse(request, env, { client_id: clientId });
+    }
+
     // Stripe checkout is handled at the edge, but identity comes only from Discord.
     if (action === "create_checkout") {
         const verifiedUser = await verifyDiscordUser(request);
