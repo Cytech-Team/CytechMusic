@@ -5,11 +5,12 @@ from motor.motor_asyncio import AsyncIOMotorCollection
 
 
 class _RootSafeCollectionProxy:
-    """Delegate collection access while making empty update filters fail-safe.
+    """Delegate collection access while making empty root selectors fail-safe.
 
     This collection stores both the root config document and standalone user
-    documents. An accidental update_one({}) can therefore mutate an arbitrary
-    user document. Empty update filters are rewritten to the resolved root _id.
+    documents. Accidental find_one({}) / update_one({}) calls can otherwise
+    select an arbitrary user document. Empty selectors are rewritten to the
+    resolved root _id.
     """
 
     def __init__(self, manager: "DatabaseManager", collection: AsyncIOMotorCollection):
@@ -18,6 +19,14 @@ class _RootSafeCollectionProxy:
 
     def __getattr__(self, name):
         return getattr(self._collection, name)
+
+    async def find_one(self, filter=None, *args, **kwargs):
+        if filter == {}:
+            await self._manager._fetch_root()
+            if self._manager._root_id is None:
+                return None
+            filter = {"_id": self._manager._root_id}
+        return await self._collection.find_one(filter, *args, **kwargs)
 
     async def update_one(self, filter, update, *args, **kwargs):
         if filter == {}:
