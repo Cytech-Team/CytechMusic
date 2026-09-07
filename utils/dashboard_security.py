@@ -199,6 +199,12 @@ def make_dashboard_security_middleware(bot):
             if requested_uid and str(requested_uid) != str(user["id"]):
                 return web.json_response({"error": "forbidden"}, status=403)
 
+            if action == "bot_guilds":
+                user_guilds = await _guilds(token) or []
+                visible_ids = {str(guild.get("id")) for guild in user_guilds if guild.get("id")}
+                mutual = [str(guild.id) for guild in bot.guilds if str(guild.id) in visible_ids]
+                return web.json_response({"guilds": mutual})
+
             guild_id = request.query.get("guild_id")
             if action in {"status", "guild_settings"}:
                 if not guild_id or not str(guild_id).isdigit():
