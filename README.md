@@ -2,6 +2,8 @@
 <div align="center">
 <a href="https://github.com/Cytech-Team/CytechMusic"><img width="100%" alt="CytechMusic banner" src="https://capsule-render.vercel.app/api?type=waving&color=0:111225,100:6366F1&height=210&section=header&text=CytechMusic&fontSize=40&fontColor=ffffff&fontAlignY=36&desc=An%20open-source%20Discord%20music%20bot%20in%20maintenance%20mode&descAlignY=59&descSize=16"></a>
 
+<p><img src="web/logo-circle.png" alt="CytechMusic logo" width="136" /></p>
+
 <img alt="Project: Discord Bot" src="https://img.shields.io/badge/PROJECT-Discord%20Bot-6366F1?style=flat-square&labelColor=111225"> <img alt="Stack: Python · Lavalink" src="https://img.shields.io/badge/STACK-Python%20%C2%B7%20Lavalink-6366F1?style=flat-square&labelColor=111225">
 
 <a href="https://github.com/Cytech-Team/CytechMusic">Source</a> · <a href="https://github.com/Cytech-Team/CytechMusic/issues">Issues</a> · <a href="https://github.com/Cytech-Team/CytechMusic/releases">Releases</a>
@@ -145,3 +147,19 @@ Distributed under the [MIT License](LICENSE).
 ---
 
 Developed and maintained by **Cytech Team Development**.
+
+---
+
+<!-- CYTECH_STAR_HISTORY:START -->
+
+## Star History
+
+<a href="https://star-history.dera.page/#Cytech-Team/CytechMusic&type=date&legend=top-left">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=Cytech-Team/CytechMusic&type=date&legend=top-left&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=Cytech-Team/CytechMusic&type=date&legend=top-left" />
+    <img alt="GitHub star history for Cytech-Team/CytechMusic" src="https://star-history.dera.page/svg?repos=Cytech-Team/CytechMusic&type=date&legend=top-left" width="800" />
+  </picture>
+</a>
+
+<!-- CYTECH_STAR_HISTORY:END -->
