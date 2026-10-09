@@ -1,4 +1,15 @@
-# CytechMusic
+<!-- CYTECH_README_REFRESH:START -->
+<div align="center">
+<a href="https://github.com/Cytech-Team/CytechMusic"><img width="100%" alt="CytechMusic banner" src="https://capsule-render.vercel.app/api?type=waving&color=0:111225,100:6366F1&height=210&section=header&text=CytechMusic&fontSize=40&fontColor=ffffff&fontAlignY=36&desc=An%20open-source%20Discord%20music%20bot%20in%20maintenance%20mode&descAlignY=59&descSize=16"></a>
+
+<img alt="Project: Discord Bot" src="https://img.shields.io/badge/PROJECT-Discord%20Bot-6366F1?style=flat-square&labelColor=111225"> <img alt="Stack: Python · Lavalink" src="https://img.shields.io/badge/STACK-Python%20%C2%B7%20Lavalink-6366F1?style=flat-square&labelColor=111225">
+
+<a href="https://github.com/Cytech-Team/CytechMusic">Source</a> · <a href="https://github.com/Cytech-Team/CytechMusic/issues">Issues</a> · <a href="https://github.com/Cytech-Team/CytechMusic/releases">Releases</a>
+
+</div>
+<!-- CYTECH_README_REFRESH:END -->
+
+---
 
 Open-source Discord music bot powered by `discord.py`, Lavalink, MongoDB, and the bundled CytechLink audio client.
 
